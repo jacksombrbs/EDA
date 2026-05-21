@@ -1,4 +1,4 @@
-﻿async function renderizarRelatorios(conteudo) {
+async function renderizarRelatorios(conteudo) {
     const participantes = await bd.obterTodos('participantes');
     const paroquias = await bd.obterTodos('paroquias');
     const cursos = await bd.obterTodos('cursos');
@@ -298,6 +298,7 @@ async function gerarPDFLivroCaixa() {
 async function gerarPDFMensalidades() {
     const participantes = await bd.obterTodos('participantes');
     const paroquias = await bd.obterTodos('paroquias');
+    const cursos = await bd.obterTodos('cursos');
     const pagamentos = await bd.obterTodos('pagamentos');
 
     participantes.sort((a, b) => a.nome_participante.localeCompare(b.nome_participante));
@@ -306,7 +307,10 @@ async function gerarPDFMensalidades() {
     html += `<h2>FICHA DE ACOMPANHAMENTO DE MENSALIDADES</h2>`;
     html += `<p><strong>Data de Emissão:</strong> ${Utilidades.formatarData(new Date().toISOString().split('T')[0])}</p>`;
 
-    const colunasControle = ['Inscrição', 'Parc 1', 'Parc 2', 'Parc 3', 'Parc 4', 'Parc 5', 'Parc 6', 'Parc 7', 'Parc 8'];
+    const cursosMap = {};
+    cursos.forEach(c => {
+        cursosMap[c.id_curso] = c;
+    });
 
     const paroquiasMap = {};
     paroquias.forEach(p => {
@@ -332,10 +336,17 @@ async function gerarPDFMensalidades() {
         })
         .forEach(grupo => {
             const nomeParoquia = paroquiasMap[grupo.idParo] || 'Alunos Sem Vínculo Paroquial';
+            const maxMensalidades = Math.max(0, ...grupo.alunos.map(aluno => {
+                const curso = cursosMap[aluno.id_curso];
+                return curso ? parseInt(curso.quantidade_mensalidades || '0', 10) : 0;
+            }));
+
+            const colunasControle = ['Inscrição', ...Array.from({ length: maxMensalidades }, (_, index) => `Parc ${index + 1}`)];
+
             html += `<h3>Paróquia: ${nomeParoquia} / Capela: ${grupo.capela}</h3>`;
             html += `<table><thead><tr><th>Nome do Aluno</th>`;
             colunasControle.forEach(col => {
-                html += `<th class="texto-centro" style="width: 9%;">${col}</th>`;
+                html += `<th class="texto-centro">${col}</th>`;
             });
             html += `</tr></thead><tbody>`;
 
@@ -359,7 +370,7 @@ async function gerarPDFMensalidades() {
                         return dataA.localeCompare(dataB);
                     });
 
-                    for (let i = 0; i < 8; i++) {
+                    for (let i = 0; i < maxMensalidades; i++) {
                         const pago = pagamentosParcelas[i] ? true : false;
                         html += `<td class="texto-centro">${pago ? 'X' : ' '}</td>`;
                     }
