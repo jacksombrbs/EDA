@@ -1,9 +1,16 @@
 ﻿async function renderizarParticipantes(conteudo) {
     const participantes = await bd.obterTodos('participantes');
-    const paroquias = await bd.obterTodos('paroquias');    participantes.sort((a, b) => (a.nome_participante || '').localeCompare(b.nome_participante || ''));
+    const paroquias = await bd.obterTodos('paroquias');    
+    participantes.sort((a, b) => (a.nome_participante || '').localeCompare(b.nome_participante || ''));
+    
     let codigoEstrutura = '<div class="fundo-branco borda-padrao raio-md p-md mb-lg"><div class="flex justifica-espaco itens-centro mb-md md-flex-coluna md-itens-esquerda gap-sm">';
     codigoEstrutura += '<h2 class="texto-lg peso-bold cor-texto-primario">Participantes Cadastrados</h2>';
+    
+    codigoEstrutura += '<div class="flex gap-sm">';
+    codigoEstrutura += '<button class="btn btn-secundario" onclick="abrirModalImportacao()">Importar dados</button>';
     codigoEstrutura += '<button class="btn btn-primario" onclick="abrirFormularioParticipante()">+ Novo Participante</button>';
+    codigoEstrutura += '</div>';
+    
     codigoEstrutura += '</div>';
 
     codigoEstrutura += Busca.criarCampoBusca('busca-participantes', 'Buscar por nome...');
@@ -176,6 +183,216 @@ async function salvarParticipante() {
 
     await bd.salvar('participantes', participante);
     Utilidades.notificacao(registroEmEdicao ? 'Participante atualizado!' : 'Participante salvo com sucesso!', 'sucesso');
+    Interface.fecharJanela('janela-formulario');
+    renderizarAbaAtual();
+}
+
+function abrirModalImportacao() {
+    document.getElementById('titulo-janela').textContent = 'Importar Participantes';
+    
+    let codigoEstrutura = `
+        <div class="flex flex-coluna gap-md">
+            <div class="p-md fundo-secundario borda-padrao raio-sm texto-sm">
+                <p class="peso-bold mb-xs cor-texto-escuro">Instruções para importação:</p>
+                <ul style="padding-left: 1.5rem; list-style-type: disc; margin-top: 8px; margin-bottom: 0;">
+                    <li style="margin-bottom: 4px;">Sua planilha deve ter cabeçalhos exatos na primeira linha.</li>
+                    <li style="margin-bottom: 4px;">Colunas <strong>obrigatórias</strong>: Nome, Curso, Paroquia.</li>
+                    <li>Colunas opcionais: CPF, RG, Nascimento, Email, Telefone, Endereço, Cidade, Estado e Capela.</li>
+                </ul>
+            </div>
+            
+            <div class="mt-sm mb-sm">
+                <input type="file" id="arquivo-excel" accept=".xlsx, .xls" style="display: none;" onchange="window.atualizarRotuloArquivo(this)" />
+                
+                <label for="arquivo-excel" class="btn btn-secundario largura-total">
+                    <span id="texto-arquivo-selecionado">Selecione seu arquivo para importação</span>
+                </label>
+            </div>
+            
+            <div id="resultado-validacao" class="oculto"></div>
+
+            <div class="flex justifica-fim gap-md pt-md borda-topo mt-sm">
+                <button type="button" class="btn btn-secundario" onclick="Interface.fecharJanela('janela-formulario')">Cancelar</button>
+                <button type="button" class="btn btn-primario" id="btn-processar-excel" onclick="processarPlanilha()">Validar Planilha</button>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('conteudo-formulario').innerHTML = codigoEstrutura;
+    Interface.abrirJanela('janela-formulario');
+}
+
+window.atualizarRotuloArquivo = function(input) {
+    const span = document.getElementById('texto-arquivo-selecionado');
+    if (input.files && input.files.length > 0) {
+        span.innerHTML = '✅ <strong>Arquivo selecionado:</strong> ' + input.files[0].name;
+    } else {
+        span.textContent = '📁 Clique aqui para escolher a planilha Excel...';
+    }
+};
+
+const normalizarTexto = (texto) => {
+    if (!texto) return "";
+    return texto.toString().trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+};
+
+async function processarPlanilha() {
+    const inputArquivo = document.getElementById('arquivo-excel');
+    if (!inputArquivo.files.length) {
+        Utilidades.notificacao('Selecione um arquivo Excel primeiro.', 'erro');
+        return;
+    }
+
+    const arquivo = inputArquivo.files[0];
+    const leitor = new FileReader();
+
+    leitor.onload = async (e) => {
+        try {
+            const dados = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(dados, { type: 'array' });
+            const nomePrimeiraAba = workbook.SheetNames[0];
+            const planilha = workbook.Sheets[nomePrimeiraAba];
+            
+            // Converte a planilha para um array de objetos JSON
+            const linhas = XLSX.utils.sheet_to_json(planilha);
+
+            if (linhas.length === 0) {
+                Utilidades.notificacao('A planilha está vazia.', 'aviso');
+                return;
+            }
+
+            await validarDadosPlanilha(linhas);
+
+        } catch (erro) {
+            console.error(erro);
+            Utilidades.notificacao('Erro ao ler a planilha. Verifique o formato.', 'erro');
+        }
+    };
+
+    leitor.readAsArrayBuffer(arquivo);
+}
+
+async function validarDadosPlanilha(linhasExcel) {
+    const cursos = await bd.obterTodos('cursos');
+    const paroquias = await bd.obterTodos('paroquias');
+
+    const mapaCursos = new Map(cursos.map(c => [normalizarTexto(c.nome_curso), c.id_curso]));
+    const mapaParoquias = new Map(paroquias.map(p => [normalizarTexto(p.nome_paroquia), p.id_paroquia]));
+
+    const registrosValidos = [];
+    const erros = [];
+
+    linhasExcel.forEach((linha, index) => {
+        const linhaNum = index + 2;
+        
+        const nomePlanilha = linha.Nome || linha.NOME || linha.nome;
+        const cursoPlanilha = linha.Curso || linha.CURSO || linha.curso;
+        const paroquiaPlanilha = linha.Paroquia || linha.PAROQUIA || linha.paroquia || linha['Paróquia'];
+
+        if (!nomePlanilha) {
+            erros.push(`Linha ${linhaNum}: Nome do participante em branco.`);
+            return;
+        }
+        if (!cursoPlanilha) {
+            erros.push(`Linha ${linhaNum}: (${nomePlanilha}) Curso não informado.`);
+            return;
+        }
+        if (!paroquiaPlanilha) {
+            erros.push(`Linha ${linhaNum}: (${nomePlanilha}) Paróquia não informada.`);
+            return;
+        }
+
+        const idCursoLocalizado = mapaCursos.get(normalizarTexto(cursoPlanilha));
+        const idParoquiaLocalizada = mapaParoquias.get(normalizarTexto(paroquiaPlanilha));
+
+        if (!idCursoLocalizado) {
+            erros.push(`Linha ${linhaNum}: Curso "${cursoPlanilha}" não encontrado no sistema.`);
+            return;
+        }
+        if (!idParoquiaLocalizada) {
+            erros.push(`Linha ${linhaNum}: Paróquia "${paroquiaPlanilha}" não encontrada no sistema.`);
+            return;
+        }
+
+        registrosValidos.push({
+            id_participante: Utilidades.gerarId(),
+            nome_participante: nomePlanilha,
+            cpf: linha.CPF || '',
+            rg: linha.RG || '',
+            data_nascimento: linha.Nascimento || '',
+            email: linha.Email || linha.EMAIL || '',
+            telefone: linha.Telefone || linha.WhatsApp || '',
+            endereco: linha.Endereco || linha.Endereço || '',
+            bairro: linha.Bairro || '',
+            cidade: linha.Cidade || 'Curitiba',
+            estado: linha.Estado || linha.UF || 'PR',
+            id_paroquia: idParoquiaLocalizada,
+            capela: linha.Capela || '',
+            id_curso: idCursoLocalizado,
+            codigo_acesso: Math.floor(100000 + Math.random() * 900000).toString()
+        });
+    });
+
+    exibirResultadoValidacao(registrosValidos, erros);
+}
+
+function exibirResultadoValidacao(validos, erros) {
+    const divResultado = document.getElementById('resultado-validacao');
+    divResultado.classList.remove('oculto');
+    
+    let html = '';
+
+    if (erros.length > 0) {
+        html += `
+            <div class="p-md borda-erro fundo-branco raio-sm mb-md borda-esquerda-grossa">
+                <h4 class="texto-erro peso-bold mb-sm">Atenção: ${erros.length} erros encontrados</h4>
+                <ul class="cor-texto-escuro texto-sm max-altura-rolagem" style="max-height: 150px; overflow-y: auto; padding-left: 1.5rem; list-style-type: disc;">
+                    ${erros.map(e => `<li>${e}</li>`).join('')}
+                </ul>
+                <p class="texto-sm mt-sm">Corrija estes erros na planilha e tente novamente. Nenhum dado foi salvo ainda.</p>
+            </div>
+        `;
+    }
+
+    if (validos.length > 0) {
+        html += `
+            <div class="p-md borda-sucesso fundo-branco raio-sm borda-esquerda-grossa">
+                <h4 class="texto-sucesso peso-bold mb-sm">${validos.length} Participantes prontos para importar!</h4>
+                <p class="texto-sm cor-texto-escuro">Os vínculos com as paróquias e cursos foram verificados com sucesso.</p>
+                ${erros.length > 0 ? '<p class="texto-sm texto-aviso mt-xs">Nota: Se você prosseguir, apenas os participantes válidos serão importados, ignorando os erros acima.</p>' : ''}
+            </div>
+        `;
+    }
+
+    divResultado.innerHTML = html;
+
+    const containerBotoes = divResultado.nextElementSibling;
+    if (validos.length > 0) {
+        window._dadosImportacaoPendentes = validos;
+        containerBotoes.innerHTML = `
+            <button type="button" class="btn btn-secundario" onclick="Interface.fecharJanela('janela-formulario')">Cancelar</button>
+            <button type="button" class="btn btn-sucesso" onclick="efetivarImportacaoExcel()">Confirmar Importação de ${validos.length} alunos</button>
+        `;
+    }
+}
+
+async function efetivarImportacaoExcel() {
+    const dados = window._dadosImportacaoPendentes;
+    if (!dados || dados.length === 0) return;
+
+    let salvosComSucesso = 0;
+
+    for (const participante of dados) {
+        try {
+            await bd.salvar('participantes', participante);
+            salvosComSucesso++;
+        } catch (e) {
+            console.error("Erro ao salvar participante", participante, e);
+        }
+    }
+
+    window._dadosImportacaoPendentes = null;
+    Utilidades.notificacao(`${salvosComSucesso} participantes importados com sucesso!`, 'sucesso');
     Interface.fecharJanela('janela-formulario');
     renderizarAbaAtual();
 }
