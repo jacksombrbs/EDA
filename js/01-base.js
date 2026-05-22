@@ -140,16 +140,12 @@ const Interface = {
         document.querySelectorAll('.item-menu[data-aba]').forEach(item => {
     const ehAtivo = item.dataset.aba === aba;
 
-    // mantém compatibilidade com classes antigas
     item.classList.toggle('fundo-primario-leve', ehAtivo);
     item.classList.toggle('cor-texto-primario', ehAtivo);
     item.classList.toggle('peso-bold', ehAtivo);
     item.classList.toggle('fundo-transparente', !ehAtivo);
-
-    // nova marcação para o "risquinho"
     item.classList.toggle('ativo', ehAtivo);
 
-    // aria-current para leitores de tela
     if (ehAtivo) item.setAttribute('aria-current', 'page');
     else item.removeAttribute('aria-current');
   });
@@ -352,6 +348,41 @@ function trocarAba(aba) {
 function fecharJanela(idJanela) {
     Interface.fecharJanela(idJanela);
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('btn-topo');
+    
+    const possiveisContainers = [
+        document.getElementById('aplicacao'),
+        document.querySelector('main'),
+        document.body
+    ];
+
+    let containerScroll = null;
+    for (let el of possiveisContainers) {
+        if (el && (el.scrollHeight > el.clientHeight)) {
+            containerScroll = el;
+            break;
+        }
+    }
+
+    if (containerScroll) {
+        containerScroll.addEventListener('scroll', () => {
+            if (containerScroll.scrollTop > 300) {
+                btn.style.display = 'block';
+            } else {
+                btn.style.display = 'none';
+            }
+        });
+
+        window.voltarAoTopo = function() {
+            containerScroll.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        };
+    }
+});
 
 async function renderizarAbaAtual() {
     const conteudo = document.getElementById('conteudo-administracao');

@@ -1,4 +1,4 @@
-async function renderizarRelatorios(conteudo) {
+﻿async function renderizarRelatorios(conteudo) {
     const participantes = await bd.obterTodos('participantes');
     const paroquias = await bd.obterTodos('paroquias');
     const cursos = await bd.obterTodos('cursos');
@@ -102,7 +102,7 @@ async function renderizarRelatorios(conteudo) {
                 pendencias.push('Falta Inscrição');
             }
             if (qtdMensalidadesPagas < qtdExigidaCurso) {
-                pendencias.push(`Falta ${qtdExigidaCurso - qtdMensalidadesPagas} mêns.`);
+                pendencias.push(`Faltam ${qtdExigidaCurso - qtdMensalidadesPagas} mêns.`);
             }
 
             const estaEmDia = pendencias.length === 0;
