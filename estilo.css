@@ -13,7 +13,7 @@
     --cor-fundo-alt: #f3f4f6;
     --cor-primaria: #1e3a8a;
     --cor-marca-300: #f6e4fc;
-    --cor-marca-700: #843aa7;
+    --cor-marca-700: #8e3aa7;
     --cor-secundaria: #c084fc24;
 
     --cor-sucesso: #10b981;
@@ -95,7 +95,7 @@
 }
 
 .logo-fundo {
-    fill: var(--cor-marca-300);
+    fill: var(--cor-superficie-2);
 }
 
 .logo-traco {
