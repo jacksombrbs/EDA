@@ -1,4 +1,4 @@
-﻿async function renderizarFrequencia(conteudo) {
+async function renderizarFrequencia(conteudo) {
     const cursos = await bd.obterTodos('cursos');
     const disciplinas = await bd.obterTodos('disciplinas');
     const todasFrequencias = await bd.obterTodos('frequencia');
@@ -92,6 +92,12 @@ window.editarFrequenciaAntiga = async function (idFrequencia) {
     const participantes = await bd.obterTodos('participantes');
     const alunosDoCurso = participantes.filter(p => String(p.id_curso) === String(frequencia.id_curso));
 
+    alunosDoCurso.sort((a, b) => {
+        const nomeA = (a.nome_participante || a.nome || '').toLowerCase();
+        const nomeB = (b.nome_participante || b.nome || '').toLowerCase();
+        return nomeA.localeCompare(nomeB);
+    });
+
     window.frequenciaTemporaria = { ...frequencia.presencas };
     window.idFrequenciaAtual = frequencia.id_frequencia;
 
@@ -138,19 +144,21 @@ window.editarFrequenciaAntiga = async function (idFrequencia) {
     const recipiente = document.getElementById('grade-chamada-alunos');
 
     let codigoEstrutura = '<div class="rolagem-x borda-padrao raio-md fundo-branco mb-md"><table class="tabela-base">';
-    codigoEstrutura += '<thead><tr><th>Nome do Aluno</th><th style="width: 200px;" class="texto-centro">Situação da Presença</th></tr></thead><tbody>';
+    codigoEstrutura += '<thead><tr><th>Nome do Aluno</th><th><div class="flex justifica-centro">Situação da Presença</div></th></tr></thead><tbody>';
 
     alunosDoCurso.forEach(aluno => {
         const estado = window.frequenciaTemporaria[aluno.id_participante] || 'C';
         const classeEstado = estado === 'C' ? 'btn-sucesso' : 'btn-perigo';
-        const textoBotao = estado === 'C' ? 'C (Compareceu)' : 'F (Faltou)';
+        const textoBotao = estado === 'C' ? 'Compareceu' : 'Faltou';
 
         codigoEstrutura += `<tr>
             <td class="cor-texto-escuro"><strong>${aluno.nome_participante || aluno.nome}</strong></td>
-            <td class="texto-centro">
-                <button id="botao-frequencia-${aluno.id_participante}" class="btn btn-pequeno largura-btn transicao ${classeEstado}" onclick="window.alternarFrequenciaAluno('${aluno.id_participante}')">
-                    ${textoBotao}
-                </button>
+            <td>
+                <div class="flex justifica-centro">
+                    <button id="botao-frequencia-${aluno.id_participante}" class="btn btn-pequeno largura-btn transicao ${classeEstado}" onclick="window.alternarFrequenciaAluno('${aluno.id_participante}')">
+                        ${textoBotao}
+                    </button>
+                </div>
             </td>
         </tr>`;
     });
@@ -182,6 +190,12 @@ window.carregarGradeChamada = async function () {
         return;
     }
 
+    alunosDoCurso.sort((a, b) => {
+        const nomeA = (a.nome_participante || a.nome || '').toLowerCase();
+        const nomeB = (b.nome_participante || b.nome || '').toLowerCase();
+        return nomeA.localeCompare(nomeB);
+    });
+
     const todasFrequencias = await bd.obterTodos('frequencia');
     const freqExistente = todasFrequencias.find(f => String(f.id_curso) === idCurso && String(f.id_disciplina) === idDisciplina && f.data === dataAula);
 
@@ -189,7 +203,7 @@ window.carregarGradeChamada = async function () {
     window.idFrequenciaAtual = freqExistente ? freqExistente.id_frequencia : Utilidades.gerarId();
 
     let codigoEstrutura = '<div class="rolagem-x borda-padrao raio-md fundo-branco mb-md"><table class="tabela-base">';
-    codigoEstrutura += '<thead><tr><th>Nome do Aluno</th><th style="width: 200px;" class="texto-centro">Situação da Presença</th></tr></thead><tbody>';
+    codigoEstrutura += '<thead><tr><th>Nome do Aluno</th><th><div class="flex justifica-centro">Situação da Presença</div></th></tr></thead><tbody>';
 
     alunosDoCurso.forEach(aluno => {
         if (!window.frequenciaTemporaria[aluno.id_participante]) {
@@ -198,14 +212,16 @@ window.carregarGradeChamada = async function () {
 
         const estado = window.frequenciaTemporaria[aluno.id_participante];
         const classeEstado = estado === 'C' ? 'btn-sucesso' : 'btn-perigo';
-        const textoBotao = estado === 'C' ? 'C (Compareceu)' : 'F (Faltou)';
+        const textoBotao = estado === 'C' ? 'Compareceu' : 'Faltou';
 
         codigoEstrutura += `<tr>
                     <td class="cor-texto-escuro"><strong>${aluno.nome_participante || aluno.nome}</strong></td>
-                    <td class="texto-centro">
-                        <button id="botao-frequencia-${aluno.id_participante}" class="btn btn-pequeno largura-btn transicao ${classeEstado}" onclick="window.alternarFrequenciaAluno('${aluno.id_participante}')">
-                            ${textoBotao}
-                        </button>
+                    <td>
+                        <div class="flex justifica-centro">
+                            <button id="botao-frequencia-${aluno.id_participante}" class="btn btn-pequeno largura-btn transicao ${classeEstado}" onclick="window.alternarFrequenciaAluno('${aluno.id_participante}')">
+                                ${textoBotao}
+                            </button>
+                        </div>
                     </td>
                  </tr>`;
     });
@@ -242,12 +258,12 @@ window.alternarFrequenciaAluno = function (idAluno) {
 
     if (window.frequenciaTemporaria[idAluno] === 'C') {
         window.frequenciaTemporaria[idAluno] = 'F';
-        botao.textContent = 'F (Faltou)';
+        botao.textContent = 'Faltou';
         botao.classList.remove('btn-sucesso');
         botao.classList.add('btn-perigo');
     } else {
         window.frequenciaTemporaria[idAluno] = 'C';
-        botao.textContent = 'C (Compareceu)';
+        botao.textContent = 'Compareceu';
         botao.classList.remove('btn-perigo');
         botao.classList.add('btn-sucesso');
     }
@@ -271,12 +287,4 @@ window.salvarDiarioFrequencia = async function () {
     Utilidades.notificacao('Diário de frequência armazenado com sucesso!', 'sucesso');
 
     await renderizarAbaAtual();
-
-    setTimeout(() => {
-        document.getElementById('freq-curso').value = idCurso;
-        document.getElementById('freq-disciplina').value = idDisciplina;
-        document.getElementById('freq-data').value = dataAula;
-
-        window.carregarGradeChamada();
-    }, 100);
 };
