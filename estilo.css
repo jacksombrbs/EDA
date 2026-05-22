@@ -1,4 +1,4 @@
-﻿/* 1. VARIÁVEIS GLOBAIS ========= */
+/* 1. VARIÁVEIS GLOBAIS ========= */
 
 :root {
     /* Paleta base */
@@ -235,7 +235,7 @@ main {
 }
 
 .largura-btn {
-    width: 150px;
+    width: 100px;
 }
 
 .max-largura-md {
@@ -786,12 +786,12 @@ main {
 }
 
 .btn-perigo {
-    color: var(--cor-erro);
-    background: var(--cor-fundo);
+    color: var(--cor-fundo);
+    background: var(--cor-erro);
 }
 
 .btn-perigo:hover {
-    background-color: color-mix(in srgb, var(--cor-erro) 10%, var(--cor-fundo) 90%);
+    background-color: color-mix(in srgb, var(--cor-erro) 85%, var(--cor-fundo) 15%);
 }
 
 .btn-sucesso {
