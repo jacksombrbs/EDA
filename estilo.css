@@ -1,0 +1,699 @@
+﻿/* 1. VARIÁVEIS GLOBAIS ========= */
+
+:root {
+    --cor-fundo: #fafafa;
+    --cor-superficie: #ffffff;
+    --cor-superficie-2: #f5f5f5;
+    --cor-superficie-3: #e1e1e1;
+    --cor-texto: #191a1a;
+    --cor-texto-claro: #6b7280;
+    --cor-borda: #e6e9ef;
+    --cor-fundo-alt: #f3f4f6;
+    --cor-marca-700: #8e3aa7;
+    --cor-marca-escuro: color-mix(in srgb, #8e3aa7 90%, #fafafa 10%);
+    --cor-marca-ativo: color-mix(in srgb, #8e3aa7 75%, #fafafa 25%);
+    --cor-sucesso: #10b981;
+    --cor-aviso: #f59e0b;
+    --cor-erro: #ef4444;
+    --cor-erro-escuro: color-mix(in srgb, #ef4444 85%, #fafafa 15%);
+    --cor-sucesso-escuro: color-mix(in srgb, #10b981 85%, #fafafa 15%);
+
+    --raio-xxs: 6px;
+    --raio-sm: 8px;
+    --raio-md: 16px;
+
+    --espaco-xxs: 4px;
+    --espaco-xs: 6px;
+    --espaco-sm: 8px;
+    --espaco-md: 16px;
+    --espaco-lg: 24px;
+
+    --fonte-familia: "Segoe UI Variable", "Segoe UI", Roboto, system-ui, -apple-system;
+    --fonte-sm: 12px;
+    --fonte-md: 14px;
+    --fonte-lg: 18px;
+    --fonte-xl: 24px;
+
+    --peso-regular: 500;
+    --peso-bold: 700;
+
+    --transicao-padrao: all 160ms cubic-bezier(0, 0, 1, 1);
+
+    --sombra-1: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.06);
+    --sombra-2: 0 4px 8px rgba(16, 24, 40, 0.06), 0 8px 20px rgba(16, 24, 40, 0.08);
+}
+
+/* 2. RESET ========= */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html,
+body {
+    min-height: 100%;
+    height: 100%;
+    width: 100%;
+    overflow: auto;
+}
+
+html {
+    scrollbar-width: none;
+}
+
+::-webkit-scrollbar {
+    display: none;
+}
+
+input,
+button,
+textarea,
+select {
+    font-family: inherit;
+}
+
+/* 3. UTILITÁRIOS DE DISPLAY & LAYOUT ========= */
+.block {
+    display: block;
+}
+
+.inline-block {
+    display: inline-block;
+}
+
+.flex {
+    display: flex;
+}
+
+.inline-flex {
+    display: inline-flex;
+}
+
+.grid {
+    display: grid;
+}
+
+.oculto {
+    display: none !important;
+}
+
+/* Flexbox & Grid */
+.flex-coluna {
+    flex-direction: column;
+}
+
+.flex-linha {
+    flex-direction: row;
+}
+
+.flex-1 {
+    flex: 1;
+    min-width: 0;
+}
+
+.itens-centro {
+    align-items: center;
+}
+
+.itens-inicio {
+    align-items: flex-start;
+}
+
+.justifica-centro {
+    justify-content: center;
+}
+
+.justifica-inicio {
+    justify-content: flex-start;
+}
+
+.justifica-fim {
+    justify-content: flex-end;
+}
+
+.justifica-espaco {
+    justify-content: space-between;
+}
+
+.gap-xs {
+    gap: var(--espaco-xs);
+}
+
+.gap-sm {
+    gap: var(--espaco-sm);
+}
+
+.gap-md {
+    gap: var(--espaco-md);
+}
+
+.gap-lg {
+    gap: var(--espaco-lg);
+}
+
+.coluna-total {
+    grid-column: 1 / -1;
+}
+
+/* 4. POSICIONAMENTO ========= */
+.pos-fixa {
+    position: fixed;
+}
+
+.pos-absoluta {
+    position: absolute;
+}
+
+.pos-relativa {
+    position: relative;
+}
+
+.inset-0 {
+    inset: 0;
+}
+
+.topo-0 {
+    top: 0;
+}
+
+.topo-total {
+    top: 100%;
+}
+
+.base-30 {
+    bottom: 30px;
+}
+
+.direita-30 {
+    right: 30px;
+}
+
+.z-maximo {
+    z-index: 99999;
+}
+
+.z-2000 {
+    z-index: 2000;
+}
+
+/* 5. DIMENSÕES ========= */
+.w-total {
+    width: 100%;
+}
+
+.w-tela {
+    width: 100vw;
+}
+
+.w-240 {
+    width: 240px;
+}
+
+.min-w-240 {
+    min-width: 240px;
+}
+
+.max-w-450 {
+    max-width: 450px;
+}
+
+.max-w-760 {
+    max-width: 760px;
+}
+
+.h-total {
+    height: 100%;
+}
+
+.h-tela {
+    height: 100vh;
+}
+
+.min-h-100vh {
+    min-height: 100vh;
+}
+
+.min-h-44 {
+    min-height: 44px;
+}
+
+.max-h-90vh {
+    max-height: 90vh;
+}
+
+/* 6. ESPAÇAMENTO (Padding e Margin) ========= */
+.p-0 {
+    padding: 0;
+}
+
+.p-sm {
+    padding: var(--espaco-sm);
+}
+
+.p-md {
+    padding: var(--espaco-md);
+}
+
+.p-lg {
+    padding: var(--espaco-lg);
+}
+
+.px-sm {
+    padding-left: var(--espaco-sm);
+    padding-right: var(--espaco-sm);
+}
+
+.px-md {
+    padding-left: var(--espaco-md);
+    padding-right: var(--espaco-md);
+}
+
+.py-sm {
+    padding-top: var(--espaco-sm);
+    padding-bottom: var(--espaco-sm);
+}
+
+.py-md {
+    padding-top: var(--espaco-md);
+    padding-bottom: var(--espaco-md);
+}
+
+.pl-md {
+    padding-left: var(--espaco-md);
+}
+
+.pt-md {
+    padding-top: var(--espaco-md);
+}
+
+.pb-md {
+    padding-bottom: var(--espaco-md);
+}
+
+.pb-lg {
+    padding-bottom: var(--espaco-lg);
+}
+
+.m-auto {
+    margin: auto;
+}
+
+.mt-xxs {
+    margin-top: var(--espaco-xxs);
+}
+
+.mt-auto {
+    margin-top: auto;
+}
+
+.mb-sm {
+    margin-bottom: var(--espaco-sm);
+}
+
+.mb-md {
+    margin-bottom: var(--espaco-md);
+}
+
+.mb-lg {
+    margin-bottom: var(--espaco-lg);
+}
+
+.mr-sm {
+    margin-right: var(--espaco-sm);
+}
+
+/* 7. TIPOGRAFIA ========= */
+.fonte-padrao {
+    font-family: var(--fonte-familia);
+}
+
+.texto-sm {
+    font-size: var(--fonte-sm);
+}
+
+.texto-md {
+    font-size: var(--fonte-md);
+}
+
+.texto-lg {
+    font-size: var(--fonte-lg);
+}
+
+.texto-xl {
+    font-size: var(--fonte-xl);
+}
+
+.peso-regular {
+    font-weight: var(--peso-regular);
+}
+
+.peso-bold {
+    font-weight: var(--peso-bold);
+}
+
+.texto-centro {
+    text-align: center;
+}
+
+.texto-esquerda {
+    text-align: left;
+}
+
+.sem-sublinhado {
+    text-decoration: none;
+}
+
+.antialiased {
+    -webkit-font-smoothing: antialiased;
+}
+
+.altura-linha-1-5 {
+    line-height: 1.5;
+}
+
+/* Cores de Texto */
+.cor-texto-escuro {
+    color: var(--cor-texto);
+}
+
+.cor-texto-claro {
+    color: var(--cor-texto-claro);
+}
+
+.cor-texto-branco {
+    color: var(--cor-superficie);
+}
+
+.cor-texto-primario {
+    color: var(--cor-marca-700);
+}
+
+.cor-texto-sucesso {
+    color: #064e3b;
+}
+
+.cor-texto-erro {
+    color: #991b1b;
+}
+
+.cor-texto-aviso {
+    color: #92400e;
+}
+
+/* 8. FUNDOS E CORES ========= */
+.fundo-branco {
+    background-color: var(--cor-superficie);
+}
+
+.fundo-cinza {
+    background-color: var(--cor-fundo-alt);
+}
+
+.fundo-superficie-2 {
+    background-color: var(--cor-superficie-2);
+}
+
+.fundo-marca-700 {
+    background-color: var(--cor-marca-700);
+}
+
+.fundo-sucesso {
+    background-color: var(--cor-sucesso);
+}
+
+.fundo-erro {
+    background-color: var(--cor-erro);
+}
+
+.fundo-transparente {
+    background-color: transparent;
+}
+
+.fundo-sobreposicao {
+    background: color-mix(in srgb, var(--cor-texto) 50%, transparent);
+}
+
+.fundo-toast-sucesso {
+    background: color-mix(in srgb, var(--cor-sucesso) 20%, var(--cor-superficie) 80%);
+}
+
+.fundo-toast-erro {
+    background: color-mix(in srgb, var(--cor-erro) 20%, var(--cor-superficie) 80%);
+}
+
+.fundo-toast-aviso {
+    background: color-mix(in srgb, var(--cor-aviso) 20%, var(--cor-superficie) 80%);
+}
+
+/* 9. BORDAS ========= */
+.sem-borda {
+    border: none;
+}
+
+.borda-1 {
+    border-width: 1px;
+}
+
+.borda-2 {
+    border-width: 2px;
+}
+
+.borda-solida {
+    border-style: solid;
+}
+
+.borda-base-solida {
+    border-bottom-style: solid;
+}
+
+.borda-base-1 {
+    border-bottom-width: 1px;
+}
+
+.borda-base-2 {
+    border-bottom-width: 2px;
+}
+
+.borda-topo-1 {
+    border-top-width: 1px;
+}
+
+.borda-cor-padrao {
+    border-color: var(--cor-borda);
+}
+
+.borda-transparente {
+    border-color: transparent;
+}
+
+.borda-colapso {
+    border-collapse: collapse;
+}
+
+.raio-xxs {
+    border-radius: var(--raio-xxs);
+}
+
+.raio-sm {
+    border-radius: var(--raio-sm);
+}
+
+.raio-md {
+    border-radius: var(--raio-md);
+}
+
+/* 10. EFEITOS E INTERAÇÕES ========= */
+.sombra-1 {
+    box-shadow: var(--sombra-1);
+}
+
+.sombra-2 {
+    box-shadow: var(--sombra-2);
+}
+
+.sem-sombra {
+    box-shadow: none;
+}
+
+.cursor-apontador {
+    cursor: pointer;
+}
+
+.transicao {
+    transition: var(--transicao-padrao);
+}
+
+.sem-selecao {
+    user-select: none;
+}
+
+.opacidade-0 {
+    opacity: 0;
+}
+
+.opacidade-100 {
+    opacity: 1;
+}
+
+.eventos-nenhum {
+    pointer-events: none;
+}
+
+/* Focus States */
+.focus-sem-outline:focus {
+    outline: none;
+}
+
+.focus-borda-marca:focus {
+    border-color: var(--cor-marca-700);
+}
+
+/* Hover & Active States */
+.hover-fundo-superficie-2:hover {
+    background-color: var(--cor-superficie-2);
+}
+
+.hover-fundo-superficie-3:hover {
+    background-color: var(--cor-superficie-3);
+}
+
+.hover-fundo-marca-escuro:hover {
+    background-color: var(--cor-marca-escuro);
+}
+
+.hover-fundo-erro-escuro:hover {
+    background-color: var(--cor-erro-escuro);
+}
+
+.hover-fundo-sucesso-escuro:hover {
+    background-color: var(--cor-sucesso-escuro);
+}
+
+.active-fundo-marca-ativo:active {
+    background-color: var(--cor-marca-ativo);
+}
+
+/* 11. OUTROS UTILITÁRIOS ========= */
+.rolagem-y {
+    overflow-y: auto;
+}
+
+.rolagem-x {
+    overflow-x: auto;
+}
+
+.rolagem-oculta {
+    overflow: hidden;
+}
+
+.animacao-deslize {
+    animation: deslizarEntrada 0.3s ease-out;
+}
+
+@keyframes deslizarEntrada {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Utilitário para Ícones (Fonte) */
+.icone-inline {
+    position: relative;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Segoe Fluent Icons', 'Segoe MDL2 Assets', 'Segoe UI Symbol', sans-serif;
+    font-size: 1.15em;
+    line-height: 1;
+    vertical-align: middle;
+    margin-right: 0.5rem;
+    transform: translateY(-0.07em);
+}
+
+/* Utilitário Sidebar Ativa (Substitui .item-menu::before) */
+.indicador-lateral-ativo::before {
+    content: "";
+    position: absolute;
+    left: 5px;
+    width: 5px;
+    height: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--cor-marca-700);
+    border-radius: 6px;
+    pointer-events: none;
+    transition: var(--transicao-padrao);
+    opacity: 0;
+}
+
+.indicador-lateral-ativo.ativo::before {
+    opacity: 1;
+}
+
+/* SVG Utilities */
+.svg-w-300 {
+    width: 300px;
+    height: auto;
+}
+
+.svg-fill-superficie-2 {
+    fill: var(--cor-superficie-2);
+}
+
+.svg-stroke-marca {
+    fill: none;
+    stroke: var(--cor-marca-700);
+    stroke-width: 1.2px;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-miterlimit: 10;
+}
+
+/* 12. RESPONSIVIDADE ========= */
+@media (max-width: 768px) {
+    .md-flex-coluna {
+        flex-direction: column !important;
+    }
+
+    .md-w-total {
+        width: 100% !important;
+    }
+
+    .md-sem-borda-direita {
+        border-right: none !important;
+    }
+
+    .md-borda-base-solida {
+        border-bottom-style: solid !important;
+        border-bottom-width: 1px !important;
+        border-color: var(--cor-borda) !important;
+    }
+
+    .md-rolagem-x {
+        overflow-x: auto !important;
+    }
+
+    .md-p-0 {
+        padding: 0 !important;
+    }
+
+    .md-p-md {
+        padding: var(--espaco-md) !important;
+    }
+
+    .md-oculto {
+        display: none !important;
+    }
+
+    .md-itens-esquerda {
+        align-items: flex-start !important;
+    }
+}
