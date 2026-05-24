@@ -1,7 +1,9 @@
 ﻿class BancoDados {
     constructor() {
         this.nomeBanco = 'escolaDiscipuloAmado';
-        this.versao = 4;
+        this.versao = 5;
+        this.versaoDados = 1;
+        this.nomeSistema = 'Comissão Bíblico-Catequética';
         this.bancoInterno = null;
         this.inicializar();
     }
@@ -18,6 +20,7 @@
             requisicao.onsuccess = () => {
                 this.bancoInterno = requisicao.result;
                 console.log('Banco de dados aberto com sucesso na versão', this.versao);
+                this.registrarMetadados().catch(erro => console.warn('Não foi possível registrar os metadados do banco:', erro));
                 resolve(this.bancoInterno);
             };
 
@@ -36,7 +39,8 @@
                     { nome: 'pagamentos', chave: 'id_pagamento' },
                     { nome: 'pagamentos_lote', chave: 'id_lote' },
                     { nome: 'avisos', chave: 'id_aviso' },
-                    { nome: 'financas', chave: 'id_despesa' }
+                    { nome: 'financas', chave: 'id_despesa' },
+                    { nome: 'configuracoes', chave: 'chave' }
                 ];
 
                 tabelas.forEach(tabela => {
@@ -100,6 +104,21 @@
                 });
             };
         });
+    }
+
+    criarMetadados() {
+        return {
+            chave: 'metadados_sistema',
+            nome_sistema: this.nomeSistema,
+            versao_banco: this.versao,
+            versao_dados: this.versaoDados,
+            atualizado_em: new Date().toISOString()
+        };
+    }
+
+    async registrarMetadados() {
+        if (!this.bancoInterno || !this.bancoInterno.objectStoreNames.contains('configuracoes')) return;
+        await this.salvar('configuracoes', this.criarMetadados());
     }
 
     salvar(tabela, dados) {
@@ -198,10 +217,19 @@
     async exportarDados() {
         const tabelas = [
             'cursos', 'paroquias', 'palestrantes', 'disciplinas', 'participantes',
-            'frequencia', 'atividades', 'pagamentos', 'pagamentos_lote', 'avisos', 'financas'
+            'frequencia', 'atividades', 'pagamentos', 'pagamentos_lote', 'avisos', 'financas', 'configuracoes'
         ];
 
-        const dados = {};
+        const metadadosBase = this.criarMetadados();
+        const dados = {
+            __metadados: {
+                nome_sistema: metadadosBase.nome_sistema,
+                versao_banco: metadadosBase.versao_banco,
+                versao_dados: metadadosBase.versao_dados,
+                exportado_em: new Date().toISOString()
+            }
+        };
+
         for (const tabela of tabelas) {
             dados[tabela] = await this.obterTodos(tabela);
         }
@@ -210,7 +238,15 @@
     }
 
     async importarDados(dados) {
+        const metadados = dados.__metadados || {};
+        if (metadados.versao_dados && metadados.versao_dados > this.versaoDados) {
+            throw new Error('Esta cópia de segurança foi gerada por uma versão mais nova do sistema.');
+        }
+
         for (const tabela in dados) {
+            if (tabela.startsWith('__')) continue;
+            if (!this.bancoInterno.objectStoreNames.contains(tabela)) continue;
+
             await this.limparTabela(tabela);
             if (dados[tabela]) {
                 for (const registro of dados[tabela]) {
@@ -218,6 +254,8 @@
                 }
             }
         }
+
+        await this.registrarMetadados();
     }
 }
 
