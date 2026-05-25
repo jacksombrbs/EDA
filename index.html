@@ -69,24 +69,20 @@
                     <div class="item-menu pos-relativa pl-md p-sm px-md raio-sm cursor-apontador transicao hover-fundo-superficie-3 cor-texto-escuro texto-md peso-regular fundo-transparente sem-borda sem-sombra indicador-lateral-ativo" data-aba="avisos" onclick="trocarAba('avisos')">
                         <span class="icone-inline" data-icone="avisos" aria-hidden="true"></span>Avisos
                     </div>
-                </nav>
 
-                <div class="acoes-sistema" aria-label="Ações do sistema">
-                    <button class="botao-padrao botao-secundario botao-acao-sistema" onclick="exportarCopiaSeguranca()" title="Exportar backup" aria-label="Exportar backup">
-                        <span class="icone-inline" data-icone="backup" aria-hidden="true"></span>
-                    </button>
-                    <button class="botao-padrao botao-secundario botao-acao-sistema" onclick="importarCopiaSeguranca()" title="Restaurar backup" aria-label="Restaurar backup">
-                        <span class="icone-inline" data-icone="restaurar" aria-hidden="true"></span>
-                    </button>
-                    <button class="botao-padrao botao-secundario botao-acao-sistema" onclick="sairAdministracao()" title="Sair" aria-label="Sair">
-                        <span class="icone-inline" data-icone="sair" aria-hidden="true"></span>
-                    </button>
-                </div>
+                    <div class="item-menu pos-relativa pl-md p-sm px-md raio-sm cursor-apontador transicao hover-fundo-superficie-3 cor-texto-escuro texto-md peso-regular fundo-transparente sem-borda sem-sombra indicador-lateral-ativo" data-aba="dados" onclick="trocarAba('dados')">
+                        <span class="icone-inline" data-icone="dados" aria-hidden="true"></span>Dados
+                    </div>
+                </nav>
             </aside>
 
             <main class="flex-1 p-md rolagem-y fundo-cinza md-p-md flex flex-coluna">
                 <div id="conteudo-administracao" class="w-total"></div>
             </main>
+
+            <button class="botao-padrao botao-secundario botao-sair-discreto" onclick="sairAdministracao()" title="Sair" aria-label="Sair">
+                <span class="icone-inline" data-icone="sair" aria-hidden="true"></span>
+            </button>
         </div>
 
         <div id="janela-formulario" class="pos-fixa inset-0 flex fundo-sobreposicao itens-centro justifica-centro z-maximo p-lg rolagem-y oculto" role="dialog" aria-modal="true" aria-labelledby="titulo-janela" aria-hidden="true" tabindex="-1">
@@ -123,5 +119,6 @@
     <script src="js/13-relatorios-academico.js"></script>
     <script src="js/14-relatorios-financeiro.js"></script>
     <script src="js/15-salvamento-copia-seguranca.js"></script>
+    <script src="js/16-dados.js"></script>
 </body>
 </html>

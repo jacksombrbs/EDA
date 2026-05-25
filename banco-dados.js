@@ -1,4 +1,19 @@
-﻿class BancoDados {
+const TABELAS_BANCO_DADOS = [
+    { nome: 'cursos', chave: 'id_curso', rotulo: 'Cursos' },
+    { nome: 'paroquias', chave: 'id_paroquia', rotulo: 'Paróquias' },
+    { nome: 'palestrantes', chave: 'id_palestrante', rotulo: 'Palestrantes' },
+    { nome: 'disciplinas', chave: 'id_disciplina', rotulo: 'Disciplinas' },
+    { nome: 'participantes', chave: 'id_participante', rotulo: 'Participantes' },
+    { nome: 'frequencia', chave: 'id_frequencia', rotulo: 'Frequência' },
+    { nome: 'atividades', chave: 'id_atividade', rotulo: 'Atividades' },
+    { nome: 'pagamentos', chave: 'id_pagamento', rotulo: 'Pagamentos individuais' },
+    { nome: 'pagamentos_lote', chave: 'id_lote', rotulo: 'Pagamentos em lote' },
+    { nome: 'avisos', chave: 'id_aviso', rotulo: 'Avisos' },
+    { nome: 'financas', chave: 'id_despesa', rotulo: 'Livro caixa' },
+    { nome: 'configuracoes', chave: 'chave', rotulo: 'Configurações' }
+];
+
+class BancoDados {
     constructor() {
         this.nomeBanco = 'escolaDiscipuloAmado';
         this.versao = 5;
@@ -28,20 +43,7 @@
                 const bancoInterno = evento.target.result;
                 const transacao = evento.target.transaction;
 
-                const tabelas = [
-                    { nome: 'cursos', chave: 'id_curso' },
-                    { nome: 'paroquias', chave: 'id_paroquia' },
-                    { nome: 'palestrantes', chave: 'id_palestrante' },
-                    { nome: 'disciplinas', chave: 'id_disciplina' },
-                    { nome: 'participantes', chave: 'id_participante' },
-                    { nome: 'frequencia', chave: 'id_frequencia' },
-                    { nome: 'atividades', chave: 'id_atividade' },
-                    { nome: 'pagamentos', chave: 'id_pagamento' },
-                    { nome: 'pagamentos_lote', chave: 'id_lote' },
-                    { nome: 'avisos', chave: 'id_aviso' },
-                    { nome: 'financas', chave: 'id_despesa' },
-                    { nome: 'configuracoes', chave: 'chave' }
-                ];
+                const tabelas = TABELAS_BANCO_DADOS;
 
                 tabelas.forEach(tabela => {
                     let armazenamento;
@@ -214,11 +216,18 @@
         });
     }
 
-    async exportarDados() {
-        const tabelas = [
-            'cursos', 'paroquias', 'palestrantes', 'disciplinas', 'participantes',
-            'frequencia', 'atividades', 'pagamentos', 'pagamentos_lote', 'avisos', 'financas', 'configuracoes'
-        ];
+    obterNomesTabelas() {
+        return TABELAS_BANCO_DADOS.map(tabela => tabela.nome);
+    }
+
+    normalizarTabelas(tabelasSelecionadas) {
+        const tabelasPermitidas = this.obterNomesTabelas();
+        if (!Array.isArray(tabelasSelecionadas) || tabelasSelecionadas.length === 0) return tabelasPermitidas;
+        return tabelasSelecionadas.filter(tabela => tabelasPermitidas.includes(tabela));
+    }
+
+    async exportarDados(tabelasSelecionadas = null) {
+        const tabelas = this.normalizarTabelas(tabelasSelecionadas);
 
         const metadadosBase = this.criarMetadados();
         const dados = {
@@ -226,25 +235,33 @@
                 nome_sistema: metadadosBase.nome_sistema,
                 versao_banco: metadadosBase.versao_banco,
                 versao_dados: metadadosBase.versao_dados,
+                tabelas_exportadas: tabelas,
+                registros_por_tabela: {},
                 exportado_em: new Date().toISOString()
             }
         };
 
         for (const tabela of tabelas) {
             dados[tabela] = await this.obterTodos(tabela);
+            dados.__metadados.registros_por_tabela[tabela] = dados[tabela].length;
         }
 
         return dados;
     }
 
-    async importarDados(dados) {
+    async importarDados(dados, tabelasSelecionadas = null) {
         const metadados = dados.__metadados || {};
         if (metadados.versao_dados && metadados.versao_dados > this.versaoDados) {
             throw new Error('Esta cópia de segurança foi gerada por uma versão mais nova do sistema.');
         }
 
-        for (const tabela in dados) {
-            if (tabela.startsWith('__')) continue;
+        const tabelas = this.normalizarTabelas(tabelasSelecionadas).filter(tabela => Object.prototype.hasOwnProperty.call(dados, tabela));
+
+        if (tabelas.length === 0) {
+            throw new Error('Nenhuma tabela selecionada foi encontrada nesta cópia de segurança.');
+        }
+
+        for (const tabela of tabelas) {
             if (!this.bancoInterno.objectStoreNames.contains(tabela)) continue;
 
             await this.limparTabela(tabela);
