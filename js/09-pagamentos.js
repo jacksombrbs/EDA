@@ -60,7 +60,7 @@ async function renderizarPagamentos(conteudo) {
     codigoEstrutura += '<h3 class="texto-md peso-bold cor-texto-primario mb-sm mt-md">Pagamentos Individuais</h3>';
     
     if (pagamentos.length === 0) {
-        codigoEstrutura += '<p class="texto-md cor-texto-claro p-md texto-centro fundo-superficie-2 borda-1 borda-solida borda-cor-padrao raio-md">Nenhum pagamento cadastrado ainda.</p>';
+        codigoEstrutura += '<p class="texto-md cor-texto-claro p-md texto-centro">Nenhum pagamento cadastrado ainda.</p>';
     } else {
         let linhasPagamentos = '';
 
