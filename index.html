@@ -1,87 +1,107 @@
 ﻿<!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Comissão Bíblico-Catequética</title>
+    <link rel="icon" href="marca-comissao-desenho.svg" type="image/svg+xml">
     <link rel="stylesheet" href="estilo.css">
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#7a2b2b">
+    <meta name="theme-color" content="#7a2b2b">
 
 </head>
+
 <body class="fonte-padrao fundo-cinza cor-texto-escuro antialiased h-total w-total">
-    
+
     <div id="aplicacao" class="w-total min-h-100vh rolagem-oculta pos-relativa">
         <div id="pagina-inicio" class="flex flex-coluna itens-centro justifica-centro h-tela w-tela fundo-cinza p-md">
             <div class="cartao-inicial">
-                <img src="marca-comissao-desenho.svg" alt="Desenho da Comissão Bíblico-Catequética" class="logo-inicial">
+                <img src="marca-comissao-desenho.svg" alt="Desenho da Comissão Bíblico-Catequética"
+                    class="logo-inicial">
                 <h1 class="texto-xl peso-bold cor-texto-primario mb-sm">Comissão Bíblico-Catequética</h1>
                 <p class="texto-md cor-texto-claro mb-lg">Gestão de cursos, participantes e finanças</p>
-                <button class="botao-padrao botao-primario active-fundo-marca-ativo w-total" onclick="irParaAdministracao()">
+                <button class="botao-padrao botao-primario active-fundo-marca-ativo w-total"
+                    onclick="irParaAdministracao()">
                     Painel de Administração
                 </button>
             </div>
         </div>
 
         <div id="pagina-administracao" class="w-tela h-tela fundo-cinza flex flex-linha md-flex-coluna oculto">
-            
+
             <aside class="barra-lateral fundo-cinza flex flex-coluna justifica-inicio p-md md-w-total">
-                <nav class="navegacao-principal flex flex-coluna gap-sm rolagem-y md-flex-linha md-rolagem-x md-p-0 pb-md">
-                    <div class="item-menu pos-relativa pl-md p-sm px-md raio-sm cursor-apontador transicao hover-fundo-superficie-3 cor-texto-escuro texto-md peso-regular fundo-transparente sem-borda sem-sombra indicador-lateral-ativo" data-aba="cursos" onclick="trocarAba('cursos')">
+                <nav
+                    class="navegacao-principal flex flex-coluna gap-sm rolagem-y md-flex-linha md-rolagem-x md-p-0 pb-md">
+                    <div class="item-menu pos-relativa pl-md p-sm px-md raio-sm cursor-apontador transicao hover-fundo-superficie-3 cor-texto-escuro texto-md peso-regular fundo-transparente sem-borda sem-sombra indicador-lateral-ativo"
+                        data-aba="cursos" onclick="trocarAba('cursos')">
                         <span class="icone-inline" data-icone="cursos" aria-hidden="true"></span>Cursos
                     </div>
-                    
-                    <div class="item-menu pos-relativa pl-md p-sm px-md raio-sm cursor-apontador transicao hover-fundo-superficie-3 cor-texto-escuro texto-md peso-regular fundo-transparente sem-borda sem-sombra indicador-lateral-ativo" data-aba="palestrantes" onclick="trocarAba('palestrantes')">
+
+                    <div class="item-menu pos-relativa pl-md p-sm px-md raio-sm cursor-apontador transicao hover-fundo-superficie-3 cor-texto-escuro texto-md peso-regular fundo-transparente sem-borda sem-sombra indicador-lateral-ativo"
+                        data-aba="palestrantes" onclick="trocarAba('palestrantes')">
                         <span class="icone-inline" data-icone="palestrantes" aria-hidden="true"></span>Palestrantes
                     </div>
-                    
-                    <div class="item-menu pos-relativa pl-md p-sm px-md raio-sm cursor-apontador transicao hover-fundo-superficie-3 cor-texto-escuro texto-md peso-regular fundo-transparente sem-borda sem-sombra indicador-lateral-ativo" data-aba="disciplinas" onclick="trocarAba('disciplinas')">
+
+                    <div class="item-menu pos-relativa pl-md p-sm px-md raio-sm cursor-apontador transicao hover-fundo-superficie-3 cor-texto-escuro texto-md peso-regular fundo-transparente sem-borda sem-sombra indicador-lateral-ativo"
+                        data-aba="disciplinas" onclick="trocarAba('disciplinas')">
                         <span class="icone-inline" data-icone="disciplinas" aria-hidden="true"></span>Disciplinas
                     </div>
-                    
-                    <div class="item-menu pos-relativa pl-md p-sm px-md raio-sm cursor-apontador transicao hover-fundo-superficie-3 cor-texto-escuro texto-md peso-regular fundo-transparente sem-borda sem-sombra indicador-lateral-ativo" data-aba="paroquias" onclick="trocarAba('paroquias')">
+
+                    <div class="item-menu pos-relativa pl-md p-sm px-md raio-sm cursor-apontador transicao hover-fundo-superficie-3 cor-texto-escuro texto-md peso-regular fundo-transparente sem-borda sem-sombra indicador-lateral-ativo"
+                        data-aba="paroquias" onclick="trocarAba('paroquias')">
                         <span class="icone-inline" data-icone="paroquias" aria-hidden="true"></span>Paróquias
                     </div>
-                    
-                    <div class="item-menu pos-relativa pl-md p-sm px-md raio-sm cursor-apontador transicao hover-fundo-superficie-3 cor-texto-escuro texto-md peso-regular fundo-transparente sem-borda sem-sombra indicador-lateral-ativo" data-aba="participantes" onclick="trocarAba('participantes')">
+
+                    <div class="item-menu pos-relativa pl-md p-sm px-md raio-sm cursor-apontador transicao hover-fundo-superficie-3 cor-texto-escuro texto-md peso-regular fundo-transparente sem-borda sem-sombra indicador-lateral-ativo"
+                        data-aba="participantes" onclick="trocarAba('participantes')">
                         <span class="icone-inline" data-icone="participantes" aria-hidden="true"></span>Participantes
                     </div>
-                    
-                    <div class="item-menu pos-relativa pl-md p-sm px-md raio-sm cursor-apontador transicao hover-fundo-superficie-3 cor-texto-escuro texto-md peso-regular fundo-transparente sem-borda sem-sombra indicador-lateral-ativo" data-aba="frequencia" onclick="trocarAba('frequencia')">
+
+                    <div class="item-menu pos-relativa pl-md p-sm px-md raio-sm cursor-apontador transicao hover-fundo-superficie-3 cor-texto-escuro texto-md peso-regular fundo-transparente sem-borda sem-sombra indicador-lateral-ativo"
+                        data-aba="frequencia" onclick="trocarAba('frequencia')">
                         <span class="icone-inline" data-icone="frequencia" aria-hidden="true"></span>Frequência
                     </div>
-                    
-                    <div class="item-menu pos-relativa pl-md p-sm px-md raio-sm cursor-apontador transicao hover-fundo-superficie-3 cor-texto-escuro texto-md peso-regular fundo-transparente sem-borda sem-sombra indicador-lateral-ativo" data-aba="atividades" onclick="trocarAba('atividades')">
+
+                    <div class="item-menu pos-relativa pl-md p-sm px-md raio-sm cursor-apontador transicao hover-fundo-superficie-3 cor-texto-escuro texto-md peso-regular fundo-transparente sem-borda sem-sombra indicador-lateral-ativo"
+                        data-aba="atividades" onclick="trocarAba('atividades')">
                         <span class="icone-inline" data-icone="atividades" aria-hidden="true"></span>Atividades
                     </div>
 
-                    <div class="item-menu pos-relativa pl-md p-sm px-md raio-sm cursor-apontador transicao hover-fundo-superficie-3 cor-texto-escuro texto-md peso-regular fundo-transparente sem-borda sem-sombra indicador-lateral-ativo" data-aba="financas" onclick="trocarAba('financas')">
+                    <div class="item-menu pos-relativa pl-md p-sm px-md raio-sm cursor-apontador transicao hover-fundo-superficie-3 cor-texto-escuro texto-md peso-regular fundo-transparente sem-borda sem-sombra indicador-lateral-ativo"
+                        data-aba="financas" onclick="trocarAba('financas')">
                         <span class="icone-inline" data-icone="financas" aria-hidden="true"></span>Finanças
                     </div>
-                    
-                    <div class="item-menu pos-relativa pl-md p-sm px-md raio-sm cursor-apontador transicao hover-fundo-superficie-3 cor-texto-escuro texto-md peso-regular fundo-transparente sem-borda sem-sombra indicador-lateral-ativo" data-aba="pagamentos" onclick="trocarAba('pagamentos')">
+
+                    <div class="item-menu pos-relativa pl-md p-sm px-md raio-sm cursor-apontador transicao hover-fundo-superficie-3 cor-texto-escuro texto-md peso-regular fundo-transparente sem-borda sem-sombra indicador-lateral-ativo"
+                        data-aba="pagamentos" onclick="trocarAba('pagamentos')">
                         <span class="icone-inline" data-icone="pagamentos" aria-hidden="true"></span>Pagamentos
                     </div>
-                                       
 
-                    <div class="item-menu pos-relativa pl-md p-sm px-md raio-sm cursor-apontador transicao hover-fundo-superficie-3 cor-texto-escuro texto-md peso-regular fundo-transparente sem-borda sem-sombra indicador-lateral-ativo" data-aba="relatorios" onclick="trocarAba('relatorios')">
+
+                    <div class="item-menu pos-relativa pl-md p-sm px-md raio-sm cursor-apontador transicao hover-fundo-superficie-3 cor-texto-escuro texto-md peso-regular fundo-transparente sem-borda sem-sombra indicador-lateral-ativo"
+                        data-aba="relatorios" onclick="trocarAba('relatorios')">
                         <span class="icone-inline" data-icone="relatorios" aria-hidden="true"></span>Relatórios
                     </div>
-                    
-                    <div class="item-menu pos-relativa pl-md p-sm px-md raio-sm cursor-apontador transicao hover-fundo-superficie-3 cor-texto-escuro texto-md peso-regular fundo-transparente sem-borda sem-sombra indicador-lateral-ativo" data-aba="avisos" onclick="trocarAba('avisos')">
+
+                    <div class="item-menu pos-relativa pl-md p-sm px-md raio-sm cursor-apontador transicao hover-fundo-superficie-3 cor-texto-escuro texto-md peso-regular fundo-transparente sem-borda sem-sombra indicador-lateral-ativo"
+                        data-aba="avisos" onclick="trocarAba('avisos')">
                         <span class="icone-inline" data-icone="avisos" aria-hidden="true"></span>Avisos
                     </div>
                 </nav>
 
                 <div class="acoes-sistema" aria-label="Ações do sistema">
-                    <button class="botao-padrao botao-secundario botao-acao-sistema" onclick="exportarCopiaSeguranca()" title="Exportar backup" aria-label="Exportar backup">
+                    <button class="botao-padrao botao-secundario botao-acao-sistema" onclick="exportarCopiaSeguranca()"
+                        title="Exportar backup" aria-label="Exportar backup">
                         <span class="icone-inline" data-icone="backup" aria-hidden="true"></span>
                     </button>
-                    <button class="botao-padrao botao-secundario botao-acao-sistema" onclick="importarCopiaSeguranca()" title="Restaurar backup" aria-label="Restaurar backup">
+                    <button class="botao-padrao botao-secundario botao-acao-sistema" onclick="importarCopiaSeguranca()"
+                        title="Restaurar backup" aria-label="Restaurar backup">
                         <span class="icone-inline" data-icone="restaurar" aria-hidden="true"></span>
                     </button>
-                    <button class="botao-padrao botao-secundario botao-acao-sistema" onclick="sairAdministracao()" title="Sair" aria-label="Sair">
+                    <button class="botao-padrao botao-secundario botao-acao-sistema" onclick="sairAdministracao()"
+                        title="Sair" aria-label="Sair">
                         <span class="icone-inline" data-icone="sair" aria-hidden="true"></span>
                     </button>
                 </div>
@@ -92,11 +112,15 @@
             </main>
         </div>
 
-        <div id="janela-formulario" class="pos-fixa inset-0 flex fundo-sobreposicao itens-centro justifica-centro z-maximo p-lg rolagem-y oculto" role="dialog" aria-modal="true" aria-labelledby="titulo-janela" aria-hidden="true" tabindex="-1">
+        <div id="janela-formulario"
+            class="pos-fixa inset-0 flex fundo-sobreposicao itens-centro justifica-centro z-maximo p-lg rolagem-y oculto"
+            role="dialog" aria-modal="true" aria-labelledby="titulo-janela" aria-hidden="true" tabindex="-1">
             <div class="janela-conteudo">
-                <div class="flex justifica-espaco itens-centro pb-md mb-lg borda-base-1 borda-base-solida borda-cor-padrao">
+                <div
+                    class="flex justifica-espaco itens-centro pb-md mb-lg borda-base-1 borda-base-solida borda-cor-padrao">
                     <h3 id="titulo-janela" class="texto-lg peso-bold cor-texto-primario">Formulário</h3>
-                    <button class="botao-padrao botao-secundario botao-fechar-janela" onclick="fecharJanela('janela-formulario')" aria-label="Fechar janela">
+                    <button class="botao-padrao botao-secundario botao-fechar-janela"
+                        onclick="fecharJanela('janela-formulario')" aria-label="Fechar janela">
                         <span class="icone-inline" data-icone="cancelar" aria-hidden="true"></span>
                     </button>
                 </div>
@@ -106,7 +130,8 @@
 
     </div>
 
-    <button id="botao-topo" class="pos-fixa base-30 direita-30 z-maximo sombra-2 botao-padrao botao-secundario oculto" onclick="voltarAoTopo()" title="Voltar ao topo">
+    <button id="botao-topo" class="pos-fixa base-30 direita-30 z-maximo sombra-2 botao-padrao botao-secundario oculto"
+        onclick="voltarAoTopo()" title="Voltar ao topo">
         <span class="icone-inline" data-icone="topo" aria-hidden="true"></span>Topo
     </button>
 
@@ -127,4 +152,5 @@
     <script src="js/14-relatorios-financeiro.js"></script>
     <script src="js/15-salvamento-copia-seguranca.js"></script>
 </body>
+
 </html>
