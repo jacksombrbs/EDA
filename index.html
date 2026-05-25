@@ -23,62 +23,68 @@
 
         <div id="pagina-administracao" class="w-tela h-tela fundo-cinza flex flex-linha md-flex-coluna oculto">
             
-            <aside class="fundo-cinza md-sem-borda-direita md-borda-base-solida flex flex-coluna justifica-inicio p-md w-240 min-w-240 md-w-total">
-                <nav class="flex flex-coluna gap-sm rolagem-y md-flex-linha md-rolagem-x md-p-0 pb-md">
+            <aside class="barra-lateral fundo-cinza flex flex-coluna justifica-inicio p-md md-w-total">
+                <nav class="navegacao-principal flex flex-coluna gap-sm rolagem-y md-flex-linha md-rolagem-x md-p-0 pb-md">
                     <div class="item-menu pos-relativa pl-md p-sm px-md raio-sm cursor-apontador transicao hover-fundo-superficie-3 cor-texto-escuro texto-md peso-regular fundo-transparente sem-borda sem-sombra indicador-lateral-ativo" data-aba="cursos" onclick="trocarAba('cursos')">
-                        <span class="icone-inline">&#xE7BE;</span>Cursos
+                        <span class="icone-inline" data-icone="cursos" aria-hidden="true"></span>Cursos
                     </div>
                     
                     <div class="item-menu pos-relativa pl-md p-sm px-md raio-sm cursor-apontador transicao hover-fundo-superficie-3 cor-texto-escuro texto-md peso-regular fundo-transparente sem-borda sem-sombra indicador-lateral-ativo" data-aba="palestrantes" onclick="trocarAba('palestrantes')">
-                        <span class="icone-inline">&#xEE57;</span>Palestrantes
+                        <span class="icone-inline" data-icone="palestrantes" aria-hidden="true"></span>Palestrantes
                     </div>
                     
                     <div class="item-menu pos-relativa pl-md p-sm px-md raio-sm cursor-apontador transicao hover-fundo-superficie-3 cor-texto-escuro texto-md peso-regular fundo-transparente sem-borda sem-sombra indicador-lateral-ativo" data-aba="disciplinas" onclick="trocarAba('disciplinas')">
-                        <span class="icone-inline">&#xE82D;</span>Disciplinas
+                        <span class="icone-inline" data-icone="disciplinas" aria-hidden="true"></span>Disciplinas
                     </div>
                     
                     <div class="item-menu pos-relativa pl-md p-sm px-md raio-sm cursor-apontador transicao hover-fundo-superficie-3 cor-texto-escuro texto-md peso-regular fundo-transparente sem-borda sem-sombra indicador-lateral-ativo" data-aba="paroquias" onclick="trocarAba('paroquias')">
-                        <span class="icone-inline">&#xE80F;</span>Paróquias
+                        <span class="icone-inline" data-icone="paroquias" aria-hidden="true"></span>Paróquias
                     </div>
                     
                     <div class="item-menu pos-relativa pl-md p-sm px-md raio-sm cursor-apontador transicao hover-fundo-superficie-3 cor-texto-escuro texto-md peso-regular fundo-transparente sem-borda sem-sombra indicador-lateral-ativo" data-aba="participantes" onclick="trocarAba('participantes')">
-                        <span class="icone-inline">&#xE716;</span>Participantes
+                        <span class="icone-inline" data-icone="participantes" aria-hidden="true"></span>Participantes
                     </div>
                     
                     <div class="item-menu pos-relativa pl-md p-sm px-md raio-sm cursor-apontador transicao hover-fundo-superficie-3 cor-texto-escuro texto-md peso-regular fundo-transparente sem-borda sem-sombra indicador-lateral-ativo" data-aba="frequencia" onclick="trocarAba('frequencia')">
-                        <span class="icone-inline">&#xE917;</span>Frequência
+                        <span class="icone-inline" data-icone="frequencia" aria-hidden="true"></span>Frequência
                     </div>
                     
                     <div class="item-menu pos-relativa pl-md p-sm px-md raio-sm cursor-apontador transicao hover-fundo-superficie-3 cor-texto-escuro texto-md peso-regular fundo-transparente sem-borda sem-sombra indicador-lateral-ativo" data-aba="atividades" onclick="trocarAba('atividades')">
-                        <span class="icone-inline">&#xF0E3;</span>Atividades
+                        <span class="icone-inline" data-icone="atividades" aria-hidden="true"></span>Atividades
                     </div>
 
                     <div class="item-menu pos-relativa pl-md p-sm px-md raio-sm cursor-apontador transicao hover-fundo-superficie-3 cor-texto-escuro texto-md peso-regular fundo-transparente sem-borda sem-sombra indicador-lateral-ativo" data-aba="financas" onclick="trocarAba('financas')">
-                        <span class="icone-inline">&#xE825;</span>Finanças
+                        <span class="icone-inline" data-icone="financas" aria-hidden="true"></span>Finanças
                     </div>
                     
                     <div class="item-menu pos-relativa pl-md p-sm px-md raio-sm cursor-apontador transicao hover-fundo-superficie-3 cor-texto-escuro texto-md peso-regular fundo-transparente sem-borda sem-sombra indicador-lateral-ativo" data-aba="pagamentos" onclick="trocarAba('pagamentos')">
-                        <span class="icone-inline">&#xE8C7;</span>Pagamentos
+                        <span class="icone-inline" data-icone="pagamentos" aria-hidden="true"></span>Pagamentos
                     </div>
                                        
 
                     <div class="item-menu pos-relativa pl-md p-sm px-md raio-sm cursor-apontador transicao hover-fundo-superficie-3 cor-texto-escuro texto-md peso-regular fundo-transparente sem-borda sem-sombra indicador-lateral-ativo" data-aba="relatorios" onclick="trocarAba('relatorios')">
-                        <span class="icone-inline">&#xE9F9;</span>Relatórios
+                        <span class="icone-inline" data-icone="relatorios" aria-hidden="true"></span>Relatórios
                     </div>
                     
                     <div class="item-menu pos-relativa pl-md p-sm px-md raio-sm cursor-apontador transicao hover-fundo-superficie-3 cor-texto-escuro texto-md peso-regular fundo-transparente sem-borda sem-sombra indicador-lateral-ativo" data-aba="avisos" onclick="trocarAba('avisos')">
-                        <span class="icone-inline">&#xE789;</span>Avisos
+                        <span class="icone-inline" data-icone="avisos" aria-hidden="true"></span>Avisos
                     </div>
                 </nav>
 
-                <div class="flex flex-coluna gap-sm pt-md md-oculto mt-auto">
-                    <button class="botao-padrao botao-primario" onclick="exportarCopiaSeguranca()">Backup</button>
-                    <button class="botao-padrao botao-secundario" onclick="importarCopiaSeguranca()">Restaurar Backup</button>
-                    <button class="botao-padrao botao-secundario" onclick="sairAdministracao()">Sair</button>
+                <div class="acoes-sistema" aria-label="Ações do sistema">
+                    <button class="botao-padrao botao-secundario botao-acao-sistema" onclick="exportarCopiaSeguranca()" title="Exportar backup" aria-label="Exportar backup">
+                        <span class="icone-inline" data-icone="backup" aria-hidden="true"></span>
+                    </button>
+                    <button class="botao-padrao botao-secundario botao-acao-sistema" onclick="importarCopiaSeguranca()" title="Restaurar backup" aria-label="Restaurar backup">
+                        <span class="icone-inline" data-icone="restaurar" aria-hidden="true"></span>
+                    </button>
+                    <button class="botao-padrao botao-secundario botao-acao-sistema" onclick="sairAdministracao()" title="Sair" aria-label="Sair">
+                        <span class="icone-inline" data-icone="sair" aria-hidden="true"></span>
+                    </button>
                 </div>
             </aside>
 
-            <main class="flex-1 p-lg rolagem-y fundo-cinza md-p-md flex flex-coluna">
+            <main class="flex-1 p-md rolagem-y fundo-cinza md-p-md flex flex-coluna">
                 <div id="conteudo-administracao" class="w-total"></div>
             </main>
         </div>
@@ -87,7 +93,9 @@
             <div class="janela-conteudo">
                 <div class="flex justifica-espaco itens-centro pb-md mb-lg borda-base-1 borda-base-solida borda-cor-padrao">
                     <h3 id="titulo-janela" class="texto-lg peso-bold cor-texto-primario">Formulário</h3>
-                    <button class="botao-padrao botao-secundario botao-fechar-janela" onclick="fecharJanela('janela-formulario')">✕</button>
+                    <button class="botao-padrao botao-secundario botao-fechar-janela" onclick="fecharJanela('janela-formulario')" aria-label="Fechar janela">
+                        <span class="icone-inline" data-icone="cancelar" aria-hidden="true"></span>
+                    </button>
                 </div>
                 <div id="conteudo-formulario" class="mb-lg"></div>
             </div>
@@ -96,7 +104,7 @@
     </div>
 
     <button id="botao-topo" class="pos-fixa base-30 direita-30 z-maximo sombra-2 botao-padrao botao-secundario oculto" onclick="voltarAoTopo()" title="Voltar ao topo">
-        <span class="icone-inline">&#xe74a;</span>Topo
+        <span class="icone-inline" data-icone="topo" aria-hidden="true"></span>Topo
     </button>
 
     <script src="banco-dados.js"></script>
