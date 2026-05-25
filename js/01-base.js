@@ -100,7 +100,7 @@ const Utilidades = {
 
         setTimeout(() => {
             div.remove();
-        }, 3000);
+        }, 5000);
     },
 
     copiarParaClipboard(texto) {
@@ -270,7 +270,7 @@ const Validacao = {
             .map(campo => campo.nome);
     },
 
-    notificarCamposObrigatorios(campos, mensagem = 'Preencha os campos obrigatórios.') {
+    notificarCamposObrigatorios(campos, mensagem = 'Preencha os campos obrigatórios:') {
         const faltantes = this.camposObrigatorios(campos);
         if (faltantes.length === 0) return true;
 

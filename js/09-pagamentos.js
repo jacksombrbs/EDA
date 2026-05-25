@@ -109,13 +109,13 @@ async function renderizarPagamentos(conteudo) {
     Busca.vincularFiltro('busca-pagamentos', 'corpo-tabela-lotes');
 }
 
-function processarRegraValor(idParticipanteElement, tipoPagamentoElement, valorElement, participantes, cursos) {
+function processarRegraValor(idParticipanteElement, tipoPagamentoElement, valorElement, participantes, cursos, pagamentos = []) {
     const tipo = tipoPagamentoElement.value;
     const idParticipante = idParticipanteElement.value;
 
     const elQtd = document.getElementById('quantidade');
     const elQtdLote = document.getElementById('quantidade_lote');
-    const qtd = elQtd ? (parseInt(elQtd.value) || 1) : (elQtdLote ? (parseInt(elQtdLote.value) || 1) : 1);
+    let qtd = elQtd ? (parseInt(elQtd.value) || 1) : (elQtdLote ? (parseInt(elQtdLote.value) || 1) : 1);
 
     const containerQtd = document.getElementById('container-quantidade');
     const containerQtdLote = document.getElementById('container-quantidade-lote');
@@ -124,6 +124,7 @@ function processarRegraValor(idParticipanteElement, tipoPagamentoElement, valorE
 
     if (tipo === 'Outros' || !tipo) {
         valorElement.readOnly = false;
+        if (elQtd) elQtd.removeAttribute('max');
         return;
     }
 
@@ -134,7 +135,34 @@ function processarRegraValor(idParticipanteElement, tipoPagamentoElement, valorE
             if (curso) {
                 if (tipo === 'Inscrição') {
                     valorElement.value = curso.valor_inscricao || 0;
+                    if (elQtd) elQtd.removeAttribute('max');
                 } else if (tipo === 'Mensalidade') {
+
+                    const mensalidadesJaPagas = pagamentos
+                        .filter(p => String(p.id_participante) === String(idParticipante) 
+                                  && p.tipo_pagamento === 'Mensalidade' 
+                                  && p.id_pagamento !== registroEmEdicao)
+                        .reduce((total, p) => total + (parseInt(p.quantidade) || 1), 0);
+                    
+                    const totalPermitidoCurso = curso.quantidade_mensalidades || 0;
+                    let maxPermitido = totalPermitidoCurso - mensalidadesJaPagas;
+                    if (maxPermitido < 0) maxPermitido = 0;
+
+                    if (elQtd) {
+                        elQtd.setAttribute('max', maxPermitido);
+                        
+                        if (qtd > maxPermitido) {
+                            qtd = maxPermitido;
+                            elQtd.value = qtd;
+                            
+                            if (maxPermitido === 0) {
+                                Utilidades.notificacao('Este participante já quitou todas as mensalidades do curso.', 'aviso');
+                            } else {
+                                Utilidades.notificacao(`Limite atingido. Restam apenas ${maxPermitido} mensalidade(s).`, 'aviso');
+                            }
+                        }
+                    }
+
                     valorElement.value = (curso.valor_mensalidade || 0) * qtd;
                 }
                 valorElement.readOnly = true;
@@ -143,10 +171,6 @@ function processarRegraValor(idParticipanteElement, tipoPagamentoElement, valorE
         }
     }
     valorElement.readOnly = false;
-}
-
-async function editarPagamento(idPagamento) {
-    await abrirFormularioPagamento(idPagamento);
 }
 
 async function abrirFormularioPagamento(idPagamento = null) {
@@ -164,6 +188,7 @@ async function abrirFormularioPagamento(idPagamento = null) {
 
     const participantes = await bd.obterTodos('participantes');
     const cursos = await bd.obterTodos('cursos');
+    const pagamentos = await bd.obterTodos('pagamentos');
     participantes.sort((a, b) => a.nome_participante.localeCompare(b.nome_participante));
 
     const dataIso = pagamento ? pagamento.data_pagamento : new Date().toISOString().split('T')[0];
@@ -201,17 +226,21 @@ async function abrirFormularioPagamento(idPagamento = null) {
     const elTipo = document.getElementById('tipo_pagamento');
     const elValor = document.getElementById('valor');
 
-    elParticipante.addEventListener('change', () => processarRegraValor(elParticipante, elTipo, elValor, participantes, cursos));
-    elTipo.addEventListener('change', () => processarRegraValor(elParticipante, elTipo, elValor, participantes, cursos));
+elParticipante.addEventListener('change', () => processarRegraValor(elParticipante, elTipo, elValor, participantes, cursos, pagamentos));
+    elTipo.addEventListener('change', () => processarRegraValor(elParticipante, elTipo, elValor, participantes, cursos, pagamentos));
 
     const elQtd = document.getElementById('quantidade');
-    if (elQtd) elQtd.addEventListener('input', () => processarRegraValor(elParticipante, elTipo, elValor, participantes, cursos));
+    if (elQtd) elQtd.addEventListener('input', () => processarRegraValor(elParticipante, elTipo, elValor, participantes, cursos, pagamentos));
 
     if (pagamento && (pagamento.tipo_pagamento === 'Inscrição' || pagamento.tipo_pagamento === 'Mensalidade')) {
         elValor.readOnly = true;
     }
 
     Interface.abrirJanela('janela-formulario');
+}
+
+async function editarPagamento(idPagamento) {
+    await abrirFormularioPagamento(idPagamento);
 }
 
 async function abrirFormularioPagamentoLote(idLote = null) {
@@ -230,6 +259,7 @@ async function abrirFormularioPagamentoLote(idLote = null) {
     const paroquias = await bd.obterTodos('paroquias');
     const participantes = await bd.obterTodos('participantes');
     const cursos = await bd.obterTodos('cursos');
+    const pagamentos = await bd.obterTodos('pagamentos');
     paroquias.sort((a, b) => a.nome_paroquia.localeCompare(b.nome_paroquia));
 
     const dataIso = lote ? lote.data_pagamento : new Date().toISOString().split('T')[0];
@@ -293,15 +323,82 @@ async function abrirFormularioPagamentoLote(idLote = null) {
         }
     }
 
-    function reavaliarValorLote() {
+function reavaliarValorLote() {
         const marcadores = document.querySelectorAll('input[name="participantes_lote"]:checked');
-        if (marcadores.length > 0) {
-            const campoTemporario = document.createElement('input');
-            campoTemporario.value = marcadores[0].value;
-            processarRegraValor(campoTemporario, elTipoLote, elValorLote, participantes, cursos);
-        } else {
-            if (elTipoLote.value !== 'Outros') elValorLote.value = '';
+        const tipoLote = elTipoLote.value;
+        const elQtdLote = document.getElementById('quantidade_lote');
+        let qtdLote = elQtdLote ? (parseInt(elQtdLote.value) || 1) : 1;
+
+        const containerQtdLote = document.getElementById('container-quantidade-lote');
+        if (containerQtdLote) containerQtdLote.style.display = tipoLote === 'Mensalidade' ? 'block' : 'none';
+
+        if (marcadores.length === 0) {
+            if (tipoLote !== 'Outros') elValorLote.value = '';
             elValorLote.readOnly = false;
+            if (elQtdLote) elQtdLote.removeAttribute('max');
+            return;
+        }
+
+        if (tipoLote === 'Mensalidade') {
+            let menorLimiteRestante = Infinity;
+            let nomeParticipanteLimitante = '';
+            let valorMensalidadePadrao = 0;
+
+            marcadores.forEach(marcador => {
+                const idPart = marcador.value;
+                const nomePart = marcador.getAttribute('data-nome');
+                const participante = participantes.find(p => String(p.id_participante) === String(idPart));
+                
+                if (participante && participante.id_curso) {
+                    const curso = cursos.find(c => String(c.id_curso) === String(participante.id_curso));
+                    if (curso) {
+                        valorMensalidadePadrao = curso.valor_mensalidade || 0;
+                        
+                        const pagas = pagamentos
+                            .filter(p => String(p.id_participante) === String(idPart) 
+                                      && p.tipo_pagamento === 'Mensalidade' 
+                                      && p.id_lote !== registroEmEdicao)
+                            .reduce((total, p) => total + (parseInt(p.quantidade) || 1), 0);
+                            
+                        let restante = (curso.quantidade_mensalidades || 0) - pagas;
+                        if (restante < 0) restante = 0;
+
+                        if (restante < menorLimiteRestante) {
+                            menorLimiteRestante = restante;
+                            nomeParticipanteLimitante = nomePart;
+                        }
+                    }
+                }
+            });
+
+            if (menorLimiteRestante !== Infinity && elQtdLote) {
+                elQtdLote.setAttribute('max', menorLimiteRestante);
+                if (qtdLote > menorLimiteRestante) {
+                    qtdLote = menorLimiteRestante;
+                    elQtdLote.value = qtdLote;
+                    
+                    if (menorLimiteRestante === 0) {
+                        Utilidades.notificacao(`O participante ${nomeParticipanteLimitante} já quitou o curso. Desmarque-o para prosseguir.`, 'aviso');
+                    } else {
+                        Utilidades.notificacao(`Quantidade ajustada para ${menorLimiteRestante} devido ao limite de ${nomeParticipanteLimitante}.`, 'aviso');
+                    }
+                }
+            }
+            
+            elValorLote.value = valorMensalidadePadrao * qtdLote;
+            elValorLote.readOnly = true;
+
+        } else if (tipoLote === 'Inscrição') {
+            const primeiroPart = participantes.find(p => String(p.id_participante) === String(marcadores[0].value));
+            if (primeiroPart && primeiroPart.id_curso) {
+                const curso = cursos.find(c => String(c.id_curso) === String(primeiroPart.id_curso));
+                if (curso) elValorLote.value = curso.valor_inscricao || 0;
+            }
+            elValorLote.readOnly = true;
+            if (elQtdLote) elQtdLote.removeAttribute('max');
+        } else {
+            elValorLote.readOnly = false;
+            if (elQtdLote) elQtdLote.removeAttribute('max');
         }
     }
 
@@ -326,29 +423,6 @@ async function abrirFormularioPagamentoLote(idLote = null) {
 
 async function editarPagamentoLote(idLote) {
     await abrirFormularioPagamentoLote(idLote);
-}
-
-async function excluirPagamento(idPagamento) {
-    if (confirm('Deseja realmente excluir este registro de pagamento? O saldo do livro caixa será afetado.')) {
-        await bd.excluir('pagamentos', idPagamento);
-        Utilidades.notificacao('Pagamento excluído com sucesso!', 'sucesso');
-        renderizarAbaAtual();
-    }
-}
-
-async function excluirPagamentoLote(idLote) {
-    if (confirm('Deseja realmente excluir este lote? Todos os pagamentos individuais vinculados a ele também serão excluídos.')) {
-        const pagamentos = await bd.obterTodos('pagamentos');
-        const vinculados = pagamentos.filter(p => p.id_lote === idLote);
-        
-        for (let p of vinculados) {
-            await bd.excluir('pagamentos', p.id_pagamento);
-        }
-        
-        await bd.excluir('pagamentos_lote', idLote);
-        Utilidades.notificacao('Lote e pagamentos vinculados excluídos!', 'sucesso');
-        renderizarAbaAtual();
-    }
 }
 
 async function salvarPagamento() {
@@ -466,6 +540,29 @@ async function salvarPagamentoLote() {
         renderizarAbaAtual();
     } catch (erro) {
         Utilidades.notificacao('Erro ao salvar em lote.', 'erro');
+    }
+}
+
+async function excluirPagamento(idPagamento) {
+    if (confirm('Deseja realmente excluir este registro de pagamento? O saldo do livro caixa será afetado.')) {
+        await bd.excluir('pagamentos', idPagamento);
+        Utilidades.notificacao('Pagamento excluído com sucesso!', 'sucesso');
+        renderizarAbaAtual();
+    }
+}
+
+async function excluirPagamentoLote(idLote) {
+    if (confirm('Deseja realmente excluir este lote? Todos os pagamentos individuais vinculados a ele também serão excluídos.')) {
+        const pagamentos = await bd.obterTodos('pagamentos');
+        const vinculados = pagamentos.filter(p => p.id_lote === idLote);
+        
+        for (let p of vinculados) {
+            await bd.excluir('pagamentos', p.id_pagamento);
+        }
+        
+        await bd.excluir('pagamentos_lote', idLote);
+        Utilidades.notificacao('Lote e pagamentos vinculados excluídos!', 'sucesso');
+        renderizarAbaAtual();
     }
 }
 
