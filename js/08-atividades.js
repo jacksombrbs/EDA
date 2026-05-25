@@ -19,7 +19,7 @@ async function renderizarAtividades(conteudo) {
         return nomeParticipanteA.localeCompare(nomeParticipanteB);
     });
 
-    let codigoEstrutura = '<div class="cartao-padrao mb-lg">';
+    let codigoEstrutura = '<div class="pagina-conteudo">';
     codigoEstrutura += criarCabecalhoSecao('Atividades Entregues', criarBotao('+ Nova Atividade', 'abrirFormularioAtividade()'));
     
     codigoEstrutura += Busca.criarCampoBusca('busca-atividades', 'Buscar por participante ou disciplina...');

@@ -24,9 +24,10 @@ async function renderizarRelatorios(conteudo) {
     disciplinas.sort((a, b) => (a.nome_disciplina || '').localeCompare(b.nome_disciplina || ''));
 
     const cursoAtual = cursos.find(curso => String(curso.id_curso) === String(cursoSelecionado));
+    const tituloRelatorios = cursoAtual ? `Painéis e Relatórios - ${cursoAtual.nome_curso || 'Curso sem nome'}` : 'Painéis e Relatórios';
 
-    let codigoEstrutura = '<div class="cartao-padrao mb-lg">';
-    codigoEstrutura += criarCabecalhoSecao('Painéis e Relatórios', criarBotao('Selecionar Curso', 'abrirJanelaSelecaoCursoRelatorio()', 'secundario'));
+    let codigoEstrutura = '<div class="pagina-conteudo">';
+    codigoEstrutura += criarCabecalhoSecao(tituloRelatorios, criarBotao('Selecionar Curso', 'abrirJanelaSelecaoCursoRelatorio()', 'secundario'));
 
     if (cursos.length === 0) {
         codigoEstrutura += '<p class="p-md texto-centro cor-texto-claro fundo-superficie-2 raio-sm">Cadastre um curso antes de gerar relatórios.</p>';
@@ -56,11 +57,6 @@ async function renderizarRelatorios(conteudo) {
         return idsParticipantesCurso.has(String(atividade.id_participante || '')) &&
             idsDisciplinasCurso.has(String(atividade.id_disciplina || ''));
     });
-
-    codigoEstrutura += `<div class="fundo-superficie-2 borda-1 borda-solida borda-cor-padrao raio-sm p-md mb-lg">
-        <span class="texto-sm cor-texto-claro">Curso selecionado</span>
-        <h3 class="texto-lg peso-bold cor-texto-primario m-zero">${cursoAtual.nome_curso || 'Curso sem nome'}</h3>
-    </div>`;
 
     codigoEstrutura += '<div class="flex gap-sm mb-lg md-flex-coluna borda-vazada-inferior pb-sm">';
     codigoEstrutura += criarBotao('Módulo Acadêmico', "alternarAbaRelatorio('academico')", 'primario', 'botao-aba-relatorio', 'button', 'id="aba-rel-academico"');

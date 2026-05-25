@@ -53,7 +53,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.addEventListener('wheel', bloquearScrollInicial, { passive: false });
     document.addEventListener('touchmove', bloquearScrollInicial, { passive: false });
 
-    console.log('Aplicativo iniciado com IndexedDB');
 });
 
 const Utilidades = {
@@ -240,10 +239,6 @@ const Interface = {
         document.querySelectorAll('.item-menu[data-aba]').forEach(item => {
             const ehAtivo = item.dataset.aba === aba;
 
-            item.classList.toggle('fundo-superficie-3', ehAtivo);
-            item.classList.toggle('cor-texto-primario', ehAtivo);
-            item.classList.toggle('peso-bold', ehAtivo);
-            item.classList.toggle('fundo-transparente', !ehAtivo);
             item.classList.toggle('ativo', ehAtivo);
 
             if (ehAtivo) item.setAttribute('aria-current', 'page');
@@ -673,17 +668,17 @@ function criarSeletor(rotulo, id, opções, selecionado = '', obrigatorio = fals
                     <span>${textoSelecionado}</span>
                     <span class="texto-sm cor-texto-claro">▼</span>
                 </div>
-                <div class="opcoes-seletor-customizado seletor-opcoes pos-absoluta fundo-branco borda-1 borda-solida borda-cor-padrao raio-sm rolagem-y z-maximo w-total oculto">
-                    <div class="opcao-customizada p-sm px-md cor-texto-escuro texto-md transicao cursor-apontador hover-fundo-superficie-3" onclick="window.atualizarSeletorCustomizado('${id}', '', 'Selecione', event)">Selecione</div>`;
+                <div class="opcoes-seletor-customizado seletor-opcoes pos-absoluta borda-1 borda-solida borda-cor-padrao raio-sm rolagem-y z-maximo w-total oculto">
+                    <div class="opcao-customizada p-sm px-md cor-texto-escuro texto-md transicao cursor-apontador ${selecionado ? '' : 'cor-texto-primario peso-bold'}" onclick="window.atualizarSeletorCustomizado('${id}', '', 'Selecione', event)">Selecione</div>`;
 
     let opcoesNativasEstrutura = `<option value="">Selecione</option>`;
 
     opções.forEach(opção => {
         const valor = typeof opção === 'object' ? opção.id : opção;
         const rotuloOpcao = typeof opção === 'object' ? opção.nome : opção;
-        const classesAtivas = valor === selecionado ? 'fundo-marca-700 cor-texto-branco peso-bold' : '';
+        const classesAtivas = valor === selecionado ? 'cor-texto-primario peso-bold' : '';
 
-        codigoEstrutura += `<div class="opcao-customizada p-sm px-md cor-texto-escuro texto-md transicao cursor-apontador hover-fundo-superficie-3 ${classesAtivas}" onclick="window.atualizarSeletorCustomizado('${id}', '${valor}', '${rotuloOpcao}', event)">${rotuloOpcao}</div>`;
+        codigoEstrutura += `<div class="opcao-customizada p-sm px-md cor-texto-escuro texto-md transicao cursor-apontador ${classesAtivas}" onclick="window.atualizarSeletorCustomizado('${id}', '${valor}', '${rotuloOpcao}', event)">${rotuloOpcao}</div>`;
         opcoesNativasEstrutura += `<option value="${valor}" ${valor === selecionado ? 'selected' : ''}>${rotuloOpcao}</option>`;
     });
 
@@ -730,10 +725,10 @@ window.atualizarSeletorCustomizado = function (idSeletor, valor, rotulo, evento)
         if (caixaOpcoes) caixaOpcoes.classList.add('oculto');
 
         recipiente.querySelectorAll('.opcao-customizada').forEach(opt => {
-            opt.classList.remove('fundo-marca-700', 'cor-texto-branco', 'peso-bold');
+            opt.classList.remove('cor-texto-primario', 'peso-bold');
         });
         if (evento?.target) {
-            evento.target.classList.add('fundo-marca-700', 'cor-texto-branco', 'peso-bold');
+            evento.target.classList.add('cor-texto-primario', 'peso-bold');
         }
     }
 
@@ -754,8 +749,8 @@ window.limparSeletorCustomizado = function (idSeletor, rotulo = 'Selecione') {
     if (!recipiente) return;
 
     recipiente.querySelectorAll('.opcao-customizada').forEach((opcao, indice) => {
-        opcao.classList.remove('fundo-marca-700', 'cor-texto-branco', 'peso-bold');
-        if (indice === 0) opcao.classList.add('fundo-marca-700', 'cor-texto-branco', 'peso-bold');
+        opcao.classList.remove('cor-texto-primario', 'peso-bold');
+        if (indice === 0) opcao.classList.add('cor-texto-primario', 'peso-bold');
     });
 };
 

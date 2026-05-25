@@ -2,7 +2,7 @@ async function renderizarAvisos(conteudo) {
     const avisos = await bd.obterTodos('avisos');
     const participantes = await bd.obterTodos('participantes');
 
-    let codigoEstrutura = '<div class="cartao-padrao mb-lg">';
+    let codigoEstrutura = '<div class="pagina-conteudo">';
     codigoEstrutura += criarCabecalhoSecao('Mural de Avisos', criarBotao('+ Novo Aviso', 'abrirFormularioAviso()'));
     
     codigoEstrutura += Busca.criarCampoBusca('busca-avisos', 'Buscar por título ou participante...');

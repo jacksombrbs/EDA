@@ -1,59 +1,136 @@
 function renderizarControlesFinanceiro(curso, participantes = [], pagamentos = []) {
-    const dataHoje = new Date().toISOString().split('T')[0];
-    const dataInicio = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
-    const idsParticipantes = new Set(participantes.map(participante => String(participante.id_participante)));
-    const pagamentosCurso = pagamentos.filter(pagamento => idsParticipantes.has(String(pagamento.id_participante || '')));
-    const totalMensalidades = parseInt(curso?.quantidade_mensalidades || '0', 10) || 0;
-
-    let html = '<div class="grade-controles-relatorio mb-lg">';
-    
-    html += '<div class="cartao-relatorio">';
-    html += '<div class="cabecalho-relatorio">';
-    html += '<h3 class="texto-md peso-bold cor-texto-primario m-zero">Livro Caixa (Período)</h3>';
-    html += criarBotao('Gerar Relatório', 'gerarPDFLivroCaixa()', 'contorno', 'botao-pequeno');
-    html += '</div>';
-    html += '<div class="flex gap-md md-flex-coluna w-total">';
-    html += '<div class="flex-1">' + criarCampoFormulario('Data Início', 'date', 'filtro-data-inicio', dataInicio, '', false) + '</div>';
-    html += '<div class="flex-1">' + criarCampoFormulario('Data Fim', 'date', 'filtro-data-fim', dataHoje, '', false) + '</div>';
-    html += '</div></div>';
-
-    html += '<div class="cartao-relatorio">';
-    html += '<div class="cabecalho-relatorio">';
-    html += '<h3 class="texto-md peso-bold cor-texto-primario m-zero">Ficha de Mensalidades</h3>';
-    html += criarBotao('Gerar Relatório', 'gerarPDFMensalidades()', 'contorno', 'botao-pequeno');
-    html += '</div>';
-    html += criarMetricasRelatorio([
-        { rotulo: 'Participantes', valor: participantes.length },
-        { rotulo: 'Mensalidades', valor: totalMensalidades },
-        { rotulo: 'Pagamentos', valor: pagamentosCurso.length }
-    ]);
-    html += '</div>';
-
-    html += '</div>';
-    return html;
+    return '';
 }
 
 function renderizarDashboardFinanceiro(participantes, pagamentos, despesas, cursos) {
-    const totalEntradas = pagamentos.reduce((acc, p) => acc + Utilidades.normalizarValorMonetario(p.valor || p.valor_pago || 0), 0);
-    const totalSaidas = despesas.reduce((acc, d) => acc + Utilidades.normalizarValorMonetario(d.valor || 0), 0);
-    const saldoCaixa = totalEntradas - totalSaidas;
-    const classeSaldo = saldoCaixa >= 0 ? 'cor-texto-sucesso' : 'cor-texto-erro';
-    const bordaSaldo = saldoCaixa >= 0 ? 'borda-sucesso' : 'borda-erro';
+    let dash = '';
+    const dataHoje = new Date().toISOString().split('T')[0];
+    const dataInicio = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
+    const stats = calcularEstatisticasFinanceiras(participantes, pagamentos, despesas);
+    const statusPagamentos = agruparPagamentosPorStatus(participantes, pagamentos, cursos);
+    const cursoDoPainel = cursos.find(curso => participantes.some(participante => String(participante.id_curso) === String(curso.id_curso)));
+    const mensalidadesCurso = parseInt(cursoDoPainel?.quantidade_mensalidades || '0', 10) || 0;
+    const pagamentosMensalidade = pagamentos.filter(pagamento => {
+        const termo = String(pagamento.tipo_pagamento || pagamento.descricao || '').toLowerCase();
+        return termo.includes('parcela') || termo.includes('mensalidade') || termo.includes('parc');
+    });
 
-    let dash = `<div class="flex flex-linha gap-md mb-lg md-flex-coluna">
-        <div class="cartao-resumo fundo-toast-sucesso flex-1">
-            <span class="texto-sm peso-bold cor-texto-claro">Total Entradas</span>
-            <h3 class="texto-xl peso-bold cor-texto-sucesso mt-sm">${Utilidades.formatarMoeda(totalEntradas)}</h3>
+    const cardsControle = [
+        { titulo: 'Taxa de Inadimplência', valor: stats.taxaInadimplencia + '%', classe: stats.taxaInadimplencia > 20 ? 'erro' : (stats.taxaInadimplencia > 10 ? 'aviso' : 'sucesso'), icone: 'pagamentos' },
+        { titulo: 'Inadimplentes', valor: stats.inadimplentes, classe: stats.inadimplentes > 0 ? 'erro' : 'sucesso', icone: 'participantes' },
+        { titulo: 'Status de Saúde', valor: stats.statusSaude === 'saudavel' ? 'Saudável' : (stats.statusSaude === 'atencao' ? 'Atenção' : 'Crítico'), classe: stats.statusSaude === 'saudavel' ? 'sucesso' : (stats.statusSaude === 'atencao' ? 'aviso' : 'erro'), icone: 'financas' }
+    ];
+    
+    dash += criarGradeMetricas(cardsControle, 3);
+    
+    const labelsPagto = Object.keys(statusPagamentos);
+    const valoresPagto = Object.values(statusPagamentos);
+    
+    const graficosFinanceiro = [
+        {
+            id: 'grafico-pagamentos-financeiro',
+            titulo: 'Status de Pagamentos',
+            tipo: 'pie',
+            labels: labelsPagto,
+            datasets: [{ 
+                label: 'Status de Pagamentos',
+                data: valoresPagto,
+                backgroundColor: [
+                    'rgba(16, 185, 129, 0.8)',
+                    'rgba(245, 158, 11, 0.8)',
+                    'rgba(239, 68, 68, 0.8)'
+                ],
+                borderWidth: 0,
+                hoverBorderWidth: 0
+            }],
+            opcoes: { 
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } } 
+            }
+        },
+        {
+            id: 'grafico-entradas-saidas',
+            titulo: 'Entradas vs Saídas',
+            tipo: 'bar',
+            labels: ['Total'],
+            datasets: [
+                { 
+                    label: 'Entradas',
+                    data: [stats.totalEntradas / 1000],
+                    backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                    borderWidth: 0,
+                    hoverBorderWidth: 0
+                },
+                { 
+                    label: 'Saídas',
+                    data: [stats.totalSaidas / 1000],
+                    backgroundColor: 'rgba(239, 68, 68, 0.8)',
+                    borderWidth: 0,
+                    hoverBorderWidth: 0
+                }
+            ],
+            opcoes: { 
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        border: { display: false },
+                        grid: { display: false, drawBorder: false },
+                        ticks: { callback: valor => valor.toFixed(1) + 'k' }
+                    },
+                    x: {
+                        border: { display: false },
+                        grid: { display: false, drawBorder: false }
+                    }
+                }
+            }
+        }
+    ];
+
+    const htmlGrafico1 = criarGradeGraficos([graficosFinanceiro[0]]);
+    const htmlGrafico2 = criarGradeGraficos([graficosFinanceiro[1]]);
+
+    let htmlRelatorios = `
+        <div class="lista-relatorios-dashboard">
+            <div class="cartao-geracao-relatorio">
+                <div class="flex justifica-espaco itens-centro w-total gap-sm">
+                    <h3 class="texto-md peso-bold cor-texto-primario m-zero">Livro Caixa</h3>
+                    ${criarBotao('Gerar Relatório', 'gerarPDFLivroCaixa()', 'contorno', 'botao-pequeno')}
+                </div>
+                <div class="flex gap-sm md-flex-coluna w-total mt-xs">
+                    <div class="flex-1 w-total">${criarCampoFormulario('Início', 'date', 'filtro-data-inicio', dataInicio, '', false)}</div>
+                    <div class="flex-1 w-total">${criarCampoFormulario('Fim', 'date', 'filtro-data-fim', dataHoje, '', false)}</div>
+                </div>
+            </div>
+
+            <div class="cartao-geracao-relatorio">
+                <div class="flex justifica-espaco itens-centro w-total gap-sm">
+                    <h3 class="texto-md peso-bold cor-texto-primario m-zero">Mensalidades</h3>
+                    ${criarBotao('Gerar Relatório', 'gerarPDFMensalidades()', 'contorno', 'botao-pequeno')}
+                </div>
+                ${criarMetricasRelatorio([
+                    { rotulo: 'Participantes', valor: participantes.length },
+                    { rotulo: 'Mensalidades', valor: mensalidadesCurso },
+                    { rotulo: 'Pagamentos', valor: pagamentosMensalidade.length }
+                ])}
+            </div>
         </div>
-        <div class="cartao-resumo fundo-toast-erro flex-1">
-            <span class="texto-sm peso-bold cor-texto-claro">Total Saídas</span>
-            <h3 class="texto-xl peso-bold cor-texto-erro mt-sm">${Utilidades.formatarMoeda(totalSaidas)}</h3>
+    `;
+
+    dash += `
+    <div class="painel-dashboard-relatorio">
+        <div class="area-grafico-relatorio">
+            ${htmlGrafico1}
         </div>
-        <div class="cartao-resumo ${saldoCaixa >= 0 ? 'fundo-toast-sucesso' : 'fundo-toast-erro'} flex-1">
-            <span class="texto-sm peso-bold cor-texto-claro">Saldo Líquido</span>
-            <h3 class="texto-xl peso-bold ${saldoCaixa >= 0 ? 'cor-texto-sucesso' : 'cor-texto-erro'} mt-sm">${Utilidades.formatarMoeda(saldoCaixa)}</h3>
+
+        <div class="area-grafico-relatorio">
+            ${htmlGrafico2}
         </div>
-    </div>`;
+        
+        <div class="coluna-relatorios-dashboard">
+            ${htmlRelatorios}
+        </div>
+    </div>
+    `;
 
     dash += '<div class="flex flex-coluna gap-sm mb-md w-total mt-lg">';
     dash += '<h3 class="texto-md peso-bold cor-texto-primario m-zero">Resumo de Inadimplência</h3>';
@@ -117,7 +194,6 @@ function renderizarDashboardFinanceiro(participantes, pagamentos, despesas, curs
 
     return dash;
 }
-
 async function gerarPDFLivroCaixa() {
     const dataInicio = document.getElementById('filtro-data-inicio').value;
     const dataFim = document.getElementById('filtro-data-fim').value;

@@ -2,7 +2,7 @@
     const cursos = await bd.obterTodos('cursos');
     cursos.sort((a, b) => (a.nome_curso || '').localeCompare(b.nome_curso || ''));
     
-    let codigoEstrutura = '<div class="cartao-padrao mb-lg">';
+    let codigoEstrutura = '<div class="pagina-conteudo">';
     codigoEstrutura += criarCabecalhoSecao('Cursos Cadastrados', criarBotao('+ Novo Curso', 'abrirFormularioCurso()'));
     
     codigoEstrutura += Busca.criarCampoBusca('busca-cursos', 'Buscar por nome...');

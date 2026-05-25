@@ -2,7 +2,7 @@
     const palestrantes = await bd.obterTodos('palestrantes');
     palestrantes.sort((a, b) => (a.nome_palestrante || '').localeCompare(b.nome_palestrante || ''));
 
-    let codigoEstrutura = '<div class="cartao-padrao mb-lg">';
+    let codigoEstrutura = '<div class="pagina-conteudo">';
     codigoEstrutura += criarCabecalhoSecao('Palestrantes Cadastrados', criarBotao('+ Novo Palestrante', 'abrirFormularioPalestrante()'));
 
     codigoEstrutura += Busca.criarCampoBusca('busca-palestrantes', 'Buscar por nome...');

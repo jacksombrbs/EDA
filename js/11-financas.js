@@ -10,7 +10,7 @@ async function renderizarFinancas(conteudo) {
     const transacoes = montarTransacoes(despesas, pagamentos, lotes, participantes, paroquias);
     const resumo = calcularResumoFinancas(transacoes);
 
-    let codigoEstrutura = '<div class="cartao-padrao mb-lg">';
+    let codigoEstrutura = '<div class="pagina-conteudo">';
     codigoEstrutura += criarCabecalhoSecao('Livro Caixa', criarBotao('+ Nova Transação', 'abrirFormularioFinanca()'));
 
     codigoEstrutura += `

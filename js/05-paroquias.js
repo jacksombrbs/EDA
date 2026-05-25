@@ -4,7 +4,7 @@ async function renderizarParoquias(conteudo) {
     const paroquias = await bd.obterTodos('paroquias');    
     paroquias.sort((a, b) => (a.nome_paroquia || '').localeCompare(b.nome_paroquia || ''));
     
-    let codigoEstrutura = '<div class="cartao-padrao mb-lg">';
+    let codigoEstrutura = '<div class="pagina-conteudo">';
     const botoesCabecalho = '<div class="flex gap-sm md-flex-coluna md-w-total">'
         + criarBotao('Importar Dados', 'abrirModalImportacaoParoquias()', 'secundario', 'md-w-total')
         + criarBotao('+ Nova Paróquia', 'abrirFormularioParoquia()', 'primario', 'md-w-total')

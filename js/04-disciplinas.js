@@ -7,7 +7,7 @@ async function renderizarDisciplinas(conteudo) {
     
     disciplinas.sort((a, b) => (a.nome_disciplina || '').localeCompare(b.nome_disciplina || ''));
     
-    let codigoEstrutura = '<div class="cartao-padrao mb-lg">';
+    let codigoEstrutura = '<div class="pagina-conteudo">';
     codigoEstrutura += criarCabecalhoSecao('Disciplinas Cadastradas', criarBotao('+ Nova Disciplina', 'abrirFormularioDisciplina()'));
     
     codigoEstrutura += Busca.criarCampoBusca('busca-disciplinas', 'Buscar por nome...');

@@ -5,7 +5,7 @@ async function renderizarPagamentos(conteudo) {
     const participantes = await bd.obterTodos('participantes');
     const paroquias = await bd.obterTodos('paroquias');
 
-    let codigoEstrutura = '<div class="cartao-padrao mb-lg">';
+    let codigoEstrutura = '<div class="pagina-conteudo">';
     const botoesCabecalho = '<div class="flex gap-sm md-flex-coluna">'
         + criarBotao('Pagamento em Lote (Paróquia)', 'abrirFormularioPagamentoLote()', 'secundario')
         + criarBotao('Novo Pagamento Individual', 'abrirFormularioPagamento()')
@@ -119,8 +119,8 @@ function processarRegraValor(idParticipanteElement, tipoPagamentoElement, valorE
 
     const containerQtd = document.getElementById('container-quantidade');
     const containerQtdLote = document.getElementById('container-quantidade-lote');
-    if (containerQtd) containerQtd.style.display = tipo === 'Mensalidade' ? 'block' : 'none';
-    if (containerQtdLote) containerQtdLote.style.display = tipo === 'Mensalidade' ? 'block' : 'none';
+    if (containerQtd) containerQtd.classList.toggle('oculto', tipo !== 'Mensalidade');
+    if (containerQtdLote) containerQtdLote.classList.toggle('oculto', tipo !== 'Mensalidade');
 
     if (tipo === 'Outros' || !tipo) {
         valorElement.readOnly = false;
@@ -200,8 +200,8 @@ async function abrirFormularioPagamento(idPagamento = null) {
     codigoEstrutura += '<div class="flex gap-md w-total md-flex-coluna">';
     codigoEstrutura += '<div class="flex-2">' + criarSeletor('Tipo de Pagamento', 'tipo_pagamento', ['Inscrição', 'Mensalidade', 'Outros'], pagamento ? pagamento.tipo_pagamento : '', true) + '</div>';
     
-    const displayQtd = (pagamento && pagamento.tipo_pagamento === 'Mensalidade') ? 'block' : 'none';
-    codigoEstrutura += `<div class="flex-1" id="container-quantidade" style="display: ${displayQtd};">` + criarCampoFormulario('Qtd. Meses', 'number', 'quantidade', pagamento ? (pagamento.quantidade || 1) : 1, 'Ex: 2', false) + '</div>';
+    const classeQuantidade = pagamento && pagamento.tipo_pagamento === 'Mensalidade' ? '' : ' oculto';
+    codigoEstrutura += `<div class="flex-1${classeQuantidade}" id="container-quantidade">` + criarCampoFormulario('Qtd. Meses', 'number', 'quantidade', pagamento ? (pagamento.quantidade || 1) : 1, 'Ex: 2', false) + '</div>';
     codigoEstrutura += '<div class="flex-2">' + criarCampoFormulario('Valor Total (R$)', 'number', 'valor', pagamento ? pagamento.valor : '', 'Ex: 150.00', true) + '</div>';
     codigoEstrutura += '</div>';    
     codigoEstrutura += '<div class="flex gap-md w-total md-flex-coluna">';
@@ -226,7 +226,7 @@ async function abrirFormularioPagamento(idPagamento = null) {
     const elTipo = document.getElementById('tipo_pagamento');
     const elValor = document.getElementById('valor');
 
-elParticipante.addEventListener('change', () => processarRegraValor(elParticipante, elTipo, elValor, participantes, cursos, pagamentos));
+    elParticipante.addEventListener('change', () => processarRegraValor(elParticipante, elTipo, elValor, participantes, cursos, pagamentos));
     elTipo.addEventListener('change', () => processarRegraValor(elParticipante, elTipo, elValor, participantes, cursos, pagamentos));
 
     const elQtd = document.getElementById('quantidade');
@@ -276,8 +276,8 @@ async function abrirFormularioPagamentoLote(idLote = null) {
     codigoEstrutura += '<div class="flex gap-md w-total md-flex-coluna">';
     codigoEstrutura += '<div class="flex-2">' + criarSeletor('Tipo de Pagamento', 'tipo_pagamento_lote', ['Inscrição', 'Mensalidade', 'Outros'], lote ? lote.tipo_pagamento : '', true) + '</div>';
     
-    const displayQtdLote = (lote && lote.tipo_pagamento === 'Mensalidade') ? 'block' : 'none';
-    codigoEstrutura += `<div class="flex-1" id="container-quantidade-lote" style="display: ${displayQtdLote};">` + criarCampoFormulario('Qtd. Meses', 'number', 'quantidade_lote', lote ? (lote.quantidade || 1) : 1, 'Ex: 2', false) + '</div>';
+    const classeQuantidadeLote = lote && lote.tipo_pagamento === 'Mensalidade' ? '' : ' oculto';
+    codigoEstrutura += `<div class="flex-1${classeQuantidadeLote}" id="container-quantidade-lote">` + criarCampoFormulario('Qtd. Meses', 'number', 'quantidade_lote', lote ? (lote.quantidade || 1) : 1, 'Ex: 2', false) + '</div>';
     codigoEstrutura += '<div class="flex-2">' + criarCampoFormulario('Valor Unitário (R$)', 'number', 'valor_unitario_lote', lote ? lote.valor_unitario : '', 'Ex: 150.00', true) + '</div>';
     codigoEstrutura += '</div>';    
     codigoEstrutura += '<div class="flex gap-md w-total md-flex-coluna">';
@@ -330,7 +330,7 @@ function reavaliarValorLote() {
         let qtdLote = elQtdLote ? (parseInt(elQtdLote.value) || 1) : 1;
 
         const containerQtdLote = document.getElementById('container-quantidade-lote');
-        if (containerQtdLote) containerQtdLote.style.display = tipoLote === 'Mensalidade' ? 'block' : 'none';
+        if (containerQtdLote) containerQtdLote.classList.toggle('oculto', tipoLote !== 'Mensalidade');
 
         if (marcadores.length === 0) {
             if (tipoLote !== 'Outros') elValorLote.value = '';

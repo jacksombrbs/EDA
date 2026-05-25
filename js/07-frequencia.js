@@ -3,7 +3,7 @@ async function renderizarFrequencia(conteudo) {
     const disciplinas = await bd.obterTodos('disciplinas');
     const todasFrequencias = await bd.obterTodos('frequencia');
 
-    let codigoEstrutura = '<div class="cartao-padrao mb-lg">';
+    let codigoEstrutura = '<div class="pagina-conteudo">';
     codigoEstrutura += criarCabecalhoSecao('Frequência');
     
     codigoEstrutura += '<div class="flex flex-linha md-flex-coluna gap-md mb-lg itens-fim">';

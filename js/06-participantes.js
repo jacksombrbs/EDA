@@ -4,7 +4,7 @@ async function renderizarParticipantes(conteudo) {
     
     participantes.sort((a, b) => (a.nome_participante || '').localeCompare(b.nome_participante || ''));
     
-    let codigoEstrutura = '<div class="cartao-padrao mb-lg">';
+    let codigoEstrutura = '<div class="pagina-conteudo">';
     const botoesCabecalho = '<div class="flex gap-sm md-flex-coluna md-w-total">'
         + criarBotao('Importar Dados', 'abrirModalImportacao()', 'secundario', 'md-w-total')
         + criarBotao('Imprimir Cartões', 'abrirModalCartoesParticipantes()', 'secundario', 'md-w-total')

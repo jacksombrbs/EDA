@@ -1,59 +1,90 @@
 function renderizarControlesAcademico(disciplinas, participantes = [], frequencias = [], atividades = []) {
-    let html = '<div class="grade-controles-relatorio mb-lg">';
-
-    html += '<div class="cartao-relatorio">';
-    html += '<div class="cabecalho-relatorio">';
-    html += '<h3 class="texto-md peso-bold cor-texto-primario m-zero">Relatório de Frequência</h3>';
-    html += criarBotao('Gerar Relatório', 'gerarPDFFrequencia()', 'contorno', 'botao-pequeno');
-    html += '</div>';
-    html += '<div class="flex gap-md md-flex-coluna w-total">';
-    html += '<div class="flex-1 w-total">' + criarSeletor('Tipo', 'filtro-tipo-frequencia', [{ id: 'geral', nome: 'Geral (Todos)' }, { id: 'disciplina', nome: 'Por Disciplina' }], 'geral', false) + '</div>';
-    html += '<div id="recipiente-filtro-disciplina-frequencia" class="oculto flex-1 w-total">' + criarSeletor('Disciplina', 'filtro-disciplina-freq', disciplinas.map(d => ({ id: d.id_disciplina, nome: d.nome_disciplina })), '', false) + '</div>';
-    html += '</div>';
-    html += criarMetricasRelatorio([
-        { rotulo: 'Participantes', valor: participantes.length },
-        { rotulo: 'Disciplinas', valor: disciplinas.length },
-        { rotulo: 'Chamadas', valor: frequencias.length }
-    ]);
-    html += '</div>';
-
-    html += '<div class="cartao-relatorio">';
-    html += '<div class="cabecalho-relatorio">';
-    html += '<h3 class="texto-md peso-bold cor-texto-primario m-zero">Relatório de Atividades</h3>';
-    html += criarBotao('Gerar Relatório', 'gerarPDFAtividades()', 'contorno', 'botao-pequeno');
-    html += '</div>';
-    html += criarMetricasRelatorio([
-        { rotulo: 'Participantes', valor: participantes.length },
-        { rotulo: 'Disciplinas', valor: disciplinas.length },
-        { rotulo: 'Entregas', valor: atividades.length }
-    ]);
-    html += '</div>';
-
-    html += '</div>';
-
-    setTimeout(() => {
-        const tipoFreq = document.getElementById('filtro-tipo-frequencia');
-        if (tipoFreq) {
-            tipoFreq.addEventListener('change', (e) => {
-                const recipienteFiltro = document.getElementById('recipiente-filtro-disciplina-frequencia');
-                if (recipienteFiltro) {
-                    if (e.target.value === 'disciplina') {
-                        recipienteFiltro.classList.remove('oculto');
-                    } else {
-                        recipienteFiltro.classList.add('oculto');
-                        const elDisc = document.getElementById('filtro-disciplina-freq');
-                        if (window.limparSeletorCustomizado) window.limparSeletorCustomizado('filtro-disciplina-freq');
-                    }
-                }
-            });
-        }
-    }, 0);
-
-    return html;
+    return '';
 }
 
 function renderizarDashboardAcademico(participantes, frequencias, atividades, disciplinas) {
-    let dash = '<div class="flex flex-coluna gap-sm mb-md w-total">';
+    let dash = '';
+    const stats = calcularEstatisticasAcademicas(participantes, frequencias, atividades);
+    const faixasFrequencia = agruparFrequenciasPorFaixa(participantes, frequencias);
+
+    const cardsMetricas = [
+        { titulo: 'Total de Participantes', valor: stats.totalParticipantes, classe: 'primario', icone: 'participantes' },
+        { titulo: 'Frequência Média', valor: stats.frequenciaMedia + '%', classe: stats.frequenciaMedia >= 75 ? 'sucesso' : (stats.frequenciaMedia >= 50 ? 'aviso' : 'erro'), icone: 'frequencia' },
+        { titulo: 'Em Risco (<75%)', valor: stats.participantesEmRisco, classe: stats.participantesEmRisco > 0 ? 'erro' : 'sucesso', icone: 'frequencia' },
+        { titulo: 'Total de Entregas', valor: stats.entregasTotal, classe: 'primario', icone: 'atividades' }
+    ];
+    
+    dash += criarGradeMetricas(cardsMetricas, 4);
+
+    const labelsFreq = Object.keys(faixasFrequencia);
+    const valoresFreq = Object.values(faixasFrequencia);
+
+    const graficosAcademico = [
+        {
+            id: 'grafico-frequencia-academico',
+            titulo: 'Distribuição de Frequência',
+            tipo: 'doughnut',
+            labels: labelsFreq,
+            datasets: [{ 
+                label: 'Distribuição de Frequência',
+                data: valoresFreq,
+                backgroundColor: [
+                    'rgba(239, 68, 68, 0.8)',
+                    'rgba(245, 158, 11, 0.8)',
+                    'rgba(59, 130, 246, 0.8)',
+                    'rgba(16, 185, 129, 0.8)'
+                ],
+                borderWidth: 0,
+                hoverBorderWidth: 0
+            }],
+            opcoes: { 
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'right' } } 
+            }
+        }
+    ];
+    
+    const htmlGrafico = criarGradeGraficos(graficosAcademico);
+
+    let htmlRelatorios = `
+        <div class="lista-relatorios-dashboard">
+            <div class="cartao-geracao-relatorio">
+                <div class="cabecalho-relatorio">
+                    <h3 class="texto-md peso-bold cor-texto-primario m-zero">Relatório de Frequência</h3>
+                    ${criarBotao('Gerar Relatório', 'gerarPDFFrequencia()', 'contorno', 'botao-pequeno')}
+                </div>
+                <div class="flex gap-md md-flex-coluna w-total mt-sm">
+                    <div class="flex-1 w-total">${criarSeletor('Tipo', 'filtro-tipo-frequencia', [{ id: 'geral', nome: 'Geral (Todos)' }, { id: 'disciplina', nome: 'Por Disciplina' }], 'geral', false)}</div>
+                    <div id="recipiente-filtro-disciplina-frequencia" class="oculto flex-1 w-total">${criarSeletor('Disciplina', 'filtro-disciplina-freq', disciplinas.map(d => ({ id: d.id_disciplina, nome: d.nome_disciplina })), '', false)}</div>
+                </div>
+            </div>
+
+            <div class="cartao-geracao-relatorio">
+                <div class="cabecalho-relatorio">
+                    <h3 class="texto-md peso-bold cor-texto-primario m-zero">Relatório de Atividades</h3>
+                    ${criarBotao('Gerar Relatório', 'gerarPDFAtividades()', 'contorno', 'botao-pequeno')}
+                </div>
+                ${criarMetricasRelatorio([
+                    { rotulo: 'Disciplinas', valor: disciplinas.length },
+                    { rotulo: 'Entregas', valor: atividades.length }
+                ])}
+            </div>
+        </div>
+    `;
+
+    dash += `
+    <div class="painel-dashboard-relatorio">
+        <div class="area-grafico-relatorio">
+            ${htmlGrafico}
+        </div>
+        <div class="coluna-relatorios-dashboard">
+            ${htmlRelatorios}
+        </div>
+    </div>
+    `;
+
+    dash += '<div class="flex flex-coluna gap-sm mb-md w-total">';
     dash += '<h3 class="texto-md peso-bold cor-texto-primario m-zero">Resumo Geral Acadêmico</h3>';
     dash += '<div class="w-total">' + criarCampoFormulario('', 'text', 'busca-tabela-acad', '', 'Pesquisar por participante...', false) + '</div>';
     dash += '</div>';
@@ -111,6 +142,22 @@ function renderizarDashboardAcademico(participantes, frequencias, atividades, di
 
     setTimeout(() => {
         Busca.vincularFiltro('busca-tabela-acad', 'corpo-tabela-acad');
+
+        const tipoFreq = document.getElementById('filtro-tipo-frequencia');
+        if (tipoFreq) {
+            tipoFreq.addEventListener('change', (e) => {
+                const recipienteFiltro = document.getElementById('recipiente-filtro-disciplina-frequencia');
+                if (recipienteFiltro) {
+                    if (e.target.value === 'disciplina') {
+                        recipienteFiltro.classList.remove('oculto');
+                    } else {
+                        recipienteFiltro.classList.add('oculto');
+                        const elDisc = document.getElementById('filtro-disciplina-freq');
+                        if (window.limparSeletorCustomizado) window.limparSeletorCustomizado('filtro-disciplina-freq');
+                    }
+                }
+            });
+        }
     }, 0);
 
     return dash;
