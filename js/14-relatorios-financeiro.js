@@ -1,24 +1,33 @@
-function renderizarControlesFinanceiro() {
+function renderizarControlesFinanceiro(curso, participantes = [], pagamentos = []) {
     const dataHoje = new Date().toISOString().split('T')[0];
     const dataInicio = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
+    const idsParticipantes = new Set(participantes.map(participante => String(participante.id_participante)));
+    const pagamentosCurso = pagamentos.filter(pagamento => idsParticipantes.has(String(pagamento.id_participante || '')));
+    const totalMensalidades = parseInt(curso?.quantidade_mensalidades || '0', 10) || 0;
 
-    let html = '<div class="flex gap-md mb-lg md-flex-coluna itens-esticar">';
+    let html = '<div class="grade-controles-relatorio mb-lg">';
     
-    html += '<div class="flex-1 fundo-superficie-2 borda-1 borda-solida borda-cor-padrao raio-md p-md flex flex-coluna justifica-espaco">';
-    html += '<div class="flex justifica-espaco itens-centro mb-sm gap-sm">';
+    html += '<div class="cartao-relatorio">';
+    html += '<div class="cabecalho-relatorio">';
     html += '<h3 class="texto-md peso-bold cor-texto-primario m-zero">Livro Caixa (Período)</h3>';
-    html += criarBotao('Gerar Relatório', 'gerarPDFLivroCaixa()');
+    html += criarBotao('Gerar Relatório', 'gerarPDFLivroCaixa()', 'contorno', 'botao-pequeno');
     html += '</div>';
     html += '<div class="flex gap-md md-flex-coluna w-total">';
     html += '<div class="flex-1">' + criarCampoFormulario('Data Início', 'date', 'filtro-data-inicio', dataInicio, '', false) + '</div>';
     html += '<div class="flex-1">' + criarCampoFormulario('Data Fim', 'date', 'filtro-data-fim', dataHoje, '', false) + '</div>';
     html += '</div></div>';
 
-    html += '<div class="flex-1 fundo-superficie-2 borda-1 borda-solida borda-cor-padrao raio-md p-md flex flex-coluna justifica-espaco">';
-    html += '<h3 class="texto-md peso-bold cor-texto-primario mb-sm m-zero">Ficha de Mensalidades</h3>';
-    html += '<div class="flex gap-md md-flex-coluna w-total h-total">';
-    html += '<div class="flex flex-coluna justifica-fim w-total h-total">' + criarBotao('Gerar Relatório', 'gerarPDFMensalidades()', 'primario', 'w-total mt-auto') + '</div>';
-    html += '</div></div>';
+    html += '<div class="cartao-relatorio">';
+    html += '<div class="cabecalho-relatorio">';
+    html += '<h3 class="texto-md peso-bold cor-texto-primario m-zero">Ficha de Mensalidades</h3>';
+    html += criarBotao('Gerar Relatório', 'gerarPDFMensalidades()', 'contorno', 'botao-pequeno');
+    html += '</div>';
+    html += criarMetricasRelatorio([
+        { rotulo: 'Participantes', valor: participantes.length },
+        { rotulo: 'Mensalidades', valor: totalMensalidades },
+        { rotulo: 'Pagamentos', valor: pagamentosCurso.length }
+    ]);
+    html += '</div>';
 
     html += '</div>';
     return html;

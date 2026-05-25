@@ -267,7 +267,7 @@ async function abrirFormularioFinanca(idDespesa = null) {
     formHTML += '</div>';
 
     formHTML += criarRodapeFormulario('salvarFinanca()', idDespesa ? 'Atualizar' : 'Salvar', {
-        botoesExtras: criarBotao('Gerar Recibo', 'acionarReciboFinanca()', 'secundario', 'md-w-total oculto', 'button', 'id="botao-recibo-financa"')
+        botoesExtras: criarBotao('Salvar e Gerar Recibo', 'salvarFinancaEGerarRecibo()', 'secundario', 'md-w-total oculto', 'button', 'id="botao-recibo-financa"')
     });
 
     formHTML += '</form>';
@@ -318,7 +318,7 @@ async function editarFinanca(idDespesa) {
     await abrirFormularioFinanca(idDespesa);
 }
 
-async function salvarFinanca() {
+async function salvarFinanca(opcoes = {}) {
     const id_field = document.getElementById('id_despesa');
     const id_despesa = id_field && id_field.value ? id_field.value : (registroEmEdicao || Utilidades.gerarId());
 
@@ -347,11 +347,11 @@ async function salvarFinanca() {
         camposObrigatorios.push({ nome: 'Palestrante e Disciplina', valor: nome_palestrante });
     }
 
-    if (!Validacao.notificarCamposObrigatorios(camposObrigatorios)) return;
-    if (!Validacao.validarCampoData(data, 'Data')) return;
+    if (!Validacao.notificarCamposObrigatorios(camposObrigatorios)) return null;
+    if (!Validacao.validarCampoData(data, 'Data')) return null;
 
     const valorValidado = Validacao.validarCampoMonetario(valorRaw, 'Valor');
-    if (!valorValidado.valido) return;
+    if (!valorValidado.valido) return null;
 
     const transacao = {
         id_despesa,
@@ -364,7 +364,18 @@ async function salvarFinanca() {
     };
 
     await bd.salvar('financas', transacao);
-    Utilidades.notificacao(id_field && id_field.value ? 'Transação atualizada com sucesso!' : 'Transação registrada com sucesso!', 'sucesso');
+    if (opcoes.notificar !== false) {
+        Utilidades.notificacao(id_field && id_field.value ? 'Transação atualizada com sucesso!' : 'Transação registrada com sucesso!', 'sucesso');
+    }
+    if (opcoes.fecharJanela !== false) Interface.fecharJanela('janela-formulario');
+    if (opcoes.renderizar !== false) renderizarAbaAtual();
+    return transacao;
+}
+
+async function salvarFinancaEGerarRecibo() {
+    const transacao = await salvarFinanca({ fecharJanela: false, renderizar: false });
+    if (!transacao) return;
+    await acionarReciboFinancaDireto(transacao.id_despesa);
     Interface.fecharJanela('janela-formulario');
     renderizarAbaAtual();
 }
@@ -375,30 +386,6 @@ async function excluirFinanca(idDespesa) {
         Utilidades.notificacao('Transação excluída com sucesso!', 'sucesso');
         renderizarAbaAtual();
     }
-}
-
-async function acionarReciboFinanca() {
-    const palestranteValor = document.getElementById('nome_palestrante').value.trim();
-    const descricao = document.getElementById('descricao').value.trim();
-    const valor = document.getElementById('valor').value;
-    
-    const dataElem = document.getElementById('data');
-    const dataFinanca = (dataElem && dataElem.dataset && dataElem.dataset.real) ? dataElem.dataset.real : new Date().toISOString().split('T')[0];
-
-    if (!palestranteValor || !valor) {
-        Utilidades.notificacao('Preencha o nome do palestrante e o valor antes de gerar o recibo.', 'erro');
-        return;
-    }
-
-    if (!Validacao.validarCampoData(dataFinanca, 'Data')) return;
-    const valorValidado = Validacao.validarCampoMonetario(valor, 'Valor');
-    if (!valorValidado.valido) return;
-
-    const nomePalestrante = palestranteValor.includes(' - ') ? palestranteValor.split(' - ')[0] : palestranteValor;
-    const nomeDisciplina = palestranteValor.includes(' - ') ? palestranteValor.split(' - ')[1] : '';
-
-    const dataFormatada = Utilidades.formatarData(dataFinanca);
-    gerarReciboPalestranteTemplate(nomePalestrante, nomeDisciplina, valorValidado.valor, descricao, dataFormatada);
 }
 
 async function acionarReciboFinancaDireto(idFinanca) {

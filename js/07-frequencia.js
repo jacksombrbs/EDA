@@ -20,6 +20,7 @@ async function renderizarFrequencia(conteudo) {
     
     codigoEstrutura += '<div class="flex-1 w-total flex gap-sm md-flex-coluna mb-md">';
     codigoEstrutura += criarBotao('Iniciar Chamada', 'iniciarNovaChamada()', 'primario', 'w-total');
+    codigoEstrutura += criarBotao('Imprimir Lista Física', 'gerarListaFisicaFrequencia()', 'secundario', 'w-total');
     codigoEstrutura += '</div>';
     codigoEstrutura += '</div>';
 
@@ -72,6 +73,52 @@ async function renderizarFrequencia(conteudo) {
 
         SeletorDinamico.vincular('freq-curso', 'recipiente-disciplina-frequencia', 'Disciplina', 'freq-disciplina', disciplinas, 'id_curso', 'Selecione a disciplina...');
     }, 50);
+}
+
+async function gerarListaFisicaFrequencia() {
+    const idCurso = document.getElementById('freq-curso').value;
+    const idDisciplina = document.getElementById('freq-disciplina').value;
+    const dataAula = document.getElementById('freq-data').dataset.valorReal;
+
+    if (!idCurso) return Utilidades.notificacao('Selecione um curso para imprimir a lista.', 'erro');
+    if (!idDisciplina) return Utilidades.notificacao('Selecione uma disciplina para imprimir a lista.', 'erro');
+
+    const [curso, disciplina, participantes, paroquias] = await Promise.all([
+        bd.obter('cursos', idCurso),
+        bd.obter('disciplinas', idDisciplina),
+        bd.obterTodos('participantes'),
+        bd.obterTodos('paroquias')
+    ]);
+
+    const participantesCurso = participantes
+        .filter(participante => String(participante.id_curso) === String(idCurso))
+        .sort((a, b) => (a.nome_participante || '').localeCompare(b.nome_participante || ''));
+
+    const mapaParoquias = {};
+    paroquias.forEach(paroquia => {
+        mapaParoquias[paroquia.id_paroquia] = paroquia.nome_paroquia;
+    });
+
+    const dataFormatada = dataAula ? Utilidades.formatarData(dataAula) : '____/____/________';
+    let html = `<h2>LISTA DE ASSINATURAS (PRESENÇA FÍSICA)</h2>`;
+    html += `<p><strong>Curso:</strong> ${Utilidades.escaparHtml(curso ? curso.nome_curso : '-')}</p>`;
+    html += `<p><strong>Disciplina:</strong> ${Utilidades.escaparHtml(disciplina ? disciplina.nome_disciplina : '-')}</p>`;
+    html += `<p><strong>Data da Aula:</strong> ____/____/________ </p>`;
+
+    if (participantesCurso.length === 0) {
+        html += '<p class="texto-centro">Nenhum participante cadastrado neste curso.</p>';
+        abrirDocumentoImpressao('Lista de Assinaturas', html);
+        return;
+    }
+
+    html += '<table><thead><tr><th class="coluna-nome-documento">Nome do Participante</th><th>Paróquia</th><th class="coluna-assinatura">Assinatura</th></tr></thead><tbody>';
+    participantesCurso.forEach(participante => {
+        const paroquia = mapaParoquias[participante.id_paroquia] || 'Não informada';
+        html += `<tr class="linha-assinatura"><td><strong>${Utilidades.escaparHtml(participante.nome_participante || '-')}</strong></td><td>${Utilidades.escaparHtml(paroquia)}</td><td></td></tr>`;
+    });
+    html += '</tbody></table>';
+
+    abrirDocumentoImpressao('Lista de Assinaturas', html);
 }
 
 async function iniciarNovaChamada() {

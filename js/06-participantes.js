@@ -7,6 +7,7 @@ async function renderizarParticipantes(conteudo) {
     let codigoEstrutura = '<div class="cartao-padrao mb-lg">';
     const botoesCabecalho = '<div class="flex gap-sm md-flex-coluna md-w-total">'
         + criarBotao('Importar Dados', 'abrirModalImportacao()', 'secundario', 'md-w-total')
+        + criarBotao('Imprimir Cartões', 'abrirModalCartoesParticipantes()', 'secundario', 'md-w-total')
         + criarBotao('+ Novo Participante', 'abrirFormularioParticipante()', 'primario', 'md-w-total')
         + '</div>';
     codigoEstrutura += criarCabecalhoSecao('Participantes Cadastrados', botoesCabecalho);
@@ -34,6 +35,7 @@ async function renderizarParticipantes(conteudo) {
                     <td class="p-md texto-esquerda">${statusBadge}</td>
                     <td class="p-md texto-esquerda">
                         ${criarAcoesTabela([
+                            { rotulo: 'Cartão', acao: `imprimirCartaoParticipante('${participante.id_participante}')` },
                             { rotulo: 'Editar', acao: `editarParticipante('${participante.id_participante}')` },
                             { rotulo: 'Excluir', acao: `excluirParticipante('${participante.id_participante}')`, perigo: true }
                         ])}
@@ -113,7 +115,9 @@ async function abrirFormularioParticipante(idParticipante = null) {
         formHTML += `<div class="p-md fundo-superficie-2 borda-1 borda-solida borda-cor-padrao raio-sm mt-xs">Código de Acesso do Participante: <strong>${p.codigo_acesso || '-'}</strong></div>`;
     }
 
-    formHTML += criarRodapeFormulario('salvarParticipante()', idParticipante ? 'Atualizar Participante' : 'Salvar Participante');
+    formHTML += criarRodapeFormulario('salvarParticipante()', idParticipante ? 'Atualizar Participante' : 'Salvar Participante', {
+        botoesExtras: criarBotao('Salvar e Imprimir Cartão', 'salvarEImprimirCartaoParticipante()', 'secundario', 'md-w-total')
+    });
 
     formHTML += '</form>';
 
@@ -175,7 +179,24 @@ async function excluirParticipante(idParticipante) {
     }
 }
 
-async function salvarParticipante() {
+async function gerarCodigoAcessoUnico(idParticipanteAtual = '') {
+    const participantes = await bd.obterTodos('participantes');
+    const codigosExistentes = new Set(
+        participantes
+            .filter(participante => String(participante.id_participante) !== String(idParticipanteAtual))
+            .map(participante => participante.codigo_acesso)
+            .filter(Boolean)
+    );
+
+    let codigo = '';
+    do {
+        codigo = Math.floor(100000 + Math.random() * 900000).toString();
+    } while (codigosExistentes.has(codigo));
+
+    return codigo;
+}
+
+async function salvarParticipante(opcoes = {}) {
     const nome_participante = document.getElementById('nome_participante').value.trim();
     const cpf = document.getElementById('cpf').value.trim();
     const data_nascimento = document.getElementById('data_nascimento').value;
@@ -194,28 +215,29 @@ async function salvarParticipante() {
     ];
 
     if (!Validacao.notificarCamposObrigatorios(camposObrigatorios)) {
-        return;
+        return null;
     }
 
     if (cpf && !Validacao.validarCPF(cpf)) {
         Utilidades.notificacao('Informe um CPF válido.', 'erro');
-        return;
+        return null;
     }
 
     if (email && !Validacao.validarEmail(email)) {
         Utilidades.notificacao('Informe um email válido.', 'erro');
-        return;
+        return null;
     }
 
     if (telefone && !Validacao.validarTelefone(telefone)) {
         Utilidades.notificacao('Informe um telefone válido.', 'erro');
-        return;
+        return null;
     }
 
-    if (data_nascimento && !Validacao.validarCampoData(data_nascimento, 'Nascimento')) return;
+    if (data_nascimento && !Validacao.validarCampoData(data_nascimento, 'Nascimento')) return null;
 
+    const idParticipante = registroEmEdicaoParticipante || Utilidades.gerarId();
     const participante = {
-        id_participante: registroEmEdicaoParticipante || Utilidades.gerarId(),
+        id_participante: idParticipante,
         nome_participante,
         cpf,
         rg: document.getElementById('rg').value,
@@ -230,7 +252,7 @@ async function salvarParticipante() {
         id_paroquia,
         capela,
         id_curso,
-        codigo_acesso: registroEmEdicaoParticipante ? undefined : Math.floor(100000 + Math.random() * 900000).toString()
+        codigo_acesso: ''
     };
 
     if (registroEmEdicaoParticipante) {
@@ -238,10 +260,235 @@ async function salvarParticipante() {
         if (pAntigo) participante.codigo_acesso = pAntigo.codigo_acesso;
     }
 
+    if (!participante.codigo_acesso) {
+        participante.codigo_acesso = await gerarCodigoAcessoUnico(idParticipante);
+    }
+
     await bd.salvar('participantes', participante);
-    Utilidades.notificacao(registroEmEdicaoParticipante ? 'Participante atualizado!' : 'Participante salvo com sucesso!', 'sucesso');
+    if (opcoes.notificar !== false) {
+        Utilidades.notificacao(registroEmEdicaoParticipante ? 'Participante atualizado!' : 'Participante salvo com sucesso!', 'sucesso');
+    }
+    if (opcoes.fecharJanela !== false) Interface.fecharJanela('janela-formulario');
+    if (opcoes.renderizar !== false) renderizarAbaAtual();
+    return participante;
+}
+
+async function salvarEImprimirCartaoParticipante() {
+    const participante = await salvarParticipante({ fecharJanela: true, renderizar: true });
+    if (participante) await imprimirCartaoParticipante(participante.id_participante);
+}
+
+async function garantirCodigoAcessoParticipante(participante) {
+    if (participante.codigo_acesso) return participante;
+    participante.codigo_acesso = await gerarCodigoAcessoUnico(participante.id_participante);
+    await bd.salvar('participantes', participante);
+    return participante;
+}
+
+async function obterDadosCartaoParticipante(participante) {
+    const [curso, paroquia] = await Promise.all([
+        participante.id_curso ? bd.obter('cursos', participante.id_curso) : Promise.resolve(null),
+        participante.id_paroquia ? bd.obter('paroquias', participante.id_paroquia) : Promise.resolve(null)
+    ]);
+
+    return {
+        participante,
+        curso: curso ? curso.nome_curso : '-',
+        paroquia: paroquia ? paroquia.nome_paroquia : '-'
+    };
+}
+
+function criarEstilosCartoesAcesso(individual = false) {
+    return `
+        @page { size: A4 landscape; margin: 8mm; }
+        body { margin: 0; background: #ffffff; }
+        .grade-cartoes-acesso {
+            display: grid;
+            grid-template-columns: repeat(2, 9.9cm);
+            gap: 6mm;
+            justify-content: center;
+            align-content: start;
+        }
+        .folha-cartao-individual {
+            min-height: 190mm;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding-top: 18mm;
+        }
+        .cartao-acesso {
+            width: 9.9cm;
+            height: 5.58cm;
+            padding: 4mm;
+            overflow: hidden;
+            border: 1mm solid var(--cor-documento-vinho);
+            border-radius: 3mm;
+            background: #ffffff;
+            page-break-inside: avoid;
+            break-inside: avoid;
+            font-family: var(--fonte-documento);
+        }
+        .topo-cartao-acesso {
+            display: flex;
+            align-items: center;
+            gap: 2.5mm;
+            margin-bottom: 1.6mm;
+            padding-bottom: 1.4mm;
+            border-bottom: 0.4mm solid var(--cor-documento-dourado);
+        }
+        .logo-cartao-acesso {
+            width: 9mm;
+            height: 9mm;
+            object-fit: contain;
+        }
+        .marca-cartao-acesso {
+            margin: 0;
+            color: var(--cor-documento-vinho);
+            font-size: 7.8pt;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+        .submarca-cartao-acesso {
+            margin: 1mm 0 0;
+            color: var(--cor-documento-azul);
+            font-size: 6pt;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .nome-cartao-acesso {
+            margin: 0 0 1.8mm;
+            color: var(--cor-documento-azul);
+            font-size: 15pt;
+            font-weight: 900;
+            line-height: 1.08;
+            text-transform: uppercase;
+        }
+        .linha-cartao-acesso {
+            margin: 1.2mm 0;
+            color: var(--cor-documento-texto);
+            font-size: 8pt;
+            line-height: 1.25;
+        }
+        .linha-paroquia-cartao {
+            font-size: 10.8pt;
+            font-weight: 800;
+        }
+        .linha-curso-cartao {
+            font-size: 8.5pt;
+        }
+        .linha-cartao-acesso strong {
+            color: var(--cor-documento-vinho);
+        }
+        .codigo-cartao-acesso {
+            margin-top: 2mm;
+            padding: 1.5mm 2.5mm;
+            border-radius: 2mm;
+            background: #ffffff;
+            color: var(--cor-documento-vinho);
+            font-size: 13pt;
+            font-weight: 900;
+            text-align: center;
+            letter-spacing: 1.5pt;
+        }
+        @media print {
+            body { margin: 0; }
+            .cartao-acesso { box-shadow: none; }
+            ${individual ? '.cartao-acesso { page-break-after: always; }' : ''}
+        }
+    `;
+}
+
+function montarHtmlCartoesAcesso(dadosCartoes, individual = false) {
+    const caminhoMarca = new URL(CAMINHO_MARCA_INSTITUCIONAL, window.location.href).href;
+    const classeFolha = individual ? 'folha-cartao-individual' : 'grade-cartoes-acesso';
+
+    const cartoes = dadosCartoes.map(({ participante, curso, paroquia }) => `
+        <article class="cartao-acesso">
+            <div class="topo-cartao-acesso">
+                <img src="${caminhoMarca}" alt="${Utilidades.escaparHtml(NOME_INSTITUCIONAL)}" class="logo-cartao-acesso">
+                <div>
+                    <p class="marca-cartao-acesso">${Utilidades.escaparHtml(NOME_INSTITUCIONAL)}</p>
+                    <p class="submarca-cartao-acesso">${Utilidades.escaparHtml(SUBTITULO_INSTITUCIONAL)}</p>
+                </div>
+            </div>
+            <h1 class="nome-cartao-acesso">${Utilidades.escaparHtml(participante.nome_participante || '-')}</h1>
+            <p class="linha-cartao-acesso linha-paroquia-cartao"><strong>Paróquia:</strong> ${Utilidades.escaparHtml(paroquia)}</p>
+            <p class="linha-cartao-acesso linha-curso-cartao"><strong>Curso:</strong> ${Utilidades.escaparHtml(curso)}</p>
+            <div class="codigo-cartao-acesso">${Utilidades.escaparHtml(participante.codigo_acesso || '-')}</div>
+        </article>
+    `).join('');
+
+    return `<section class="${classeFolha}">${cartoes}</section>`;
+}
+
+async function imprimirCartaoParticipante(idParticipante) {
+    let participante = await bd.obter('participantes', idParticipante);
+    if (!participante) {
+        Utilidades.notificacao('Participante não encontrado.', 'erro');
+        return;
+    }
+
+    participante = await garantirCodigoAcessoParticipante(participante);
+    const dadosCartao = await obterDadosCartaoParticipante(participante);
+    abrirDocumentoImpressao(
+        `Cartão de Acesso - ${participante.nome_participante || 'Participante'}`,
+        montarHtmlCartoesAcesso([dadosCartao], true),
+        { incluirCabecalho: false, estilosExtras: criarEstilosCartoesAcesso(true) }
+    );
+}
+
+async function abrirModalCartoesParticipantes() {
+    const cursos = await bd.obterTodos('cursos');
+    cursos.sort((a, b) => (a.nome_curso || '').localeCompare(b.nome_curso || ''));
+
+    document.getElementById('titulo-janela').textContent = 'Imprimir Cartões de Acesso';
+    let html = '<form class="flex flex-coluna gap-md w-total" onsubmit="event.preventDefault();">';
+    html += criarSeletor('Curso', 'id_curso_cartoes', cursos.map(curso => ({ id: curso.id_curso, nome: curso.nome_curso })), '', true);
+    html += '<label class="flex itens-centro gap-sm cursor-apontador cartao-suave">';
+    html += '<input type="checkbox" id="somente_ativos_cartoes" class="checkbox-padrao" checked>';
+    html += '<span class="texto-md cor-texto-escuro">Imprimir somente participantes ativos</span>';
+    html += '</label>';
+    html += criarRodapeFormulario('imprimirCartoesParticipantesEmLote()', 'Imprimir Cartões', {
+        varianteSalvar: 'secundario'
+    });
+    html += '</form>';
+
+    document.getElementById('conteudo-formulario').innerHTML = html;
+    Interface.abrirJanela('janela-formulario');
+}
+
+async function imprimirCartoesParticipantesEmLote() {
+    const idCurso = document.getElementById('id_curso_cartoes').value;
+    const somenteAtivos = document.getElementById('somente_ativos_cartoes')?.checked;
+
+    if (!idCurso) {
+        Utilidades.notificacao('Selecione um curso para imprimir os cartões.', 'erro');
+        return;
+    }
+
+    const participantes = await bd.obterTodos('participantes');
+    const participantesCurso = participantes
+        .filter(participante => String(participante.id_curso) === String(idCurso))
+        .filter(participante => !somenteAtivos || (participante.status_participante || 'Ativo') === 'Ativo')
+        .sort((a, b) => (a.nome_participante || '').localeCompare(b.nome_participante || ''));
+
+    if (participantesCurso.length === 0) {
+        Utilidades.notificacao('Nenhum participante encontrado para este curso.', 'aviso');
+        return;
+    }
+
+    const dadosCartoes = [];
+    for (const participanteOriginal of participantesCurso) {
+        const participante = await garantirCodigoAcessoParticipante(participanteOriginal);
+        dadosCartoes.push(await obterDadosCartaoParticipante(participante));
+    }
+
     Interface.fecharJanela('janela-formulario');
-    renderizarAbaAtual();
+    abrirDocumentoImpressao(
+        'Cartões de Acesso',
+        montarHtmlCartoesAcesso(dadosCartoes, false),
+        { incluirCabecalho: false, estilosExtras: criarEstilosCartoesAcesso(false) }
+    );
 }
 
 function abrirModalImportacao() {

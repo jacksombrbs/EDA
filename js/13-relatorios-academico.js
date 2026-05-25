@@ -1,30 +1,33 @@
-function renderizarControlesAcademico(disciplinas) {
-    let html = '<div class="flex gap-md mb-lg md-flex-coluna itens-esticar">';
+function renderizarControlesAcademico(disciplinas, participantes = [], frequencias = [], atividades = []) {
+    let html = '<div class="grade-controles-relatorio mb-lg">';
 
-    html += '<div class="flex-1 fundo-superficie-2 borda-1 borda-solida borda-cor-padrao raio-md p-md flex flex-coluna justifica-espaco">';
-    html += '<div class="flex justifica-espaco itens-centro mb-sm gap-sm">';
+    html += '<div class="cartao-relatorio">';
+    html += '<div class="cabecalho-relatorio">';
     html += '<h3 class="texto-md peso-bold cor-texto-primario m-zero">Relatório de Frequência</h3>';
-    html += criarBotao('Gerar Relatório', 'gerarPDFFrequencia()');
+    html += criarBotao('Gerar Relatório', 'gerarPDFFrequencia()', 'contorno', 'botao-pequeno');
     html += '</div>';
     html += '<div class="flex gap-md md-flex-coluna w-total">';
     html += '<div class="flex-1 w-total">' + criarSeletor('Tipo', 'filtro-tipo-frequencia', [{ id: 'geral', nome: 'Geral (Todos)' }, { id: 'disciplina', nome: 'Por Disciplina' }], 'geral', false) + '</div>';
     html += '<div id="recipiente-filtro-disciplina-frequencia" class="oculto flex-1 w-total">' + criarSeletor('Disciplina', 'filtro-disciplina-freq', disciplinas.map(d => ({ id: d.id_disciplina, nome: d.nome_disciplina })), '', false) + '</div>';
-    html += '</div></div>';
-
-    html += '<div class="flex-1 fundo-superficie-2 borda-1 borda-solida borda-cor-padrao raio-md p-md flex flex-coluna justifica-espaco">';
-    html += '<div class="flex justifica-espaco itens-centro mb-sm gap-sm">';
-    html += '<h3 class="texto-md peso-bold cor-texto-primario m-zero">Lista de Assinatura (Física)</h3>';
-    html += criarBotao('Gerar Relatório', 'gerarPDFAssinaturas()');
     html += '</div>';
-    html += '<div class="flex gap-md md-flex-coluna w-total">';
-    html += '<div class="flex-1 w-total">' + criarSeletor('Selecione a Disciplina', 'filtro-disciplina-ass', disciplinas.map(d => ({ id: d.id_disciplina, nome: d.nome_disciplina })), '', false) + '</div>';
-    html += '</div></div>';
+    html += criarMetricasRelatorio([
+        { rotulo: 'Participantes', valor: participantes.length },
+        { rotulo: 'Disciplinas', valor: disciplinas.length },
+        { rotulo: 'Chamadas', valor: frequencias.length }
+    ]);
+    html += '</div>';
 
-    html += '<div class="fundo-superficie-2 borda-1 borda-solida borda-cor-padrao raio-md p-md flex flex-coluna justifica-espaco md-w-total">';
-    html += '<h3 class="texto-md peso-bold cor-texto-primario mb-sm m-zero">Relatório de Atividades</h3>';
-    html += '<div class="flex gap-md md-flex-coluna w-total h-total">';
-    html += '<div class="flex flex-coluna justifica-fim w-total h-total">' + criarBotao('Gerar Relatório', 'gerarPDFAtividades()', 'primario', 'w-total mt-auto') + '</div>';
-    html += '</div></div>';
+    html += '<div class="cartao-relatorio">';
+    html += '<div class="cabecalho-relatorio">';
+    html += '<h3 class="texto-md peso-bold cor-texto-primario m-zero">Relatório de Atividades</h3>';
+    html += criarBotao('Gerar Relatório', 'gerarPDFAtividades()', 'contorno', 'botao-pequeno');
+    html += '</div>';
+    html += criarMetricasRelatorio([
+        { rotulo: 'Participantes', valor: participantes.length },
+        { rotulo: 'Disciplinas', valor: disciplinas.length },
+        { rotulo: 'Entregas', valor: atividades.length }
+    ]);
+    html += '</div>';
 
     html += '</div>';
 
@@ -111,34 +114,6 @@ function renderizarDashboardAcademico(participantes, frequencias, atividades, di
     }, 0);
 
     return dash;
-}
-
-async function gerarPDFAssinaturas() {
-    const elDisciplina = document.getElementById('filtro-disciplina-ass');
-    const idDisciplina = elDisciplina ? elDisciplina.value : '';
-    if (!idDisciplina) { Utilidades.notificacao('Selecione uma disciplina.', 'aviso'); return; }
-
-    const dadosRelatorio = await obterDadosCursoRelatorio();
-    if (!dadosRelatorio) return;
-
-    const { curso, disciplinas, participantes, paroquias } = dadosRelatorio;
-
-    participantes.sort((a, b) => (a.nome_participante || '').localeCompare(b.nome_participante || ''));
-    const disciplinaSelecionada = disciplinas.find(d => String(d.id_disciplina) === String(idDisciplina));
-    const nomeDisc = disciplinaSelecionada ? disciplinaSelecionada.nome_disciplina : '';
-    const paroquiasMap = {};
-    paroquias.forEach(p => { paroquiasMap[p.id_paroquia] = p.nome_paroquia; });
-
-    let html = `<h2>LISTA DE ASSINATURAS (PRESENÇA FÍSICA)</h2><p><strong>Curso:</strong> ${curso.nome_curso || '-'}</p><p><strong>Disciplina:</strong> ${nomeDisc}</p><p><strong>Data da Aula:</strong> ____/____/________</p>`;
-    if (participantes.length === 0) { html += `<p class="texto-centro">Nenhum participante cadastrado.</p>`; dispararImpressao('Lista', html); return; }
-
-    html += `<table><thead><tr><th class="coluna-nome-documento">Nome do Participante</th><th>Paróquia</th><th class="coluna-assinatura">Assinatura</th></tr></thead><tbody>`;
-    participantes.forEach(participante => {
-        const paroquia = paroquiasMap[participante.id_paroquia] || 'Não informada';
-        html += `<tr class="linha-assinatura"><td><strong>${participante.nome_participante || '-'}</strong></td><td>${paroquia}</td><td></td></tr>`;
-    });
-    html += `</tbody></table>`;
-    dispararImpressao('Lista de Assinaturas', html);
 }
 
 async function gerarPDFFrequencia() {

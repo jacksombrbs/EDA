@@ -8,6 +8,7 @@ const VERSAO_DADOS_APLICATIVO = 1;
 const ICONES_BOTOES_MODAL = [
     { termos: ['Cancelar', 'Fechar'], icone: 'cancelar' },
     { termos: ['Enviar via WhatsApp'], icone: 'enviar' },
+    { termos: ['Salvar e Gerar Recibo'], icone: 'recibo' },
     { termos: ['Salvar', 'Atualizar'], icone: 'salvar' },
     { termos: ['Gerar Recibo'], icone: 'recibo' },
     { termos: ['Validar Planilha'], icone: 'validar-planilha' }
@@ -24,7 +25,8 @@ const ROTAS_ABAS = {
     pagamentos: conteudo => renderizarPagamentos(conteudo),
     avisos: conteudo => renderizarAvisos(conteudo),
     financas: conteudo => renderizarFinancas(conteudo),
-    relatorios: conteudo => renderizarRelatorios(conteudo)
+    relatorios: conteudo => renderizarRelatorios(conteudo),
+    dados: conteudo => renderizarDados(conteudo)
 };
 
 let abaAtual = ABA_INICIAL;
@@ -107,6 +109,15 @@ const Utilidades = {
         navigator.clipboard.writeText(texto).then(() => {
             this.notificacao('Copiado para a área de transferência!', 'sucesso');
         });
+    },
+
+    escaparHtml(valor) {
+        return String(valor ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
     }
 };
 
@@ -586,12 +597,15 @@ function criarCabecalhoDocumento() {
     `;
 }
 
-function abrirDocumentoImpressao(titulo, htmlConteudo) {
+function abrirDocumentoImpressao(titulo, htmlConteudo, opcoes = {}) {
     const janelaDocumento = window.open('', '_blank');
     if (!janelaDocumento) {
         Utilidades.notificacao('Permita pop-ups no navegador para visualizar o documento.', 'aviso');
         return;
     }
+
+    const incluirCabecalho = opcoes.incluirCabecalho !== false;
+    const estilosExtras = opcoes.estilosExtras || '';
 
     const htmlCompleto = `
         <!DOCTYPE html>
@@ -599,10 +613,10 @@ function abrirDocumentoImpressao(titulo, htmlConteudo) {
         <head>
             <meta charset="UTF-8">
             <title>${titulo}</title>
-            <style>${criarEstilosDocumento()}</style>
+            <style>${criarEstilosDocumento()}${estilosExtras}</style>
         </head>
         <body>
-            ${criarCabecalhoDocumento()}
+            ${incluirCabecalho ? criarCabecalhoDocumento() : ''}
             ${htmlConteudo}
             <script>
                 window.onload = function() { window.focus(); setTimeout(function() { window.print(); }, 300); };

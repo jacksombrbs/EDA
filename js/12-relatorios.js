@@ -1,4 +1,17 @@
-﻿async function renderizarRelatorios(conteudo) {
+function criarMetricasRelatorio(itens) {
+    return `
+        <div class="grade-metricas-relatorio">
+            ${itens.map(item => `
+                <div class="metrica-relatorio">
+                    <span>${item.rotulo}</span>
+                    <strong>${item.valor}</strong>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+async function renderizarRelatorios(conteudo) {
     const participantes = await bd.obterTodos('participantes');
     const disciplinas = await bd.obterTodos('disciplinas');
     const cursos = await bd.obterTodos('cursos');
@@ -55,12 +68,12 @@
     codigoEstrutura += '</div>';
 
     codigoEstrutura += '<div id="sub-aba-academico" class="sub-aba-relatorio">';
-    codigoEstrutura += renderizarControlesAcademico(disciplinasCurso);
+    codigoEstrutura += renderizarControlesAcademico(disciplinasCurso, participantesCurso, frequenciasCurso, atividadesCurso);
     codigoEstrutura += renderizarDashboardAcademico(participantesCurso, frequenciasCurso, atividadesCurso, disciplinasCurso);
     codigoEstrutura += '</div>';
 
     codigoEstrutura += '<div id="sub-aba-financeiro" class="sub-aba-relatorio oculto">';
-    codigoEstrutura += renderizarControlesFinanceiro();
+    codigoEstrutura += renderizarControlesFinanceiro(cursoAtual, participantesCurso, pagamentos);
     codigoEstrutura += renderizarDashboardFinanceiro(participantesCurso, pagamentos, despesas, cursos);
     codigoEstrutura += '</div>';
 

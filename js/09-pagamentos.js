@@ -216,7 +216,7 @@ async function abrirFormularioPagamento(idPagamento = null) {
     const textoBotaoSalvar = pagamento ? 'Atualizar Pagamento' : 'Salvar Pagamento';
 
     codigoEstrutura += criarRodapeFormulario('salvarPagamento()', textoBotaoSalvar, {
-        botoesExtras: criarBotao('Gerar Recibo', 'acionarRecibo()', 'secundario', 'md-w-total')
+        botoesExtras: criarBotao('Salvar e Gerar Recibo', 'salvarPagamentoEGerarRecibo()', 'secundario', 'md-w-total')
     });
     codigoEstrutura += '</form>';
 
@@ -292,7 +292,7 @@ async function abrirFormularioPagamentoLote(idLote = null) {
     const textoBotaoSalvar = lote ? 'Atualizar Lote' : 'Salvar Lote';
 
     codigoEstrutura += criarRodapeFormulario('salvarPagamentoLote()', textoBotaoSalvar, {
-        botoesExtras: criarBotao('Gerar Recibo', 'acionarReciboLoteModal()', 'secundario', 'md-w-total')
+        botoesExtras: criarBotao('Salvar e Gerar Recibo', 'salvarPagamentoLoteEGerarRecibo()', 'secundario', 'md-w-total')
     });
     codigoEstrutura += '</form>';
 
@@ -425,7 +425,7 @@ async function editarPagamentoLote(idLote) {
     await abrirFormularioPagamentoLote(idLote);
 }
 
-async function salvarPagamento() {
+async function salvarPagamento(opcoes = {}) {
     const id_participante = document.getElementById('id_participante').value;
     const tipo_pagamento = document.getElementById('tipo_pagamento').value;
     const descricao = document.getElementById('descricao').value.trim();
@@ -439,12 +439,12 @@ async function salvarPagamento() {
         { nome: 'Tipo de Pagamento', valor: tipo_pagamento },
         { nome: 'Valor Pago', valor },
         { nome: 'Data do Recebimento', valor: data_pagamento }
-    ])) return;
+    ])) return null;
 
-    if (!Validacao.validarCampoData(data_pagamento, 'Data do Recebimento')) return;
+    if (!Validacao.validarCampoData(data_pagamento, 'Data do Recebimento')) return null;
 
     const valorValidado = Validacao.validarCampoMonetario(valor, 'Valor pago');
-    if (!valorValidado.valido) return;
+    if (!valorValidado.valido) return null;
 
     const pagamento = {
         id_pagamento: registroEmEdicao || Utilidades.gerarId(),
@@ -458,15 +458,25 @@ async function salvarPagamento() {
 
     try {
         await bd.salvar('pagamentos', pagamento);
-        Utilidades.notificacao(registroEmEdicao ? 'Pagamento atualizado!' : 'Pagamento cadastrado!', 'sucesso');
-        Interface.fecharJanela('janela-formulario');
-        renderizarAbaAtual();
+        if (opcoes.notificar !== false) Utilidades.notificacao(registroEmEdicao ? 'Pagamento atualizado!' : 'Pagamento cadastrado!', 'sucesso');
+        if (opcoes.fecharJanela !== false) Interface.fecharJanela('janela-formulario');
+        if (opcoes.renderizar !== false) renderizarAbaAtual();
+        return pagamento;
     } catch (erro) {
         Utilidades.notificacao('Erro ao salvar o pagamento.', 'erro');
+        return null;
     }
 }
 
-async function salvarPagamentoLote() {
+async function salvarPagamentoEGerarRecibo() {
+    const pagamento = await salvarPagamento({ fecharJanela: false, renderizar: false });
+    if (!pagamento) return;
+    await acionarReciboDireto(pagamento.id_pagamento);
+    Interface.fecharJanela('janela-formulario');
+    renderizarAbaAtual();
+}
+
+async function salvarPagamentoLote(opcoes = {}) {
     const idParoquia = document.getElementById('id_paroquia_lote').value;
     const marcadores = document.querySelectorAll('input[name="participantes_lote"]:checked');
     const tipoPagamento = document.getElementById('tipo_pagamento_lote').value;
@@ -478,13 +488,13 @@ async function salvarPagamentoLote() {
 
     if (!idParoquia || marcadores.length === 0 || !tipoPagamento || !valorUnitario || !dataPagamento) {
         Utilidades.notificacao('Preencha os campos e selecione ao menos um participante pagante.', 'erro');
-        return;
+        return null;
     }
 
-    if (!Validacao.validarCampoData(dataPagamento, 'Data do Recebimento')) return;
+    if (!Validacao.validarCampoData(dataPagamento, 'Data do Recebimento')) return null;
 
     const valorUnitarioValidado = Validacao.validarCampoMonetario(valorUnitario, 'Valor unitário');
-    if (!valorUnitarioValidado.valido) return;
+    if (!valorUnitarioValidado.valido) return null;
 
     const id_lote = registroEmEdicao || Utilidades.gerarId();
     const listaIds = [];
@@ -535,12 +545,22 @@ async function salvarPagamentoLote() {
             await bd.salvar('pagamentos', pagamento);
         }
 
-        Utilidades.notificacao('Pagamentos em lote salvos com sucesso!', 'sucesso');
-        Interface.fecharJanela('janela-formulario');
-        renderizarAbaAtual();
+        if (opcoes.notificar !== false) Utilidades.notificacao('Pagamentos em lote salvos com sucesso!', 'sucesso');
+        if (opcoes.fecharJanela !== false) Interface.fecharJanela('janela-formulario');
+        if (opcoes.renderizar !== false) renderizarAbaAtual();
+        return lote;
     } catch (erro) {
         Utilidades.notificacao('Erro ao salvar em lote.', 'erro');
+        return null;
     }
+}
+
+async function salvarPagamentoLoteEGerarRecibo() {
+    const lote = await salvarPagamentoLote({ fecharJanela: false, renderizar: false });
+    if (!lote) return;
+    await acionarReciboDiretoLote(lote.id_lote);
+    Interface.fecharJanela('janela-formulario');
+    renderizarAbaAtual();
 }
 
 async function excluirPagamento(idPagamento) {
@@ -589,59 +609,6 @@ async function acionarReciboDiretoLote(idLote) {
     const descFinal = lote.tipo_pagamento ? `${lote.tipo_pagamento} - ${lote.descricao}` : lote.descricao;
 
     gerarReciboLoteTemplate(nomeParoquia, lote.nomes_participantes, lote.valor_total, descFinal, dataFormatada);
-}
-
-async function acionarRecibo() {
-    const idParticipante = document.getElementById('id_participante').value;
-    const tipoPagamento = document.getElementById('tipo_pagamento').value;
-    const descricao = document.getElementById('descricao').value.trim();
-    const valor = document.getElementById('valor').value;
-    const dataPagamento = document.getElementById('data_pagamento').value;
-
-    if (!idParticipante || !valor || !dataPagamento) {
-        Utilidades.notificacao('Preencha os dados do pagamento antes de gerar o recibo.', 'erro');
-        return;
-    }
-
-    if (!Validacao.validarCampoData(dataPagamento, 'Data do Recebimento')) return;
-    const valorValidado = Validacao.validarCampoMonetario(valor, 'Valor pago');
-    if (!valorValidado.valido) return;
-
-    const p = await bd.obter('participantes', idParticipante);
-    const nomeParticipante = p ? p.nome_participante : 'Participante não identificado';
-    const dataFormatada = Utilidades.formatarData(dataPagamento);
-    const descFinal = tipoPagamento ? `${tipoPagamento} - ${descricao}` : descricao;
-
-    gerarReciboGenerico(nomeParticipante, valorValidado.valor, descFinal, dataFormatada);
-}
-
-async function acionarReciboLoteModal() {
-    const idParoquia = document.getElementById('id_paroquia_lote').value;
-    const marcadores = document.querySelectorAll('input[name="participantes_lote"]:checked');
-    const tipoPagamento = document.getElementById('tipo_pagamento_lote').value;
-    const descricao = document.getElementById('descricao_lote').value.trim();
-    const valorUnitario = document.getElementById('valor_unitario_lote').value;
-    const dataPagamento = document.getElementById('data_pagamento_lote').value;
-
-    if (!idParoquia || marcadores.length === 0 || !valorUnitario || !dataPagamento) {
-        Utilidades.notificacao('Preencha os dados antes de gerar o recibo do lote.', 'erro');
-        return;
-    }
-
-    if (!Validacao.validarCampoData(dataPagamento, 'Data do Recebimento')) return;
-    const valorUnitarioValidado = Validacao.validarCampoMonetario(valorUnitario, 'Valor unitário');
-    if (!valorUnitarioValidado.valido) return;
-
-    const paroquia = await bd.obter('paroquias', idParoquia);
-    const nomeParoquia = paroquia ? paroquia.nome_paroquia : 'Paróquia';
-    
-    const nomesParticipantes = Array.from(marcadores).map(marcador => marcador.getAttribute('data-nome'));
-    const valorTotal = valorUnitarioValidado.valor * nomesParticipantes.length;
-    
-    const dataFormatada = Utilidades.formatarData(dataPagamento);
-    const descFinal = tipoPagamento ? `${tipoPagamento} - ${descricao}` : descricao;
-
-    gerarReciboLoteTemplate(nomeParoquia, nomesParticipantes, valorTotal, descFinal, dataFormatada);
 }
 
 function gerarReciboGenerico(nomeParticipante, valor, descricao, data) {
