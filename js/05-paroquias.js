@@ -5,15 +5,11 @@ async function renderizarParoquias(conteudo) {
     paroquias.sort((a, b) => (a.nome_paroquia || '').localeCompare(b.nome_paroquia || ''));
     
     let codigoEstrutura = '<div class="cartao-padrao mb-lg">';
-    codigoEstrutura += '<div class="flex justifica-espaco itens-centro mb-md md-flex-coluna md-itens-esquerda gap-sm">';
-    codigoEstrutura += '<h2 class="texto-lg peso-bold cor-texto-primario">Paróquias Cadastradas</h2>';
-    
-    codigoEstrutura += '<div class="flex gap-sm md-flex-coluna md-w-total">';
-    codigoEstrutura += criarBotao('Importar Dados', 'abrirModalImportacaoParoquias()', 'secundario', 'md-w-total');
-    codigoEstrutura += criarBotao('+ Nova Paróquia', 'abrirFormularioParoquia()', 'primario', 'md-w-total');
-    codigoEstrutura += '</div>';
-    
-    codigoEstrutura += '</div>';
+    const botoesCabecalho = '<div class="flex gap-sm md-flex-coluna md-w-total">'
+        + criarBotao('Importar Dados', 'abrirModalImportacaoParoquias()', 'secundario', 'md-w-total')
+        + criarBotao('+ Nova Paróquia', 'abrirFormularioParoquia()', 'primario', 'md-w-total')
+        + '</div>';
+    codigoEstrutura += criarCabecalhoSecao('Paróquias Cadastradas', botoesCabecalho);
 
     codigoEstrutura += Busca.criarCampoBusca('busca-paroquias', 'Buscar por nome...');
 
@@ -29,7 +25,7 @@ async function renderizarParoquias(conteudo) {
             
             let capelasBadge = '<span class="cor-texto-claro">Nenhuma</span>';
             if (paroquia.capelas && Array.isArray(paroquia.capelas) && paroquia.capelas.length > 0) {
-                capelasBadge = `<span class="etiqueta-primaria">${paroquia.capelas.length} capela(s)</span>`;
+                capelasBadge = `<span>${paroquia.capelas.length} capela(s)</span>`;
             }
 
             linhasParoquias += `<tr class="${classeFundo} transicao hover-fundo-superficie-3">
@@ -232,7 +228,7 @@ function abrirModalImportacaoParoquias() {
             
             <div class="flex itens-centro md-flex-coluna gap-md p-md fundo-superficie-2 borda-1 borda-solida borda-cor-padrao raio-sm mt-xs mb-xs">
                 <label for="arquivo-excel-paroquia" class="botao-padrao botao-primario w-total max-w-240 md-max-w-total">
-                    <span class="icone-inline">&#xE8E5;</span> Escolher Arquivo
+                    ${criarIcone('escolher-arquivo')} Escolher Arquivo
                 </label>
                 <input type="file" id="arquivo-excel-paroquia" accept=".xlsx, .xls, .csv" class="oculto" onchange="atualizarRotuloArquivoParoquia(this)" />
                 <span id="texto-arquivo-selecionado-paroquia" class="texto-md cor-texto-escuro peso-medium md-texto-centro">Nenhum arquivo selecionado</span>

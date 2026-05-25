@@ -3,10 +3,7 @@
     palestrantes.sort((a, b) => (a.nome_palestrante || '').localeCompare(b.nome_palestrante || ''));
 
     let codigoEstrutura = '<div class="cartao-padrao mb-lg">';
-    codigoEstrutura += '<div class="flex justifica-espaco itens-centro mb-md md-flex-coluna md-itens-esquerda gap-sm">';
-    codigoEstrutura += '<h2 class="texto-lg peso-bold cor-texto-primario">Palestrantes Cadastrados</h2>';
-    codigoEstrutura += criarBotao('+ Novo Palestrante', 'abrirFormularioPalestrante()');
-    codigoEstrutura += '</div>';
+    codigoEstrutura += criarCabecalhoSecao('Palestrantes Cadastrados', criarBotao('+ Novo Palestrante', 'abrirFormularioPalestrante()'));
 
     codigoEstrutura += Busca.criarCampoBusca('busca-palestrantes', 'Buscar por nome...');
 

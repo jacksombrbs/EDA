@@ -6,12 +6,11 @@ async function renderizarPagamentos(conteudo) {
     const paroquias = await bd.obterTodos('paroquias');
 
     let codigoEstrutura = '<div class="cartao-padrao mb-lg">';
-    codigoEstrutura += '<div class="flex justifica-espaco itens-centro mb-md md-flex-coluna md-itens-esquerda gap-sm">';
-    codigoEstrutura += '<h2 class="texto-lg peso-bold cor-texto-primario">Controle de Pagamentos</h2>';
-    codigoEstrutura += '<div class="flex gap-sm md-flex-coluna">';
-    codigoEstrutura += criarBotao('Pagamento em Lote (Paróquia)', 'abrirFormularioPagamentoLote()', 'secundario');
-    codigoEstrutura += criarBotao('Novo Pagamento Individual', 'abrirFormularioPagamento()');
-    codigoEstrutura += '</div></div>';
+    const botoesCabecalho = '<div class="flex gap-sm md-flex-coluna">'
+        + criarBotao('Pagamento em Lote (Paróquia)', 'abrirFormularioPagamentoLote()', 'secundario')
+        + criarBotao('Novo Pagamento Individual', 'abrirFormularioPagamento()')
+        + '</div>';
+    codigoEstrutura += criarCabecalhoSecao('Controle de Pagamentos', botoesCabecalho);
 
     codigoEstrutura += Busca.criarCampoBusca('busca-pagamentos', 'Buscar por descrição...');
 

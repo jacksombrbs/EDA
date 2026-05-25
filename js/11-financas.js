@@ -11,10 +11,7 @@ async function renderizarFinancas(conteudo) {
     const resumo = calcularResumoFinancas(transacoes);
 
     let codigoEstrutura = '<div class="cartao-padrao mb-lg">';
-    codigoEstrutura += '<div class="flex justifica-espaco itens-centro mb-md md-flex-coluna md-itens-esquerda gap-sm">';
-    codigoEstrutura += '<h2 class="texto-lg peso-bold cor-texto-primario">Livro Caixa</h2>';
-    codigoEstrutura += criarBotao('+ Nova Transação', 'abrirFormularioFinanca()');
-    codigoEstrutura += '</div>';
+    codigoEstrutura += criarCabecalhoSecao('Livro Caixa', criarBotao('+ Nova Transação', 'abrirFormularioFinanca()'));
 
     codigoEstrutura += `
         <div class="flex flex-linha gap-md mb-md md-flex-coluna">

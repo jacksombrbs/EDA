@@ -4,10 +4,7 @@ async function renderizarFrequencia(conteudo) {
     const todasFrequencias = await bd.obterTodos('frequencia');
 
     let codigoEstrutura = '<div class="cartao-padrao mb-lg">';
-    
-    codigoEstrutura += '<div class="mb-md">';
-    codigoEstrutura += '<h2 class="texto-lg peso-bold cor-texto-primario">Frequência</h2>';
-    codigoEstrutura += '</div>';
+    codigoEstrutura += criarCabecalhoSecao('Frequência');
     
     codigoEstrutura += '<div class="flex flex-linha md-flex-coluna gap-md mb-lg itens-fim">';
     codigoEstrutura += '<div class="flex-1 w-total">' + criarSeletor('Curso', 'freq-curso', cursos.map(c => ({ id: c.id_curso, nome: c.nome_curso })), '') + '</div>';

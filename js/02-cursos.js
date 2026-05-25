@@ -3,11 +3,7 @@
     cursos.sort((a, b) => (a.nome_curso || '').localeCompare(b.nome_curso || ''));
     
     let codigoEstrutura = '<div class="cartao-padrao mb-lg">';
-    
-    codigoEstrutura += '<div class="flex justifica-espaco itens-centro mb-md md-flex-coluna md-itens-esquerda gap-sm">';
-    codigoEstrutura += '<h2 class="texto-lg peso-bold cor-texto-primario">Cursos Cadastrados</h2>';
-    codigoEstrutura += criarBotao('+ Novo Curso', 'abrirFormularioCurso()');
-    codigoEstrutura += '</div>';
+    codigoEstrutura += criarCabecalhoSecao('Cursos Cadastrados', criarBotao('+ Novo Curso', 'abrirFormularioCurso()'));
     
     codigoEstrutura += Busca.criarCampoBusca('busca-cursos', 'Buscar por nome...');
 

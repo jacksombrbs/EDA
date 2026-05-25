@@ -13,10 +13,7 @@
     const cursoAtual = cursos.find(curso => String(curso.id_curso) === String(cursoSelecionado));
 
     let codigoEstrutura = '<div class="cartao-padrao mb-lg">';
-    codigoEstrutura += '<div class="flex justifica-espaco itens-centro mb-md md-flex-coluna md-itens-esquerda gap-sm">';
-    codigoEstrutura += '<h2 class="texto-lg peso-bold cor-texto-primario m-zero">Painéis e Relatórios</h2>';
-    codigoEstrutura += criarBotao('Selecionar Curso', 'abrirJanelaSelecaoCursoRelatorio()', 'secundario');
-    codigoEstrutura += '</div>';
+    codigoEstrutura += criarCabecalhoSecao('Painéis e Relatórios', criarBotao('Selecionar Curso', 'abrirJanelaSelecaoCursoRelatorio()', 'secundario'));
 
     if (cursos.length === 0) {
         codigoEstrutura += '<p class="p-md texto-centro cor-texto-claro fundo-superficie-2 raio-sm">Cadastre um curso antes de gerar relatórios.</p>';

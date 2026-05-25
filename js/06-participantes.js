@@ -5,15 +5,11 @@ async function renderizarParticipantes(conteudo) {
     participantes.sort((a, b) => (a.nome_participante || '').localeCompare(b.nome_participante || ''));
     
     let codigoEstrutura = '<div class="cartao-padrao mb-lg">';
-    codigoEstrutura += '<div class="flex justifica-espaco itens-centro mb-md md-flex-coluna md-itens-esquerda gap-sm">';
-    codigoEstrutura += '<h2 class="texto-lg peso-bold cor-texto-primario">Participantes Cadastrados</h2>';
-    
-    codigoEstrutura += '<div class="flex gap-sm md-flex-coluna md-w-total">';
-    codigoEstrutura += criarBotao('Importar Dados', 'abrirModalImportacao()', 'secundario', 'md-w-total');
-    codigoEstrutura += criarBotao('+ Novo Participante', 'abrirFormularioParticipante()', 'primario', 'md-w-total');
-    codigoEstrutura += '</div>';
-    
-    codigoEstrutura += '</div>';
+    const botoesCabecalho = '<div class="flex gap-sm md-flex-coluna md-w-total">'
+        + criarBotao('Importar Dados', 'abrirModalImportacao()', 'secundario', 'md-w-total')
+        + criarBotao('+ Novo Participante', 'abrirFormularioParticipante()', 'primario', 'md-w-total')
+        + '</div>';
+    codigoEstrutura += criarCabecalhoSecao('Participantes Cadastrados', botoesCabecalho);
 
     codigoEstrutura += Busca.criarCampoBusca('busca-participantes', 'Buscar por nome...');
 
@@ -81,13 +77,13 @@ async function abrirFormularioParticipante(idParticipante = null) {
 
     formHTML += '<div class="flex gap-md md-flex-coluna">';
     formHTML += '<div class="flex-1">' + criarCampoFormulario('Nome Completo', 'text', 'nome_participante', p.nome_participante || '', '', true) + '</div>';
-    formHTML += '<div class="flex-1">' + criarSeletor('Status', 'status_participante', opcoesStatus, p.status_participante || 'Ativo', true) + '</div>';
+    formHTML += '<div class="flex-1">' + criarSeletor('Status', 'status_participante', opcoesStatus, p.status_participante || 'Ativo') + '</div>';
     formHTML += '</div>';
 
     formHTML += '<div class="flex gap-md md-flex-coluna">';
     formHTML += '<div class="flex-1">' + criarSeletor('Paróquia de Origem', 'id_paroquia', paroquias.map(pq => ({ id: pq.id_paroquia, nome: pq.nome_paroquia })), p.id_paroquia || '', true) + '</div>';
     formHTML += '<div class="flex-1" id="recipiente-seletor-capela">';
-    formHTML += criarSeletor('Capela / Comunidade', 'capela', [], '', true);
+    formHTML += criarSeletor('Capela / Comunidade', 'capela', [], '');
     formHTML += '</div>';
     formHTML += '<div class="flex-1">' + criarSeletor('Curso Matriculado', 'id_curso', cursos.map(c => ({ id: c.id_curso, nome: c.nome_curso })), p.id_curso || '', true) + '</div>';
     formHTML += '</div>';
@@ -100,7 +96,7 @@ async function abrirFormularioParticipante(idParticipante = null) {
     formHTML += '<div class="flex gap-md md-flex-coluna">';
     formHTML += '<div class="flex-1">' + criarCampoFormulario('CPF', 'text', 'cpf', p.cpf || '', '000.000.000-00') + '</div>';
     formHTML += '<div class="flex-1">' + criarCampoFormulario('RG', 'text', 'rg', p.rg || '') + '</div>';
-    formHTML += '<div class="flex-1">' + criarCampoFormulario('Nascimento', 'date', 'data_nascimento', p.data_nascimento || '', '', true) + '</div>';
+    formHTML += '<div class="flex-1">' + criarCampoFormulario('Nascimento', 'date', 'data_nascimento', p.data_nascimento || '') + '</div>';
     formHTML += '</div>';
 
     formHTML += '<div class="flex gap-md md-flex-coluna">';
@@ -143,7 +139,7 @@ async function atualizarSeletorCapelas(capelaSelecionada = '') {
     const recipienteCapela = document.getElementById('recipiente-seletor-capela');
     
     if (!idParoquia) {
-        recipienteCapela.innerHTML = criarSeletor('Capela / Comunidade', 'capela', [], capelaSelecionada, true);
+        recipienteCapela.innerHTML = criarSeletor('Capela / Comunidade', 'capela', [], capelaSelecionada);
         return;
     }
 
@@ -159,11 +155,11 @@ async function atualizarSeletorCapelas(capelaSelecionada = '') {
             });
         }
 
-        recipienteCapela.innerHTML = criarSeletor('Capela / Comunidade', 'capela', opcoesCapelas, capelaSelecionada, true);
+        recipienteCapela.innerHTML = criarSeletor('Capela / Comunidade', 'capela', opcoesCapelas, capelaSelecionada);
         
     } catch (erro) {
         console.error('Erro ao buscar capelas:', erro);
-        recipienteCapela.innerHTML = criarSeletor('Capela / Comunidade', 'capela', [], capelaSelecionada, true);
+        recipienteCapela.innerHTML = criarSeletor('Capela / Comunidade', 'capela', [], capelaSelecionada);
     }
 }
 
@@ -185,26 +181,17 @@ async function salvarParticipante() {
     const data_nascimento = document.getElementById('data_nascimento').value;
     const email = document.getElementById('email').value.trim();
     const telefone = document.getElementById('telefone').value.trim();
-    const status_participante = document.getElementById('status_participante').value;
+    const status_participante = document.getElementById('status_participante').value || 'Ativo';
     const id_paroquia = document.getElementById('id_paroquia').value;
     const campoCapela = document.getElementById('capela');
     const capela = campoCapela?.value || '';
-    const capelaObrigatoria = campoCapela
-        ? Array.from(campoCapela.options).some(opcao => opcao.value)
-        : false;
     const id_curso = document.getElementById('id_curso').value;
 
     const camposObrigatorios = [
         { nome: 'Nome Completo', valor: nome_participante },
-        { nome: 'Status', valor: status_participante },
         { nome: 'Paróquia de Origem', valor: id_paroquia },
-        { nome: 'Curso Matriculado', valor: id_curso },
-        { nome: 'Nascimento', valor: data_nascimento }
+        { nome: 'Curso Matriculado', valor: id_curso }
     ];
-
-    if (capelaObrigatoria) {
-        camposObrigatorios.push({ nome: 'Capela / Comunidade', valor: capela });
-    }
 
     if (!Validacao.notificarCamposObrigatorios(camposObrigatorios)) {
         return;
@@ -225,7 +212,7 @@ async function salvarParticipante() {
         return;
     }
 
-    if (!Validacao.validarCampoData(data_nascimento, 'Nascimento')) return;
+    if (data_nascimento && !Validacao.validarCampoData(data_nascimento, 'Nascimento')) return;
 
     const participante = {
         id_participante: registroEmEdicaoParticipante || Utilidades.gerarId(),
@@ -296,7 +283,7 @@ function abrirModalImportacao() {
             
             <div class="flex itens-centro md-flex-coluna gap-md p-md fundo-superficie-2 borda-1 borda-solida borda-cor-padrao raio-sm mt-xs mb-xs">
                 <label for="arquivo-excel" class="botao-padrao botao-primario w-total max-w-240 md-max-w-total">
-                    <span class="icone-inline">&#xE8E5;</span> Escolher Arquivo
+                    ${criarIcone('escolher-arquivo')} Escolher Arquivo
                 </label>
                 <input type="file" id="arquivo-excel" accept=".xlsx, .xls, .csv" class="oculto" onchange="atualizarRotuloArquivo(this)" />
                 <span id="texto-arquivo-selecionado" class="texto-md cor-texto-escuro peso-medium md-texto-centro">Nenhum arquivo selecionado</span>

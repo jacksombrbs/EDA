@@ -20,10 +20,7 @@ async function renderizarAtividades(conteudo) {
     });
 
     let codigoEstrutura = '<div class="cartao-padrao mb-lg">';
-    codigoEstrutura += '<div class="flex justifica-espaco itens-centro mb-md md-flex-coluna md-itens-esquerda gap-sm">';
-    codigoEstrutura += '<h2 class="texto-lg peso-bold cor-texto-primario">Atividades Entregues</h2>';
-    codigoEstrutura += criarBotao('+ Nova Atividade', 'abrirFormularioAtividade()');
-    codigoEstrutura += '</div>';
+    codigoEstrutura += criarCabecalhoSecao('Atividades Entregues', criarBotao('+ Nova Atividade', 'abrirFormularioAtividade()'));
     
     codigoEstrutura += Busca.criarCampoBusca('busca-atividades', 'Buscar por participante ou disciplina...');
 

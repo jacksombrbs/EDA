@@ -5,6 +5,14 @@ const CAMINHO_MARCA_INSTITUCIONAL = 'marca-comissao-desenho.svg';
 const VERSAO_APLICATIVO = '1.1.0';
 const VERSAO_DADOS_APLICATIVO = 1;
 
+const ICONES_BOTOES_MODAL = [
+    { termos: ['Cancelar', 'Fechar'], icone: 'cancelar' },
+    { termos: ['Enviar via WhatsApp'], icone: 'enviar' },
+    { termos: ['Salvar', 'Atualizar'], icone: 'salvar' },
+    { termos: ['Gerar Recibo'], icone: 'recibo' },
+    { termos: ['Validar Planilha'], icone: 'validar-planilha' }
+];
+
 const ROTAS_ABAS = {
     cursos: conteudo => renderizarCursos(conteudo),
     paroquias: conteudo => renderizarParoquias(conteudo),
@@ -209,15 +217,11 @@ const Interface = {
 
             if (button.querySelector('.icone-inline')) return;
 
-            if (texto.includes('Cancelar')) {
-                button.insertAdjacentHTML('afterbegin', '<span class="icone-inline">&#xE711;</span>');
-            } else if (texto.includes('Enviar via WhatsApp')) {
-                button.insertAdjacentHTML('afterbegin', '<span class="icone-inline">&#xE724;</span>');
-            } else if (texto.includes('Salvar') || texto.includes('Atualizar')) {
-                button.insertAdjacentHTML('afterbegin', '<span class="icone-inline">&#xE74E;</span>');
-            } else if (texto.includes('Gerar Recibo')) {
-                button.insertAdjacentHTML('afterbegin', '<span class="icone-inline">&#xE749;</span>');
-            }
+            const configuracao = ICONES_BOTOES_MODAL.find(item =>
+                item.termos.some(termo => texto.includes(termo))
+            );
+
+            if (configuracao) button.insertAdjacentHTML('afterbegin', criarIcone(configuracao.icone));
         });
     },
 
@@ -401,6 +405,11 @@ function criarBotao(rotulo, acao, variante = 'primario', classesExtras = '', tip
     const atributos = atributosExtras ? ` ${atributosExtras}` : '';
 
     return `<button type="${tipo}" class="${classesBotao}"${atributoAcao}${atributos}>${rotulo}</button>`;
+}
+
+function criarIcone(nome, classesExtras = '') {
+    const classes = `icone-inline ${classesExtras}`.trim();
+    return `<span class="${classes}" data-icone="${nome}" aria-hidden="true"></span>`;
 }
 
 function criarRodapeModal(acoes = [], opcoes = {}) {
