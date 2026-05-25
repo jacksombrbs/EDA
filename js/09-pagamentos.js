@@ -113,9 +113,17 @@ function processarRegraValor(idParticipanteElement, tipoPagamentoElement, valorE
     const tipo = tipoPagamentoElement.value;
     const idParticipante = idParticipanteElement.value;
 
+    const elQtd = document.getElementById('quantidade');
+    const elQtdLote = document.getElementById('quantidade_lote');
+    const qtd = elQtd ? (parseInt(elQtd.value) || 1) : (elQtdLote ? (parseInt(elQtdLote.value) || 1) : 1);
+
+    const containerQtd = document.getElementById('container-quantidade');
+    const containerQtdLote = document.getElementById('container-quantidade-lote');
+    if (containerQtd) containerQtd.style.display = tipo === 'Mensalidade' ? 'block' : 'none';
+    if (containerQtdLote) containerQtdLote.style.display = tipo === 'Mensalidade' ? 'block' : 'none';
+
     if (tipo === 'Outros' || !tipo) {
         valorElement.readOnly = false;
-        if (!registroEmEdicao) valorElement.value = '';
         return;
     }
 
@@ -127,7 +135,7 @@ function processarRegraValor(idParticipanteElement, tipoPagamentoElement, valorE
                 if (tipo === 'Inscrição') {
                     valorElement.value = curso.valor_inscricao || 0;
                 } else if (tipo === 'Mensalidade') {
-                    valorElement.value = curso.valor_mensalidade || 0;
+                    valorElement.value = (curso.valor_mensalidade || 0) * qtd;
                 }
                 valorElement.readOnly = true;
                 return;
@@ -165,10 +173,12 @@ async function abrirFormularioPagamento(idPagamento = null) {
     codigoEstrutura += criarSeletor('Participante', 'id_participante', participantes.map(p => ({ id: p.id_participante, nome: p.nome_participante })), pagamento ? pagamento.id_participante : '', true);
     
     codigoEstrutura += '<div class="flex gap-md w-total md-flex-coluna">';
-    codigoEstrutura += '<div class="flex-1">' + criarSeletor('Tipo de Pagamento', 'tipo_pagamento', ['Inscrição', 'Mensalidade', 'Outros'], pagamento ? pagamento.tipo_pagamento : '', true) + '</div>';
-    codigoEstrutura += '<div class="flex-1">' + criarCampoFormulario('Valor Pago (R$)', 'number', 'valor', pagamento ? pagamento.valor : '', 'Ex: 150.00', true) + '</div>';
-    codigoEstrutura += '</div>';
+    codigoEstrutura += '<div class="flex-2">' + criarSeletor('Tipo de Pagamento', 'tipo_pagamento', ['Inscrição', 'Mensalidade', 'Outros'], pagamento ? pagamento.tipo_pagamento : '', true) + '</div>';
     
+    const displayQtd = (pagamento && pagamento.tipo_pagamento === 'Mensalidade') ? 'block' : 'none';
+    codigoEstrutura += `<div class="flex-1" id="container-quantidade" style="display: ${displayQtd};">` + criarCampoFormulario('Qtd. Meses', 'number', 'quantidade', pagamento ? (pagamento.quantidade || 1) : 1, 'Ex: 2', false) + '</div>';
+    codigoEstrutura += '<div class="flex-2">' + criarCampoFormulario('Valor Total (R$)', 'number', 'valor', pagamento ? pagamento.valor : '', 'Ex: 150.00', true) + '</div>';
+    codigoEstrutura += '</div>';    
     codigoEstrutura += '<div class="flex gap-md w-total md-flex-coluna">';
     codigoEstrutura += '<div class="flex-1">' + criarCampoFormulario('Referência / Descrição', 'text', 'descricao', pagamento ? pagamento.descricao : '', 'Ex: Parcela 01', true) + '</div>';
     codigoEstrutura += '<div class="flex-1 flex flex-coluna w-total">';
@@ -193,6 +203,9 @@ async function abrirFormularioPagamento(idPagamento = null) {
 
     elParticipante.addEventListener('change', () => processarRegraValor(elParticipante, elTipo, elValor, participantes, cursos));
     elTipo.addEventListener('change', () => processarRegraValor(elParticipante, elTipo, elValor, participantes, cursos));
+
+    const elQtd = document.getElementById('quantidade');
+    if (elQtd) elQtd.addEventListener('input', () => processarRegraValor(elParticipante, elTipo, elValor, participantes, cursos));
 
     if (pagamento && (pagamento.tipo_pagamento === 'Inscrição' || pagamento.tipo_pagamento === 'Mensalidade')) {
         elValor.readOnly = true;
@@ -231,10 +244,12 @@ async function abrirFormularioPagamentoLote(idLote = null) {
     codigoEstrutura += '</div></div>';
     
     codigoEstrutura += '<div class="flex gap-md w-total md-flex-coluna">';
-    codigoEstrutura += '<div class="flex-1">' + criarSeletor('Tipo de Pagamento', 'tipo_pagamento_lote', ['Inscrição', 'Mensalidade', 'Outros'], lote ? lote.tipo_pagamento : '', true) + '</div>';
-    codigoEstrutura += '<div class="flex-1">' + criarCampoFormulario('Valor Unitário (R$)', 'number', 'valor_unitario_lote', lote ? lote.valor_unitario : '', 'Ex: 150.00', true) + '</div>';
-    codigoEstrutura += '</div>';
+    codigoEstrutura += '<div class="flex-2">' + criarSeletor('Tipo de Pagamento', 'tipo_pagamento_lote', ['Inscrição', 'Mensalidade', 'Outros'], lote ? lote.tipo_pagamento : '', true) + '</div>';
     
+    const displayQtdLote = (lote && lote.tipo_pagamento === 'Mensalidade') ? 'block' : 'none';
+    codigoEstrutura += `<div class="flex-1" id="container-quantidade-lote" style="display: ${displayQtdLote};">` + criarCampoFormulario('Qtd. Meses', 'number', 'quantidade_lote', lote ? (lote.quantidade || 1) : 1, 'Ex: 2', false) + '</div>';
+    codigoEstrutura += '<div class="flex-2">' + criarCampoFormulario('Valor Unitário (R$)', 'number', 'valor_unitario_lote', lote ? lote.valor_unitario : '', 'Ex: 150.00', true) + '</div>';
+    codigoEstrutura += '</div>';    
     codigoEstrutura += '<div class="flex gap-md w-total md-flex-coluna">';
     codigoEstrutura += '<div class="flex-1">' + criarCampoFormulario('Referência / Descrição', 'text', 'descricao_lote', lote ? lote.descricao : '', 'Ex: Parcela 01', true) + '</div>';
     codigoEstrutura += '<div class="flex-1 flex flex-coluna w-total">';
@@ -298,6 +313,9 @@ async function abrirFormularioPagamentoLote(idLote = null) {
     
     elParoquia.addEventListener('change', (e) => renderizarCheckboxes(e.target.value));
     elTipoLote.addEventListener('change', reavaliarValorLote);
+    
+    const elQtdLote = document.getElementById('quantidade_lote');
+    if (elQtdLote) elQtdLote.addEventListener('input', reavaliarValorLote);
 
     if (lote && (lote.tipo_pagamento === 'Inscrição' || lote.tipo_pagamento === 'Mensalidade')) {
         elValorLote.readOnly = true;
@@ -339,6 +357,8 @@ async function salvarPagamento() {
     const descricao = document.getElementById('descricao').value.trim();
     const valor = document.getElementById('valor').value;
     const data_pagamento = document.getElementById('data_pagamento').value;
+    const qtdElemento = document.getElementById('quantidade');
+    const quantidadeDigitada = qtdElemento ? (parseInt(qtdElemento.value) || 1) : 1;
 
     if (!Validacao.notificarCamposObrigatorios([
         { nome: 'Participante', valor: id_participante },
@@ -356,6 +376,7 @@ async function salvarPagamento() {
         id_pagamento: registroEmEdicao || Utilidades.gerarId(),
         id_participante,
         tipo_pagamento,
+        quantidade: tipo_pagamento === 'Mensalidade' ? quantidadeDigitada : 1,
         descricao,
         valor: valorValidado.valor,
         data_pagamento
@@ -378,6 +399,8 @@ async function salvarPagamentoLote() {
     const descricao = document.getElementById('descricao_lote').value.trim();
     const valorUnitario = document.getElementById('valor_unitario_lote').value;
     const dataPagamento = document.getElementById('data_pagamento_lote').value;
+    const qtdLoteElemento = document.getElementById('quantidade_lote');
+    const quantidadeLote = qtdLoteElemento ? (parseInt(qtdLoteElemento.value) || 1) : 1;
 
     if (!idParoquia || marcadores.length === 0 || !tipoPagamento || !valorUnitario || !dataPagamento) {
         Utilidades.notificacao('Preencha os campos e selecione ao menos um participante pagante.', 'erro');
@@ -406,6 +429,7 @@ async function salvarPagamentoLote() {
         id_participantes: listaIds,
         nomes_participantes: nomesParticipantes,
         tipo_pagamento: tipoPagamento,
+        quantidade: tipoPagamento === 'Mensalidade' ? quantidadeLote : 1,
         descricao: descricao,
         valor_unitario: valorUnitarioValidado.valor,
         valor_total: valorTotal,
@@ -428,6 +452,7 @@ async function salvarPagamentoLote() {
                 id_pagamento: Utilidades.gerarId(),
                 id_participante: idParticipante,
                 tipo_pagamento: tipoPagamento,
+                quantidade: tipoPagamento === 'Mensalidade' ? quantidadeLote : 1,
                 descricao: descricao,
                 valor: valorUnitarioValidado.valor,
                 data_pagamento: dataPagamento,

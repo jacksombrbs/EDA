@@ -1,14 +1,17 @@
 function renderizarControlesFinanceiro() {
-    const mesAtual = new Date().toISOString().substring(0, 7);
+    const dataHoje = new Date().toISOString().split('T')[0];
+    const dataInicio = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
+
     let html = '<div class="flex gap-md mb-lg md-flex-coluna itens-esticar">';
     
     html += '<div class="flex-1 fundo-superficie-2 borda-1 borda-solida borda-cor-padrao raio-md p-md flex flex-coluna justifica-espaco">';
     html += '<div class="flex justifica-espaco itens-centro mb-sm gap-sm">';
-    html += '<h3 class="texto-md peso-bold cor-texto-primario m-zero">Livro Caixa (Demonstrativo)</h3>';
+    html += '<h3 class="texto-md peso-bold cor-texto-primario m-zero">Livro Caixa (Período)</h3>';
     html += criarBotao('Gerar Relatório', 'gerarPDFLivroCaixa()');
     html += '</div>';
     html += '<div class="flex gap-md md-flex-coluna w-total">';
-    html += '<div class="flex-1 w-total">' + criarCampoFormulario('Mês de Referência', 'month', 'filtro-mes-caixa', mesAtual, '', false) + '</div>';
+    html += '<div class="flex-1">' + criarCampoFormulario('Data Início', 'date', 'filtro-data-inicio', dataInicio, '', false) + '</div>';
+    html += '<div class="flex-1">' + criarCampoFormulario('Data Fim', 'date', 'filtro-data-fim', dataHoje, '', false) + '</div>';
     html += '</div></div>';
 
     html += '<div class="flex-1 fundo-superficie-2 borda-1 borda-solida borda-cor-padrao raio-md p-md flex flex-coluna justifica-espaco">';
@@ -28,7 +31,7 @@ function renderizarDashboardFinanceiro(participantes, pagamentos, despesas, curs
     const classeSaldo = saldoCaixa >= 0 ? 'cor-texto-sucesso' : 'cor-texto-erro';
     const bordaSaldo = saldoCaixa >= 0 ? 'borda-sucesso' : 'borda-erro';
 
-let dash = `<div class="flex flex-linha gap-md mb-lg md-flex-coluna">
+    let dash = `<div class="flex flex-linha gap-md mb-lg md-flex-coluna">
         <div class="cartao-resumo fundo-toast-sucesso flex-1">
             <span class="texto-sm peso-bold cor-texto-claro">Total Entradas</span>
             <h3 class="texto-xl peso-bold cor-texto-sucesso mt-sm">${Utilidades.formatarMoeda(totalEntradas)}</h3>
@@ -56,7 +59,7 @@ let dash = `<div class="flex flex-linha gap-md mb-lg md-flex-coluna">
         participantes.forEach((participante, index) => {
             const curso = cursos.find(c => String(c.id_curso) === String(participante.id_curso));
             const pagtosGerais = pagamentos.filter(p => String(p.id_participante) === String(participante.id_participante));
-            
+
             const pagouInscricao = pagtosGerais.some(p => {
                 const termo = String(p.tipo_pagamento || p.descricao || '').toLowerCase();
                 return termo.includes('inscrição') || termo.includes('inscricao');
@@ -64,13 +67,14 @@ let dash = `<div class="flex flex-linha gap-md mb-lg md-flex-coluna">
             const textoInscricao = pagouInscricao ? 'Paga' : 'Pendente';
             const classeInscricao = pagouInscricao ? 'cor-texto-sucesso' : 'cor-texto-erro';
 
-            const pagtosMensais = pagtosGerais.filter(p => {
+            const pagtosMensaisFiltrados = pagtosGerais.filter(p => {
                 const termo = String(p.tipo_pagamento || p.descricao || '').toLowerCase();
                 return termo.includes('parcela') || termo.includes('mensalidade') || termo.includes('parc');
             });
-            const qtdMensalidadesPagas = pagtosMensais.length;
+
+            const qtdMensalidadesPagas = pagtosMensaisFiltrados.reduce((acc, p) => acc + (parseInt(p.quantidade) || 1), 0);
             const qtdExigidaCurso = curso ? parseInt(curso.quantidade_mensalidades || 0) : 0;
-            
+
             const estaEmDia = qtdMensalidadesPagas >= qtdExigidaCurso;
             const textoSituacao = estaEmDia ? 'Em Dia' : `Pendente (${qtdExigidaCurso - qtdMensalidadesPagas})`;
             const classeSituacao = estaEmDia ? 'cor-texto-sucesso' : 'cor-texto-erro';
@@ -106,20 +110,23 @@ let dash = `<div class="flex flex-linha gap-md mb-lg md-flex-coluna">
 }
 
 async function gerarPDFLivroCaixa() {
-    const elMes = document.getElementById('filtro-mes-caixa');
-    const mesFiltro = elMes ? elMes.value : '';
-    if (!mesFiltro) { Utilidades.notificacao('Selecione um mês de referência.', 'aviso'); return; }
+    const dataInicio = document.getElementById('filtro-data-inicio').value;
+    const dataFim = document.getElementById('filtro-data-fim').value;
+
+    if (!dataInicio || !dataFim) { 
+        Utilidades.notificacao('Selecione o intervalo de datas.', 'aviso'); 
+        return; 
+    }
 
     const pagamentos = await bd.obterTodos('pagamentos');
     const despesas = await bd.obterTodos('financas');
     const participantes = await bd.obterTodos('participantes');
 
-    const anoRef = mesFiltro.split('-')[0];
-    const mesRef = mesFiltro.split('-')[1];
+    const estaNoIntervalo = (data) => data >= dataInicio && data <= dataFim;
 
     let entradasFiltradas = [];
     pagamentos.forEach(p => {
-        if (p.data_pagamento && p.data_pagamento.startsWith(mesFiltro)) {
+        if (p.data_pagamento && estaNoIntervalo(p.data_pagamento)) {
             const participante = participantes.find(al => al.id_participante === p.id_participante);
             const nome = participante ? participante.nome_participante : 'Geral';
             entradasFiltradas.push({
@@ -132,7 +139,7 @@ async function gerarPDFLivroCaixa() {
 
     let saidasFiltradas = [];
     despesas.forEach(d => {
-        if (d.data && d.data.startsWith(mesFiltro)) {
+        if (d.data && estaNoIntervalo(d.data)) {
             saidasFiltradas.push({
                 data: d.data,
                 descricao: `${d.descricao} [${d.categoria || 'Geral'}]`,
@@ -149,7 +156,7 @@ async function gerarPDFLivroCaixa() {
 
     let html = `<h2>LIVRO CAIXA DOS ATIVOS FINANCEIROS</h2>`;
     html += `<p><strong>Data de Emissão:</strong> ${Utilidades.formatarData(new Date().toISOString().split('T')[0])}</p>`;
-    html += `<p><strong>Período de Referência:</strong> ${mesRef}/${anoRef}</p>`;
+    html += `<p><strong>Período de Referência:</strong> ${Utilidades.formatarData(dataInicio)} - ${Utilidades.formatarData(dataFim)}</p>`;
 
     html += `<h3>ENTRADAS (RECEBIMENTOS)</h3>`;
     html += `<table><thead><tr><th>Data</th><th>Descrição</th><th class="alinhado-direita">Valor</th></tr></thead><tbody>`;
@@ -219,7 +226,7 @@ async function gerarPDFMensalidades() {
         return a.capela.localeCompare(b.capela);
     }).forEach((grupo, index) => {
         const nomeParoquia = paroquiasMap[grupo.idParo] || 'Participantes Sem Vínculo Paroquial';
-        
+
         const maxMensalidades = Math.max(0, ...grupo.participantes.map(participante => {
             const curso = cursosMap[participante.id_curso];
             return curso ? parseInt(curso.quantidade_mensalidades || '0', 10) : 0;
@@ -235,18 +242,26 @@ async function gerarPDFMensalidades() {
         grupo.participantes.sort((a, b) => (a.nome_participante || '').localeCompare(b.nome_participante || '')).forEach(participante => {
             html += `<tr><td><strong>${participante.nome_participante}</strong></td>`;
             const pagamentosDoParticipante = pagamentos.filter(p => String(p.id_participante) === String(participante.id_participante));
-            
+
             const temInscricao = pagamentosDoParticipante.some(p => {
                 const termo = String(p.tipo_pagamento || p.descricao || '').toLowerCase();
                 return termo.includes('inscrição') || termo.includes('inscricao');
             });
             html += `<td class="texto-centro"><strong>${temInscricao ? 'X' : ' '}</strong></td>`;
 
-            const pagamentosParcelas = pagamentosDoParticipante.filter(p => {
+            const pagamentosParcelasFiltrados = pagamentosDoParticipante.filter(p => {
                 const termo = String(p.tipo_pagamento || p.descricao || '').toLowerCase();
                 return termo.includes('parcela') || termo.includes('mensalidade') || termo.includes('parc');
             });
-            pagamentosParcelas.sort((a, b) => (a.data_pagamento || '').localeCompare(b.data_pagamento || ''));
+            pagamentosParcelasFiltrados.sort((a, b) => (a.data_pagamento || '').localeCompare(b.data_pagamento || ''));
+
+            const pagamentosParcelas = [];
+            pagamentosParcelasFiltrados.forEach(p => {
+                const qtd = parseInt(p.quantidade) || 1;
+                for (let k = 0; k < qtd; k++) {
+                    pagamentosParcelas.push(p);
+                }
+            });
 
             for (let i = 0; i < maxMensalidades; i++) {
                 const pago = pagamentosParcelas[i] ? true : false;
