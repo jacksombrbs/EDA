@@ -1,0 +1,52 @@
+.coluna-nome-tabela {
+    width: 350px;
+    min-width: 350px;
+}
+
+.recipiente-tabela {
+    overflow-x: auto;
+    overflow-y: hidden;
+    position: relative;
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio-md);
+    background-color: var(--cor-superficie-2);
+}
+
+.tabela-padrao {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--fonte-md);
+}
+
+.tabela-padrao th {
+    padding: var(--espaco-md);
+    text-align: left;
+    font-weight: var(--peso-bold);
+    color: var(--cor-marca-700);
+    background-color: var(--cor-superficie-2);
+}
+
+.tabela-padrao td {
+    padding: var(--espaco-md);
+}
+
+.tabela-padrao tbody tr {
+    transition: var(--transicao-padrao);
+}
+
+.tabela-padrao tbody tr:hover {
+    background-color: var(--cor-superficie-3);
+}
+
+.tabela-padrao tbody tr.fundo-branco {
+    background-color: color-mix(in srgb, var(--cor-superficie) 76%, var(--cor-fundo) 24%);
+}
+
+.tabela-padrao tbody tr.fundo-superficie-2 {
+    background-color: color-mix(in srgb, var(--cor-superficie-2) 72%, var(--cor-superficie) 28%);
+}
+
+.acoes-tabela {
+    display: flex;
+    gap: var(--espaco-sm);
+}

@@ -1,0 +1,123 @@
+/* 3. UTILITÁRIOS DE DISPLAY & LAYOUT ========= */
+.block { display: block; }
+.flex { display: flex; }
+.oculto { display: none !important; }
+.flex-coluna { flex-direction: column; }
+.flex-linha { flex-direction: row; }
+.flex-1 { flex: 1; min-width: 0; }
+.flex-2 { flex: 2; min-width: 0; }
+.itens-centro { align-items: center; }
+.itens-fim { align-items: flex-end; }
+.justifica-centro { justify-content: center; }
+.justifica-inicio { justify-content: flex-start; }
+.justifica-fim { justify-content: flex-end; }
+.justifica-espaco { justify-content: space-between; }
+.gap-xs { gap: var(--espaco-xs); }
+.gap-sm { gap: var(--espaco-sm); }
+.gap-md { gap: var(--espaco-md); }
+.coluna-total { grid-column: 1 / -1; }
+
+/* 4. POSICIONAMENTO ========= */
+.pos-fixa { position: fixed; }
+.pos-absoluta { position: absolute; }
+.pos-relativa { position: relative; }
+.inset-0 { inset: 0; }
+.base-30 { bottom: 30px; }
+.direita-30 { right: 30px; }
+.z-maximo { z-index: 99999; }
+
+/* 5. DIMENSÕES ========= */
+.w-total { width: 100%; }
+.w-tela { width: 100vw; }
+.max-w-240 { max-width: 240px; }
+.h-total { height: 100%; }
+.h-tela { height: 100vh; }
+.min-h-100vh { min-height: 100vh; }
+
+/* 6. ESPAÇAMENTO (Padding e Margin) ========= */
+.p-sm { padding: var(--espaco-sm); }
+.p-md { padding: var(--espaco-md); }
+.p-lg { padding: var(--espaco-lg); }
+.px-md { padding-left: var(--espaco-md); padding-right: var(--espaco-md); }
+.py-md { padding-top: var(--espaco-md); padding-bottom: var(--espaco-md); }
+.pt-md { padding-top: var(--espaco-md); }
+.pb-md { padding-bottom: var(--espaco-md); }
+.m-zero { margin: 0; }
+.mt-xs { margin-top: var(--espaco-xs); }
+.mt-sm { margin-top: var(--espaco-sm); }
+.mt-md { margin-top: var(--espaco-md); }
+.mb-xs { margin-bottom: var(--espaco-xs); }
+.mb-sm { margin-bottom: var(--espaco-sm); }
+.mb-md { margin-bottom: var(--espaco-md); }
+.mb-lg { margin-bottom: var(--espaco-lg); }
+
+/* 7. TIPOGRAFIA ========= */
+.fonte-padrao { font-family: var(--fonte-familia); }
+.texto-sm { font-size: var(--fonte-sm); }
+.texto-md { font-size: var(--fonte-md); }
+.texto-lg { font-size: var(--fonte-lg); }
+.texto-xl { font-size: var(--fonte-xl); }
+.peso-medium { font-weight: var(--peso-regular); }
+.peso-bold { font-weight: var(--peso-bold); }
+.texto-centro { text-align: center; }
+.texto-esquerda { text-align: left; }
+.texto-direita { text-align: right; }
+.texto-italico { font-style: italic; }
+.antialiased { -webkit-font-smoothing: antialiased; }
+.cor-texto-escuro { color: var(--cor-texto); }
+.cor-texto-claro { color: var(--cor-texto-claro); }
+.cor-texto-branco { color: var(--cor-superficie); }
+.cor-texto-primario { color: var(--cor-marca-700); }
+.cor-texto-sucesso { color: #064e3b; }
+.cor-texto-erro { color: #991b1b; }
+.cor-texto-aviso { color: #92400e; }
+
+/* 8. FUNDOS E CORES ========= */
+.fundo-branco { background-color: var(--cor-superficie); }
+.fundo-cinza { background-color: var(--cor-fundo-alt); }
+.fundo-superficie-2 { background-color: var(--cor-superficie-2); }
+.fundo-marca-700 { background-color: var(--cor-marca-700); }
+.fundo-sucesso { background-color: var(--cor-sucesso); }
+.fundo-erro { background-color: var(--cor-erro); }
+.fundo-sobreposicao { background: color-mix(in srgb, var(--cor-texto) 50%, transparent); }
+.fundo-toast-sucesso { background: color-mix(in srgb, var(--cor-sucesso) 20%, var(--cor-superficie) 80%); }
+.fundo-toast-erro { background: color-mix(in srgb, var(--cor-erro) 20%, var(--cor-superficie) 80%); }
+.fundo-toast-aviso { background: color-mix(in srgb, var(--cor-aviso) 20%, var(--cor-superficie) 80%); }
+
+/* 9. BORDAS ========= */
+.borda-1 { border-width: 1px; }
+.borda-solida { border-style: solid; }
+.borda-base-solida { border-bottom-style: solid; }
+.borda-base-1 { border-bottom-width: 1px; }
+.borda-cor-padrao { border-color: var(--cor-borda); }
+.raio-xxs { border-radius: var(--raio-xxs); }
+.raio-sm { border-radius: var(--raio-sm); }
+
+/* 10. EFEITOS E INTERAÇÕES ========= */
+.sombra-2 { box-shadow: var(--sombra-2); }
+.cursor-apontador { cursor: pointer; }
+.transicao { transition: var(--transicao-padrao); }
+.sem-selecao { user-select: none; }
+.texto-truncado { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hover-fundo-superficie-2:hover { background-color: var(--cor-superficie-2); }
+.hover-fundo-superficie-3:hover { background-color: var(--cor-superficie-3); }
+.hover-fundo-erro-escuro:hover { background-color: var(--cor-erro-escuro); }
+.hover-fundo-sucesso-escuro:hover { background-color: var(--cor-sucesso-escuro); }
+.active-fundo-marca-ativo:active { background-color: var(--cor-marca-ativo); }
+
+/* 11. OUTROS UTILITÁRIOS ========= */
+.rolagem-y { overflow-y: auto; }
+.rolagem-oculta { overflow: hidden; }
+.animacao-deslize { animation: deslizarEntrada 0.3s ease-out; }
+
+@keyframes deslizarEntrada {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}

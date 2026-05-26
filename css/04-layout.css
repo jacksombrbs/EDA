@@ -1,0 +1,200 @@
+/* Layout principal */
+
+.pagina-conteudo {
+    width: min(100%, 1520px);
+    margin: 0 auto var(--espaco-lg);
+    padding: var(--espaco-md) var(--espaco-lg) var(--espaco-lg);
+}
+
+.cabecalho-secao {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--espaco-sm);
+    margin-bottom: var(--espaco-md);
+}
+
+.barra-lateral {
+    width: 260px;
+    min-width: 260px;
+    gap: var(--espaco-sm);
+    padding-right: var(--espaco-sm);
+}
+
+#pagina-administracao {
+    position: relative;
+}
+
+.navegacao-principal {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.barra-lateral .navegacao-principal {
+    gap: var(--espaco-xxs);
+    padding-bottom: var(--espaco-sm);
+}
+
+.item-menu {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 42px;
+    padding: var(--espaco-xs) var(--espaco-md);
+    padding-left: var(--espaco-md);
+    border-radius: var(--raio-sm);
+    color: var(--cor-texto);
+    font-size: var(--fonte-md);
+    font-weight: var(--peso-regular);
+    cursor: pointer;
+    transition: var(--transicao-padrao);
+    white-space: nowrap;
+}
+
+.item-menu:hover,
+.item-menu.ativo {
+    background-color: var(--cor-superficie-3);
+}
+
+.item-menu.ativo {
+    color: var(--cor-marca-700);
+    font-weight: var(--peso-bold);
+}
+
+.navegacao-principal .icone-inline {
+    flex-basis: 24px;
+    width: 24px;
+    height: 24px;
+}
+
+
+.grade-paineis-dados {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--espaco-lg);
+    align-items: start;
+}
+
+.painel-dados {
+    display: flex;
+    flex-direction: column;
+    gap: var(--espaco-md);
+    min-height: 280px;
+    padding: var(--espaco-lg);
+    border-radius: var(--raio-md);
+    background-color: var(--cor-vidro);
+    backdrop-filter: blur(18px);
+}
+
+.cabecalho-painel-dados {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--espaco-sm);
+}
+
+.barra-acoes-dados {
+    display: flex;
+    align-items: center;
+    gap: var(--espaco-xs);
+}
+
+.indicador-contagem-dados {
+    padding: 4px 8px;
+    border-radius: var(--raio-sm);
+    color: var(--cor-texto-claro);
+    background-color: color-mix(in srgb, var(--cor-superficie) 78%, transparent);
+    font-size: var(--fonte-sm);
+    white-space: nowrap;
+}
+
+.detalhes-dados {
+    overflow: hidden;
+    border-radius: var(--raio-sm);
+    background-color: color-mix(in srgb, var(--cor-superficie-2) 78%, transparent);
+    border: 1px solid color-mix(in srgb, var(--cor-borda) 70%, transparent);
+}
+
+.detalhes-dados summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--espaco-sm);
+    padding: var(--espaco-sm) var(--espaco-md);
+    cursor: pointer;
+    list-style: none;
+}
+
+.detalhes-dados summary::-webkit-details-marker {
+    display: none;
+}
+
+.detalhes-dados[open] summary {
+    background-color: color-mix(in srgb, var(--cor-superficie) 64%, transparent);
+}
+
+.titulo-detalhes-dados {
+    color: var(--cor-texto-escuro);
+    font-size: var(--fonte-sm);
+    font-weight: 700;
+}
+
+.corpo-detalhes-dados {
+    padding: var(--espaco-sm);
+    background-color: color-mix(in srgb, var(--cor-superficie) 44%, transparent);
+}
+
+.grade-selecao-dados {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--espaco-xs);
+}
+
+.item-selecao-dados {
+    display: flex;
+    align-items: center;
+    gap: var(--espaco-xs);
+    min-height: 34px;
+    padding: 6px 8px;
+    border-radius: var(--raio-xxs);
+    background-color: transparent;
+    cursor: pointer;
+}
+
+.item-selecao-dados:hover {
+    background-color: var(--cor-superficie-2);
+}
+
+.contagem-tabela-dados {
+    color: var(--cor-texto-claro);
+    font-size: var(--fonte-sm);
+    white-space: nowrap;
+}
+
+.resumo-backup-dados {
+    padding: var(--espaco-sm);
+    border-radius: var(--raio-sm);
+    background-color: color-mix(in srgb, var(--cor-superficie-2) 78%, transparent);
+}
+
+.lista-tabelas-backup {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--espaco-xs);
+}
+
+.linha-tabela-backup {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--espaco-md);
+    color: var(--cor-texto);
+    font-size: var(--fonte-sm);
+}
+
+.rodape-painel-dados {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: auto;
+    padding-top: var(--espaco-sm);
+}

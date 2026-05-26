@@ -1,0 +1,128 @@
+/* 13. RESPONSIVIDADE ========= */
+@media (max-width: 1024px) {
+    .md-flex-coluna {
+        flex-direction: column !important;
+    }
+
+    .md-flex-linha {
+        flex-direction: row !important;
+    }
+
+    .linha-cabecalhos-planilha {
+        grid-template-columns: 1fr;
+    }
+
+    .md-w-total {
+        width: 100% !important;
+    }
+
+    .md-max-w-total {
+        max-width: 100% !important;
+    }
+
+    .md-texto-centro {
+        text-align: center !important;
+    }
+
+    .md-texto-esquerda {
+        text-align: left !important;
+    }
+
+    .md-rolagem-x {
+        overflow-x: auto !important;
+    }
+
+    .md-p-0 {
+        padding: 0 !important;
+    }
+
+    .md-p-md {
+        padding: var(--espaco-md) !important;
+    }
+
+    .md-itens-esquerda {
+        align-items: flex-start !important;
+    }
+
+    #pagina-administracao {
+        height: 100dvh;
+        overflow: hidden;
+    }
+
+    #pagina-administracao main {
+        min-height: 0;
+    }
+
+    .barra-lateral {
+        flex: 0 0 auto;
+        flex-direction: row !important;
+        align-items: center;
+        width: 100% !important;
+        min-width: 0;
+        gap: var(--espaco-sm);
+        padding: var(--espaco-sm) !important;
+        overflow: hidden;
+    }
+
+    .navegacao-principal {
+        flex: 1 1 auto;
+        width: 100%;
+        min-width: 0;
+        gap: var(--espaco-sm);
+        padding-bottom: var(--espaco-xs) !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        scroll-snap-type: x proximity;
+    }
+
+    .item-menu {
+        flex: 0 0 auto;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        min-width: 96px;
+        min-height: 68px;
+        padding: var(--espaco-sm) var(--espaco-md);
+        gap: var(--espaco-xs);
+        scroll-snap-align: start;
+    }
+
+    .navegacao-principal .icone-inline {
+        flex-basis: 24px;
+        width: 24px;
+        height: 24px;
+    }
+
+    .cabecalho-painel-dados {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .grade-paineis-dados,
+    .grade-selecao-dados,
+    .lista-tabelas-backup {
+        grid-template-columns: 1fr;
+    }
+
+    .grade-graficos-relatorios,
+    .grade-relatorios-pdf {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .painel-dashboard-relatorio,
+    .grade-metricas-dashboard {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 640px) {
+    .grade-metricas-relatorios,
+    .grade-graficos-relatorios,
+    .grade-relatorios-pdf,
+    .painel-dashboard-relatorio,
+    .grade-metricas-dashboard {
+        grid-template-columns: 1fr;
+        flex-direction: column;
+        align-items: stretch;
+    }
+}

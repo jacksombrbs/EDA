@@ -1,0 +1,48 @@
+/* 1. VARIÁVEIS GLOBAIS ========= */
+
+:root {
+    --cor-fundo: #f4f5f6;
+    --cor-superficie: #fbfbfc;
+    --cor-superficie-2: #eef0f2;
+    --cor-superficie-3: #e3e6e9;
+    --cor-texto: #191a1a;
+    --cor-texto-claro: #6b7280;
+    --cor-borda: #d9dde2;
+    --cor-fundo-alt: #f4f5f6;
+    --cor-marca-700: #7A1C2C;
+    --cor-marca-secundaria: #343860;
+    --cor-marca-destaque: #C3956C;
+    --cor-marca-escuro: color-mix(in srgb, #7A1C2C 90%, #191a1a 10%);
+    --cor-marca-ativo: color-mix(in srgb, #7A1C2C 75%, #ffffff 25%);
+    --cor-vidro: color-mix(in srgb, var(--cor-superficie) 92%, transparent);
+    --cor-vidro-forte: color-mix(in srgb, var(--cor-superficie) 96%, transparent);
+    --cor-sucesso: #10b981;
+    --cor-aviso: #f59e0b;
+    --cor-erro: #ef4444;
+    --cor-erro-escuro: color-mix(in srgb, #ef4444 85%, #fafafa 15%);
+    --cor-sucesso-escuro: color-mix(in srgb, #10b981 85%, #fafafa 15%);
+
+    --raio-xxs: 6px;
+    --raio-sm: 8px;
+    --raio-md: 16px;
+
+    --espaco-xxs: 4px;
+    --espaco-xs: 6px;
+    --espaco-sm: 8px;
+    --espaco-md: 16px;
+    --espaco-lg: 24px;
+
+    --fonte-familia: "Segoe UI Variable", "Segoe UI", Roboto, system-ui, -apple-system;
+    --fonte-sm: 12px;
+    --fonte-md: 14px;
+    --fonte-lg: 18px;
+    --fonte-xl: 24px;
+
+    --peso-regular: 500;
+    --peso-bold: 700;
+
+    --transicao-padrao: all 160ms cubic-bezier(0, 0, 1, 1);
+
+    --sombra-1: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.06);
+    --sombra-2: 0 4px 8px rgba(16, 24, 40, 0.06), 0 8px 20px rgba(16, 24, 40, 0.08);
+}

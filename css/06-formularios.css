@@ -1,0 +1,138 @@
+/* Campos e seletores */
+
+.campo-padrao {
+    width: 100%;
+    min-height: 44px;
+    padding: var(--espaco-sm) var(--espaco-md);
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio-sm);
+    color: var(--cor-texto);
+    background-color: color-mix(in srgb, var(--cor-superficie-2) 70%, var(--cor-superficie) 30%);
+    font-size: var(--fonte-md);
+    transition: var(--transicao-padrao);
+}
+
+.campo-padrao:focus {
+    outline: none;
+    border-color: var(--cor-marca-700);
+    background-color: color-mix(in srgb, var(--cor-superficie) 88%, transparent);
+}
+
+.campo-somente-leitura {
+    width: 100%;
+    min-height: 44px;
+    padding: var(--espaco-sm) var(--espaco-md);
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio-sm);
+    color: var(--cor-texto-claro);
+    background-color: color-mix(in srgb, var(--cor-superficie-2) 70%, var(--cor-superficie) 30%);
+    font-size: var(--fonte-md);
+    cursor: not-allowed;
+    outline: none;
+}
+
+.grupo-cabecalhos-planilha {
+    display: flex;
+    flex-direction: column;
+    gap: var(--espaco-xs);
+    margin-top: var(--espaco-sm);
+}
+
+.linha-cabecalhos-planilha {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    align-items: start;
+    gap: var(--espaco-xs);
+}
+
+.lista-cabecalhos-planilha {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--espaco-xs);
+    min-width: 0;
+}
+
+.cabecalho-planilha {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: var(--espaco-xxs) var(--espaco-sm);
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio-xxs);
+    color: var(--cor-texto-claro);
+    background-color: var(--cor-superficie-2);
+    font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+    font-size: var(--fonte-sm);
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.area-texto-padrao {
+    resize: vertical;
+}
+
+.seletor-opcoes {
+    top: 100%;
+    max-height: 200px;
+    margin-top: var(--espaco-xxs);
+}
+
+.opcoes-seletor-customizado {
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    background-color: var(--cor-vidro);
+    backdrop-filter: blur(18px);
+}
+
+.opcoes-seletor-customizado::-webkit-scrollbar {
+    display: none;
+}
+
+.opcao-customizada:hover {
+    background-color: color-mix(in srgb, var(--cor-superficie-3) 76%, transparent);
+}
+
+
+/* Listas de formulario */
+
+.lista-selecao {
+    max-height: 200px;
+    overflow-y: auto;
+    width: 100%;
+    padding: var(--espaco-xs);
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio-xxs);
+    background-color: var(--cor-superficie);
+}
+
+.lista-rolagem-media {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.lista-rolagem-pequena {
+    max-height: 150px;
+    overflow-y: auto;
+    padding-left: 1.5rem;
+    list-style-type: disc;
+}
+
+.lista-rolagem-modal {
+    max-height: 50vh;
+    overflow-y: auto;
+}
+
+.grade-responsiva-participantes {
+    display: grid;
+    gap: var(--espaco-xs);
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+
+.checkbox-padrao {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--cor-marca-700);
+}

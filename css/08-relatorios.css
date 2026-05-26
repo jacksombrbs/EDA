@@ -1,0 +1,238 @@
+/* Relatorios, metricas e graficos */
+:root {
+    --altura-grafico-relatorio: 360px;
+
+}
+
+.pagina-relatorios .cartao-suave {
+    background-color: var(--cor-vidro);
+    backdrop-filter: blur(16px);
+}
+
+.grade-metricas-relatorios,
+.grade-graficos-relatorios,
+.grade-relatorios-pdf {
+    display: grid;
+    gap: var(--espaco-md);
+    margin-bottom: var(--espaco-lg);
+}
+
+.grade-metricas-relatorios {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.grade-graficos-relatorios {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: stretch;
+}
+
+.grade-relatorios-pdf {
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+}
+
+.cartao-metrica,
+.cartao-grafico-relatorio,
+.cartao-geracao-relatorio {
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio-md);
+    background-color: var(--cor-superficie);
+    transition: var(--transicao-padrao);
+}
+
+.cartao-metrica {
+    display: flex;
+    flex-direction: column;
+    gap: var(--espaco-xxs);
+    padding: var(--espaco-md);
+    min-height: 94px;
+    justify-content: center;
+}
+
+.cartao-metrica:hover {
+    border-color: color-mix(in srgb, var(--cor-marca-700) 36%, var(--cor-borda) 64%);
+}
+
+.cartao-grafico-relatorio {
+    display: flex;
+    flex-direction: column;
+    gap: var(--espaco-md);
+    min-width: 0;
+    padding: var(--espaco-md);
+}
+
+.cartao-grafico-relatorio h3,
+.cartao-geracao-relatorio h3 {
+    color: var(--cor-marca-700);
+    font-size: var(--fonte-lg);
+}
+
+.area-grafico-relatorio {
+    min-width: 0;
+    height: var(--altura-grafico-relatorio);
+    min-height: var(--altura-grafico-relatorio);
+}
+
+.area-grafico-relatorio canvas {
+    width: 100%;
+    height: calc(var(--altura-grafico-relatorio) - 64px);
+    max-height: calc(var(--altura-grafico-relatorio) - 64px);
+    min-height: 0;
+}
+
+.cartao-geracao-relatorio {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: var(--espaco-md);
+    min-height: 118px;
+    padding: var(--espaco-md);
+}
+
+.cartao-geracao-relatorio .botao-padrao {
+    align-self: flex-start;
+}
+
+.grade-metricas-dashboard {
+    display: grid;
+    gap: var(--espaco-md);
+    margin-bottom: var(--espaco-lg);
+}
+
+.grade-2-colunas {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.grade-3-colunas {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.grade-4-colunas {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.cartao-metrica.primario {
+    background-color: var(--cor-superficie-2);
+}
+
+.cartao-metrica.sucesso {
+    background-color: color-mix(in srgb, #10b981 10%, var(--cor-superficie) 90%);
+}
+
+.cartao-metrica.aviso {
+    background-color: color-mix(in srgb, #f59e0b 12%, var(--cor-superficie) 88%);
+}
+
+.cartao-metrica.erro {
+    background-color: color-mix(in srgb, #ef4444 10%, var(--cor-superficie) 90%);
+}
+
+.cartao-metrica span {
+    color: var(--cor-texto-claro);
+    font-size: var(--fonte-sm);
+}
+
+.cartao-metrica strong {
+    color: var(--cor-texto-escuro);
+    font-size: var(--fonte-xl);
+}
+
+.painel-dashboard-relatorio {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+    gap: var(--espaco-md);
+    align-items: stretch;
+    margin-bottom: var(--espaco-lg);
+}
+
+.grade-graficos {
+    display: grid;
+    gap: var(--espaco-md);
+}
+
+.grafico-item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--espaco-sm);
+    height: var(--altura-grafico-relatorio);
+    min-height: var(--altura-grafico-relatorio);
+    padding: var(--espaco-md);
+    border-radius: var(--raio-md);
+}
+
+.grafico-item canvas {
+    width: 100%;
+    height: calc(var(--altura-grafico-relatorio) - 64px);
+    max-height: calc(var(--altura-grafico-relatorio) - 64px);
+    min-height: 0;
+}
+
+.lista-relatorios-dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: var(--espaco-md);
+}
+
+.coluna-relatorios-dashboard {
+    min-height: var(--altura-grafico-relatorio);
+}
+
+.painel-dashboard-relatorio > .area-grafico-relatorio {
+    display: flex;
+    min-height: var(--altura-grafico-relatorio);
+}
+
+.painel-dashboard-relatorio > .area-grafico-relatorio .grade-graficos {
+    flex: 1;
+}
+
+.painel-dashboard-relatorio > .area-grafico-relatorio canvas {
+    min-height: 0;
+}
+
+.cabecalho-relatorio {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--espaco-md);
+    width: 100%;
+}
+
+.grade-metricas-relatorio {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: var(--espaco-sm);
+    width: 100%;
+    margin-top: var(--espaco-sm);
+}
+
+.metrica-relatorio {
+    display: flex;
+    flex-direction: column;
+    gap: var(--espaco-xxs);
+    min-height: 72px;
+    padding: var(--espaco-sm);
+    border-radius: var(--raio-sm);
+    background-color: var(--cor-superficie-2);
+}
+
+.metrica-relatorio span {
+    color: var(--cor-texto-claro);
+    font-size: var(--fonte-sm);
+}
+
+.metrica-relatorio strong {
+    color: var(--cor-texto-escuro);
+    font-size: var(--fonte-lg);
+}
+
+.botao-aba-relatorio {
+    min-width: 160px;
+}
+
+.ficha-participante-pdf {
+    page-break-after: always;
+}
+
+.ficha-participante-pdf:last-child {
+    page-break-after: auto;
+}
