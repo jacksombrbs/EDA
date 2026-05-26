@@ -50,7 +50,7 @@ function renderizarDashboardFinanceiro(participantes, pagamentos, despesas, curs
         },
         {
             id: 'grafico-entradas-saidas',
-            titulo: 'Entradas vs Saídas',
+            titulo: 'Entradas e Saídas',
             tipo: 'bar',
             labels: ['Total'],
             datasets: [

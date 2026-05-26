@@ -425,6 +425,28 @@ async function editarPagamentoLote(idLote) {
     await abrirFormularioPagamentoLote(idLote);
 }
 
+async function participanteJaPagouInscricao(idParticipante, ignorar = {}) {
+    const pagamentos = await bd.obterTodos('pagamentos');
+
+    return pagamentos.some(p => {
+        const mesmoParticipante = String(p.id_participante) === String(idParticipante);
+        const ehInscricao = p.tipo_pagamento === 'Inscrição';
+
+        const mesmoPagamentoEmEdicao =
+            ignorar.id_pagamento &&
+            p.id_pagamento === ignorar.id_pagamento;
+
+        const mesmoLoteEmEdicao =
+            ignorar.id_lote &&
+            p.id_lote === ignorar.id_lote;
+
+        return mesmoParticipante &&
+            ehInscricao &&
+            !mesmoPagamentoEmEdicao &&
+            !mesmoLoteEmEdicao;
+    });
+}
+
 async function salvarPagamento(opcoes = {}) {
     const id_participante = document.getElementById('id_participante').value;
     const tipo_pagamento = document.getElementById('tipo_pagamento').value;
@@ -442,6 +464,17 @@ async function salvarPagamento(opcoes = {}) {
     ])) return null;
 
     if (!Validacao.validarCampoData(data_pagamento, 'Data do Recebimento')) return null;
+
+    if (tipo_pagamento === 'Inscrição') {
+    const jaPagou = await participanteJaPagouInscricao(id_participante, {
+        id_pagamento: registroEmEdicao
+    });
+
+    if (jaPagou) {
+        Utilidades.notificacao('Este participante já pagou a inscrição. Não é possível cobrar novamente.', 'erro');
+        return null;
+    }
+}
 
     const valorValidado = Validacao.validarCampoMonetario(valor, 'Valor pago');
     if (!valorValidado.valido) return null;
@@ -497,6 +530,29 @@ async function salvarPagamentoLote(opcoes = {}) {
     if (!valorUnitarioValidado.valido) return null;
 
     const id_lote = registroEmEdicao || Utilidades.gerarId();
+
+    if (tipoPagamento === 'Inscrição') {
+    const pagamentosExistentes = await bd.obterTodos('pagamentos');
+
+    const participantesJaPagaram = Array.from(marcadores)
+        .filter(marcador => {
+            return pagamentosExistentes.some(p =>
+                String(p.id_participante) === String(marcador.value) &&
+                p.tipo_pagamento === 'Inscrição' &&
+                p.id_lote !== id_lote
+            );
+        })
+        .map(marcador => marcador.getAttribute('data-nome'));
+
+    if (participantesJaPagaram.length > 0) {
+        Utilidades.notificacao(
+            `Inscrição já paga para: ${participantesJaPagaram.join(', ')}. Desmarque estes participantes para prosseguir.`,
+            'erro'
+        );
+        return null;
+    }
+}
+
     const listaIds = [];
     const nomesParticipantes = [];
 
