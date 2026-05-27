@@ -103,6 +103,15 @@ function criarEstilosCartoesAcesso(individual = false) {
         .linha-cartao-acesso strong {
             color: var(--cor-documento-vinho);
         }
+        .status-ativo-cartao {
+            color: #047857;
+            font-weight: 800;
+        }
+        .status-inativo-cartao {
+            color: #b91c1c;
+            font-weight: 900;
+            text-transform: uppercase;
+        }
         .codigo-cartao-acesso {
             margin-top: 2mm;
             padding: 1.5mm 2.5mm;
@@ -125,6 +134,8 @@ function criarEstilosCartoesAcesso(individual = false) {
 function montarHtmlCartaoParticipante(dadosCartao) {
     const caminhoMarca = new URL(CAMINHO_MARCA_INSTITUCIONAL, window.location.href).href;
     const { participante, curso, paroquia } = dadosCartao;
+    const status = participante.status || 'Ativo';
+    const classeStatus = Utilidades.participanteEstaAtivo(participante) ? 'status-ativo-cartao' : 'status-inativo-cartao';
 
     return `
         <article class="cartao-acesso">
@@ -138,6 +149,7 @@ function montarHtmlCartaoParticipante(dadosCartao) {
             <h1 class="nome-cartao-acesso">${Utilidades.escaparHtml(participante.nome || '-')}</h1>
             <p class="linha-cartao-acesso linha-paroquia-cartao"><strong>Paróquia:</strong> ${Utilidades.escaparHtml(paroquia)}</p>
             <p class="linha-cartao-acesso linha-curso-cartao"><strong>Curso:</strong> ${Utilidades.escaparHtml(curso)}</p>
+            <p class="linha-cartao-acesso ${classeStatus}"><strong>Status:</strong> ${Utilidades.escaparHtml(status)}</p>
             <div class="codigo-cartao-acesso">${Utilidades.escaparHtml(participante.codigo_acesso || '-')}</div>
         </article>
     `;
@@ -198,7 +210,7 @@ async function imprimirCartoesSelecionados() {
     const participantes = await bd.obterTodos('participantes');
     const participantesCurso = participantes
         .filter(participante => String(participante.id_curso) === String(idCurso))
-        .filter(participante => !somenteAtivos || (participante.status || 'Ativo') === 'Ativo')
+        .filter(participante => !somenteAtivos || Utilidades.participanteEstaAtivo(participante))
         .sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
 
     if (participantesCurso.length === 0) {

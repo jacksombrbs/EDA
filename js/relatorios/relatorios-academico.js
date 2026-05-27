@@ -1,7 +1,3 @@
-function renderizarControlesAcademico() {
-    return '';
-}
-
 function renderizarDashboardAcademico(participantes = [], frequencias = [], atividades = [], disciplinas = []) {
     const estatisticas = calcularEstatisticasAcademicas(participantes, frequencias, atividades);
 
@@ -129,6 +125,8 @@ function calcularEstatisticasAcademicas(participantes = [], frequencias = [], at
         participantes = participantes.participantes || [];
     }
 
+    participantes = participantes.filter(participante => Utilidades.participanteEstaAtivo(participante));
+
     let totalRegistros = 0;
     let totalPresencas = 0;
     let participantesEmRisco = 0;
@@ -173,8 +171,9 @@ function calcularFrequenciaParticipante(idParticipante, frequencias = []) {
 
 function agruparFrequenciasPorFaixa(participantes = [], frequencias = []) {
     const faixas = { '0-49%': 0, '50-74%': 0, '75-100%': 0 };
+    const participantesConsiderados = participantes.filter(participante => Utilidades.participanteEstaAtivo(participante));
 
-    participantes.forEach(participante => {
+    participantesConsiderados.forEach(participante => {
         const frequencia = calcularFrequenciaParticipante(participante.id, frequencias);
         if (frequencia.percentual < 50) faixas['0-49%']++;
         else if (frequencia.percentual < 75) faixas['50-74%']++;

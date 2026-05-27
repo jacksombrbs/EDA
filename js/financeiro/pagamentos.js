@@ -33,14 +33,16 @@ async function abrirFormularioPagamento(id = null) {
         id ? bd.obter('pagamentos', id) : Promise.resolve(null)
     ]);
 
-    participantes.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+    const participantesDisponiveis = participantes
+        .filter(participante => Utilidades.participanteEstaAtivo(participante) || String(participante.id) === String(pagamento?.id_participante || ''))
+        .sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
     document.getElementById('titulo-janela').textContent = id ? 'Editar Pagamento Individual' : 'Novo Pagamento Individual';
 
     const data = pagamento?.data || new Date().toISOString().split('T')[0];
 
     let formulario = '<form id="formulario-pagamento" class="flex flex-coluna gap-md w-total" onsubmit="salvarPagamento(event)">';
     formulario += '<input type="hidden" id="id_lote_pagamento" value="' + (pagamento?.id_lote || '') + '">';
-    formulario += criarSeletor('Participante', 'id_participante', participantes.map(participante => ({ id: participante.id, nome: participante.nome })), pagamento?.id_participante || '', true);
+    formulario += criarSeletor('Participante', 'id_participante', participantesDisponiveis.map(participante => ({ id: participante.id, nome: participante.nome })), pagamento?.id_participante || '', true);
     formulario += '<div class="flex gap-md w-total md-flex-coluna">';
     formulario += '<div class="flex-2">' + criarSeletor('Tipo', 'tipo', TIPOS_PAGAMENTO, pagamento?.tipo || '', true) + '</div>';
     formulario += `<div class="flex-1 ${pagamento?.tipo === 'Mensalidade' ? '' : 'oculto'}" id="container-quantidade">` + criarCampoFormulario('Quantidade', 'number', 'quantidade', pagamento?.quantidade || 1, 'Ex: 2') + '</div>';
@@ -433,6 +435,7 @@ function renderizarParticipantesLotePagamento(participantes, lote = null) {
     const idsMarcados = new Set((lote?.ids_participantes || []).map(String));
     const participantesParoquia = participantes
         .filter(participante => String(participante.id_paroquia) === String(idParoquia))
+        .filter(participante => Utilidades.participanteEstaAtivo(participante) || idsMarcados.has(String(participante.id)))
         .sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
 
     if (!idParoquia) {
@@ -451,7 +454,7 @@ function renderizarParticipantesLotePagamento(participantes, lote = null) {
             ${participantesParoquia.map(participante => `
                 <label class="flex itens-centro gap-sm p-sm fundo-branco hover-fundo-superficie-2 raio-xxs cursor-apontador transicao">
                     <input type="checkbox" class="checkbox-padrao marcador-participante-lote" value="${participante.id}" ${idsMarcados.has(String(participante.id)) ? 'checked' : ''}>
-                    <span class="texto-md cor-texto-escuro peso-medium">${Utilidades.escaparHtml(participante.nome)}</span>
+                    <span class="texto-md cor-texto-escuro peso-medium">${Utilidades.escaparHtml(participante.nome)}${Utilidades.participanteEstaAtivo(participante) ? '' : ' <span class="etiqueta">Inativo</span>'}</span>
                 </label>
             `).join('')}
         </div>

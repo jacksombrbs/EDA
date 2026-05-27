@@ -49,7 +49,10 @@ async function abrirFormularioAtividade(id = null) {
     document.getElementById('conteudo-formulario').innerHTML = formulario;
     Interface.abrirJanela('janela-formulario');
 
-    SeletorDinamico.vincular('id_curso', 'recipiente-participante-atividade', 'Participante', 'id_participante', participantes, 'id_curso', 'Selecione o participante...', dados.id_participante);
+    const participantesDisponiveis = participantes.filter(participante =>
+        Utilidades.participanteEstaAtivo(participante) || String(participante.id) === String(dados.id_participante || '')
+    );
+    SeletorDinamico.vincular('id_curso', 'recipiente-participante-atividade', 'Participante', 'id_participante', participantesDisponiveis, 'id_curso', 'Selecione o participante...', dados.id_participante);
     SeletorDinamico.vincular('id_curso', 'recipiente-disciplina-atividade', 'Disciplina', 'id_disciplina', disciplinas, 'id_curso', 'Selecione a disciplina...', dados.id_disciplina);
 }
 

@@ -1,37 +1,10 @@
-/* Relatorios, metricas e graficos */
-:root {
-    --altura-grafico-relatorio: 360px;
-
-}
-
+/* Relatórios, métricas e gráficos */
 .pagina-relatorios .cartao-suave {
     background-color: var(--cor-vidro);
     backdrop-filter: blur(16px);
 }
 
-.grade-metricas-relatorios,
-.grade-graficos-relatorios,
-.grade-relatorios-pdf {
-    display: grid;
-    gap: var(--espaco-md);
-    margin-bottom: var(--espaco-lg);
-}
-
-.grade-metricas-relatorios {
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-}
-
-.grade-graficos-relatorios {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    align-items: stretch;
-}
-
-.grade-relatorios-pdf {
-    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-}
-
 .cartao-metrica,
-.cartao-grafico-relatorio,
 .cartao-geracao-relatorio {
     border: 1px solid var(--cor-borda);
     border-radius: var(--raio-md);
@@ -52,15 +25,6 @@
     border-color: color-mix(in srgb, var(--cor-marca-700) 36%, var(--cor-borda) 64%);
 }
 
-.cartao-grafico-relatorio {
-    display: flex;
-    flex-direction: column;
-    gap: var(--espaco-md);
-    min-width: 0;
-    padding: var(--espaco-md);
-}
-
-.cartao-grafico-relatorio h3,
 .cartao-geracao-relatorio h3 {
     color: var(--cor-marca-700);
     font-size: var(--fonte-lg);
@@ -69,14 +33,6 @@
 .area-grafico-relatorio {
     min-width: 0;
     height: var(--altura-grafico-relatorio);
-    min-height: var(--altura-grafico-relatorio);
-}
-
-.area-grafico-relatorio canvas {
-    width: 100%;
-    height: calc(var(--altura-grafico-relatorio) - 64px);
-    max-height: calc(var(--altura-grafico-relatorio) - 64px);
-    min-height: 0;
 }
 
 .cartao-geracao-relatorio {
@@ -154,11 +110,11 @@
     flex-direction: column;
     gap: var(--espaco-sm);
     height: var(--altura-grafico-relatorio);
-    min-height: var(--altura-grafico-relatorio);
     padding: var(--espaco-md);
     border-radius: var(--raio-md);
 }
 
+.area-grafico-relatorio canvas,
 .grafico-item canvas {
     width: 100%;
     height: calc(var(--altura-grafico-relatorio) - 64px);
@@ -185,9 +141,6 @@
     flex: 1;
 }
 
-.painel-dashboard-relatorio > .area-grafico-relatorio canvas {
-    min-height: 0;
-}
 
 .cabecalho-relatorio {
     display: flex;

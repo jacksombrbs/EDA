@@ -37,7 +37,7 @@ async function abrirChamada() {
     if (!data) return Utilidades.notificacao('Informe a data da aula.', 'erro');
 
     const participantes = await obterParticipantesDoCurso(idCurso);
-    if (participantes.length === 0) return Utilidades.notificacao('Nenhum participante matriculado neste curso.', 'aviso');
+    if (participantes.length === 0) return Utilidades.notificacao('Nenhum participante ativo matriculado neste curso.', 'aviso');
 
     AppEstado.frequenciaAtual = {
         id: null,

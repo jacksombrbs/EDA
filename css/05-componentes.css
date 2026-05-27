@@ -273,3 +273,47 @@
     border-left-width: 4px;
     border-color: var(--cor-sucesso);
 }
+
+
+/* Busca com botão de limpar padronizado */
+.campo-busca-wrapper {
+    align-items: center;
+}
+
+.campo-busca {
+    padding-right: 44px;
+}
+
+.botao-limpar-busca {
+    position: absolute;
+    top: 50%;
+    right: var(--espaco-sm);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    min-height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--raio-xxs);
+    color: var(--cor-texto-claro);
+    background-color: transparent;
+    cursor: pointer;
+    line-height: 1;
+    transform: translateY(-50%);
+    transition: var(--transicao-padrao);
+}
+
+.botao-limpar-busca:hover,
+.botao-limpar-busca:focus-visible {
+    color: var(--cor-texto);
+    background-color: var(--cor-superficie-3);
+    outline: none;
+}
+
+.botao-limpar-busca .icone-inline {
+    width: 16px;
+    height: 16px;
+    flex-basis: 16px;
+}

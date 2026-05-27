@@ -67,9 +67,6 @@
     white-space: nowrap;
 }
 
-.area-texto-padrao {
-    resize: vertical;
-}
 
 .seletor-opcoes {
     top: 100%;
@@ -125,11 +122,6 @@
     overflow-y: auto;
 }
 
-.grade-responsiva-participantes {
-    display: grid;
-    gap: var(--espaco-xs);
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-}
 
 .checkbox-padrao {
     width: 18px;

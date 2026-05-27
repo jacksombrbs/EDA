@@ -1,7 +1,3 @@
-function renderizarControlesFinanceiro() {
-    return '';
-}
-
 function renderizarDashboardFinanceiro(participantes = [], pagamentos = [], financas = [], cursos = []) {
     const hoje = new Date();
     const dataHoje = hoje.toISOString().split('T')[0];
@@ -37,8 +33,8 @@ function renderizarDashboardFinanceiro(participantes = [], pagamentos = [], fina
                     ${criarBotao('Gerar Relatório', 'gerarPDFMensalidades()', 'contorno', 'botao-pequeno')}
                 </div>
                 ${criarMetricasRelatorio([
-                    { rotulo: 'Inadimplentes', valor: resumoMensalidades.inadimplentes },
-                    { rotulo: 'A receber', valor: resumoMensalidades.mensalidadesRestantes }
+                    { rotulo: 'Inscrições pendentes', valor: resumoMensalidades.inscricoesPendentes },
+                    { rotulo: 'Mensalidades a receber', valor: resumoMensalidades.mensalidadesRestantes }
                 ])}
             </div>
         </div>
@@ -109,14 +105,16 @@ function calcularEstatisticasFinanceiras(participantes = [], pagamentos = [], fi
         participantes = participantes.participantes || [];
     }
 
+    const participantesAtivos = participantes.filter(participante => Utilidades.participanteEstaAtivo(participante));
+    const baseParticipantes = participantesAtivos.length > 0 || participantes.length === 0 ? participantesAtivos : participantes;
     const totalEntradas = calcularReceitas(pagamentos, [], financas);
     const totalSaidas = calcularDespesas(financas);
-    const inadimplentes = calcularInadimplencia(participantes, pagamentos, cursos);
-    const taxaInadimplencia = participantes.length > 0 ? Math.round((inadimplentes.length / participantes.length) * 100) : 0;
+    const inadimplentes = calcularInadimplencia(baseParticipantes, pagamentos, cursos);
+    const taxaInadimplencia = baseParticipantes.length > 0 ? Math.round((inadimplentes.length / baseParticipantes.length) * 100) : 0;
     const statusSaude = taxaInadimplencia <= 10 ? 'saudavel' : (taxaInadimplencia <= 20 ? 'atencao' : 'critico');
 
     return {
-        participantes: participantes.length,
+        participantes: baseParticipantes.length,
         pagamentos: pagamentos.length,
         receitas: totalEntradas,
         despesas: totalSaidas,
@@ -126,7 +124,7 @@ function calcularEstatisticasFinanceiras(participantes = [], pagamentos = [], fi
         inadimplentes: inadimplentes.length,
         taxaInadimplencia,
         statusSaude,
-        previsaoArrecadacao: calcularPrevisaoArrecadacao(participantes, pagamentos, cursos)
+        previsaoArrecadacao: calcularPrevisaoArrecadacao(baseParticipantes, pagamentos, cursos)
     };
 }
 
@@ -142,7 +140,8 @@ function calcularStatusPagamentoParticipante(participante, pagamentos = [], curs
 }
 
 function calcularInadimplencia(participantes = [], pagamentos = [], cursos = []) {
-    return participantes.filter(participante => {
+    const participantesConsiderados = participantes.filter(participante => Utilidades.participanteEstaAtivo(participante));
+    return participantesConsiderados.filter(participante => {
         const status = calcularStatusPagamentoParticipante(participante, pagamentos, cursos);
         return !status.inscricao || status.mensalidadesRestantes > 0;
     });
@@ -181,23 +180,33 @@ function calcularMensalidadesRestantesParticipante(participante, pagamentos = []
 }
 
 function calcularResumoMensalidades(participantes = [], pagamentos = [], cursos = []) {
-    return participantes.reduce((resumo, participante) => {
+    const participantesConsiderados = participantes.filter(participante => Utilidades.participanteEstaAtivo(participante));
+    return participantesConsiderados.reduce((resumo, participante) => {
         const curso = cursos.find(item => String(item.id) === String(participante.id_curso));
         const status = calcularStatusPagamentoParticipante(participante, pagamentos, cursos);
+        const valorInscricao = Utilidades.normalizarValorMonetario(curso?.valor_inscricao || 0);
         const valorMensalidade = Utilidades.normalizarValorMonetario(curso?.valor_mensalidade || 0);
+        const valorMensalidadesPendentes = status.mensalidadesRestantes * valorMensalidade;
+        const valorInscricaoPendente = status.inscricao ? 0 : valorInscricao;
 
         resumo.participantes++;
         resumo.mensalidadesPagas += status.mensalidadesPagas;
         resumo.mensalidadesRestantes += status.mensalidadesRestantes;
-        resumo.previsaoArrecadacao += status.mensalidadesRestantes * valorMensalidade;
+        resumo.inscricoesPendentes += status.inscricao ? 0 : 1;
+        resumo.valorMensalidadesPendentes += valorMensalidadesPendentes;
+        resumo.valorInscricoesPendentes += valorInscricaoPendente;
+        resumo.previsaoArrecadacao += valorInscricaoPendente + valorMensalidadesPendentes;
         if (!status.inscricao || status.mensalidadesRestantes > 0) resumo.inadimplentes++;
 
         return resumo;
     }, {
         participantes: 0,
         inadimplentes: 0,
+        inscricoesPendentes: 0,
         mensalidadesPagas: 0,
         mensalidadesRestantes: 0,
+        valorInscricoesPendentes: 0,
+        valorMensalidadesPendentes: 0,
         previsaoArrecadacao: 0
     });
 }
@@ -208,8 +217,9 @@ function calcularPrevisaoArrecadacao(participantes = [], pagamentos = [], cursos
 
 function agruparPagamentosPorStatus(participantes = [], pagamentos = [], cursos = []) {
     const status = { 'Em Dia': 0, 'Parcial': 0, 'Pendente': 0 };
+    const participantesConsiderados = participantes.filter(participante => Utilidades.participanteEstaAtivo(participante));
 
-    participantes.forEach(participante => {
+    participantesConsiderados.forEach(participante => {
         const situacao = calcularStatusPagamentoParticipante(participante, pagamentos, cursos);
         if (situacao.inscricao && situacao.mensalidadesRestantes <= 0) status['Em Dia']++;
         else if (situacao.temPagamento) status.Parcial++;
@@ -236,7 +246,7 @@ async function gerarPDFLivroCaixaFinanceiro() {
     const totalEntradas = entradas.reduce((total, item) => total + Utilidades.normalizarValorMonetario(item.valor), 0);
     const totalSaidas = saidas.reduce((total, item) => total + Utilidades.normalizarValorMonetario(item.valor), 0);
 
-    let html = '<h2>LIVRO CAIXA DOS ATIVOS FINANCEIROS</h2>';
+    let html = '<h2>LIVRO CAIXA</h2>';
     html += `<p><strong>Data de Emissão:</strong> ${Utilidades.formatarData(new Date().toISOString().split('T')[0])}</p>`;
     html += `<p><strong>Período de Referência:</strong> ${Utilidades.formatarData(dataInicio)} - ${Utilidades.formatarData(dataFim)}</p>`;
 

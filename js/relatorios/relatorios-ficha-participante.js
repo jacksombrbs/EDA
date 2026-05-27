@@ -30,8 +30,11 @@ async function renderizarSecaoFichaParticipante(contexto) {
                         <h3 class="texto-md peso-bold cor-texto-primario m-zero">Ficha Individual do Participante</h3>
                     </div>
                     <div class="flex-2">
-                        <div class="pos-relativa">
-                            <input type="search" id="busca-ficha-participante" class="campo-padrao" value="${Utilidades.escaparHtml(participanteSelecionado?.nome || '')}" placeholder="Buscar por nome, código ou paróquia..." aria-label="Buscar participante" autocomplete="off">
+                        <div class="campo-busca-wrapper pos-relativa">
+                            <input type="text" id="busca-ficha-participante" class="campo-padrao campo-busca" value="${Utilidades.escaparHtml(participanteSelecionado?.nome || '')}" placeholder="Buscar por nome, código ou paróquia..." aria-label="Buscar participante" autocomplete="off">
+                            <button type="button" id="busca-ficha-participante-limpar" class="botao-limpar-busca" aria-label="Limpar busca" title="Limpar busca" onclick="limparBuscaFichaParticipante()">
+                                ${criarIcone('cancelar')}
+                            </button>
                             <input type="hidden" id="ficha-participante-id" value="${Utilidades.escaparHtml(idSelecionado)}">
                             <div id="resultados-busca-ficha" class="opcoes-seletor-customizado seletor-opcoes pos-absoluta borda-1 borda-solida borda-cor-padrao raio-sm rolagem-y z-maximo w-total oculto"></div>
                         </div>
@@ -50,6 +53,29 @@ async function renderizarSecaoFichaParticipante(contexto) {
     `;
 }
 
+function limparBuscaFichaParticipante() {
+    const campoBusca = document.getElementById('busca-ficha-participante');
+    const campoId = document.getElementById('ficha-participante-id');
+    const resultados = document.getElementById('resultados-busca-ficha');
+
+    if (campoBusca) {
+        campoBusca.value = '';
+        campoBusca.dispatchEvent(new Event('input', { bubbles: true }));
+        campoBusca.focus();
+    }
+    if (campoId) campoId.value = '';
+    resultados?.classList.add('oculto');
+    atualizarBotaoLimparBuscaFicha();
+}
+
+function atualizarBotaoLimparBuscaFicha() {
+    const campoBusca = document.getElementById('busca-ficha-participante');
+    const botaoLimpar = document.getElementById('busca-ficha-participante-limpar');
+    if (!campoBusca || !botaoLimpar) return;
+
+    botaoLimpar.classList.toggle('oculto', !campoBusca.value);
+}
+
 function vincularEventosFichaParticipante(participantes = [], paroquias = []) {
     const campoBusca = document.getElementById('busca-ficha-participante');
     const campoId = document.getElementById('ficha-participante-id');
@@ -63,6 +89,7 @@ function vincularEventosFichaParticipante(participantes = [], paroquias = []) {
         const encontrados = filtrarParticipantesBuscaFicha(participantes, paroquias, campoBusca.value).slice(0, 8);
         resultados.innerHTML = montarHtmlResultadosBuscaFicha(encontrados, paroquias);
         resultados.classList.toggle('oculto', encontrados.length === 0);
+        atualizarBotaoLimparBuscaFicha();
     };
 
     campoBusca.addEventListener('input', () => {
@@ -122,7 +149,8 @@ function filtrarParticipantesBuscaFicha(participantes = [], paroquias = [], term
             participante.nome,
             participante.codigo_acesso,
             mapaParoquias[String(participante.id_paroquia)] || '',
-            participante.capela
+            participante.capela,
+            participante.status || 'Ativo'
         ].join(' ');
 
         return normalizarTextoBuscaFicha(textoBusca).includes(termoNormalizado);
@@ -138,7 +166,7 @@ function montarHtmlResultadosBuscaFicha(participantes = [], paroquias = []) {
         return `
             <div role="button" tabindex="0" class="opcao-customizada p-sm px-md cor-texto-escuro texto-md transicao cursor-apontador" data-id-participante="${Utilidades.escaparHtml(participante.id)}" data-nome-participante="${Utilidades.escaparHtml(participante.nome || '')}">
                 <strong class="block">${Utilidades.escaparHtml(participante.nome || '-')}</strong>
-                <span class="texto-sm cor-texto-claro">${Utilidades.escaparHtml(paroquia)} · Código ${Utilidades.escaparHtml(participante.codigo_acesso || '-')}</span>
+                <span class="texto-sm cor-texto-claro">${Utilidades.escaparHtml(paroquia)} · Código ${Utilidades.escaparHtml(participante.codigo_acesso || '-')} · ${Utilidades.escaparHtml(participante.status || 'Ativo')}</span>
             </div>
         `;
     }).join('');
@@ -152,6 +180,7 @@ async function selecionarParticipanteFicha(idParticipante, nomeParticipante = ''
     if (campoBusca) campoBusca.value = nomeParticipante || '';
     if (campoId) campoId.value = idParticipante || '';
     resultados?.classList.add('oculto');
+    atualizarBotaoLimparBuscaFicha();
 
     await atualizarFichaParticipanteRelatorio(idParticipante);
 }

@@ -39,7 +39,6 @@
 .p-md { padding: var(--espaco-md); }
 .p-lg { padding: var(--espaco-lg); }
 .px-md { padding-left: var(--espaco-md); padding-right: var(--espaco-md); }
-.py-md { padding-top: var(--espaco-md); padding-bottom: var(--espaco-md); }
 .pt-md { padding-top: var(--espaco-md); }
 .pb-md { padding-bottom: var(--espaco-md); }
 .m-zero { margin: 0; }
@@ -76,7 +75,6 @@
 .fundo-branco { background-color: var(--cor-superficie); }
 .fundo-cinza { background-color: var(--cor-fundo-alt); }
 .fundo-superficie-2 { background-color: var(--cor-superficie-2); }
-.fundo-marca-700 { background-color: var(--cor-marca-700); }
 .fundo-sucesso { background-color: var(--cor-sucesso); }
 .fundo-erro { background-color: var(--cor-erro); }
 .fundo-sobreposicao { background: color-mix(in srgb, var(--cor-texto) 50%, transparent); }
@@ -98,7 +96,6 @@
 .cursor-apontador { cursor: pointer; }
 .transicao { transition: var(--transicao-padrao); }
 .sem-selecao { user-select: none; }
-.texto-truncado { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hover-fundo-superficie-2:hover { background-color: var(--cor-superficie-2); }
 .hover-fundo-superficie-3:hover { background-color: var(--cor-superficie-3); }
 .hover-fundo-erro-escuro:hover { background-color: var(--cor-erro-escuro); }

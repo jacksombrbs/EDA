@@ -2,6 +2,7 @@ async function obterParticipantesDoCurso(idCurso) {
     const participantes = await bd.obterTodos('participantes');
     return participantes
         .filter(participante => String(participante.id_curso) === String(idCurso))
+        .filter(participante => Utilidades.participanteEstaAtivo(participante))
         .sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
 }
 

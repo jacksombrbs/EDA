@@ -206,7 +206,7 @@ function renderizarTabelaParticipantes(participantes, paroquias) {
             ? '<span class="cor-texto-claro peso-bold">Desistente</span>'
             : '<span class="cor-texto-escuro peso-bold">Ativo</span>';
 
-        return `<tr class="${classeFundo} transicao hover-fundo-superficie-3" data-busca="${Utilidades.escaparHtml(`${participante.nome || ''} ${participante.codigo_acesso || ''} ${paroquia?.nome || ''}`)}">
+        return `<tr class="${classeFundo} transicao hover-fundo-superficie-3" data-busca="${Utilidades.escaparHtml(`${participante.nome || ''} ${participante.codigo_acesso || ''} ${paroquia?.nome || ''} ${participante.status || 'Ativo'}`)}">
             <td class="p-md texto-esquerda peso-bold cor-texto-escuro">${Utilidades.escaparHtml(participante.nome)}</td>
             <td class="p-md texto-esquerda cor-texto-escuro">${Utilidades.escaparHtml(participante.codigo_acesso || '-')}</td>
             <td class="p-md texto-esquerda cor-texto-escuro">${Utilidades.escaparHtml(paroquia?.nome || '-')}</td>

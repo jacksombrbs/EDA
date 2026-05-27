@@ -5,7 +5,6 @@
 
 .recipiente-tabela {
     overflow-x: auto;
-    overflow-y: hidden;
     position: relative;
     border: 1px solid var(--cor-borda);
     border-radius: var(--raio-md);
@@ -50,3 +49,4 @@
     display: flex;
     gap: var(--espaco-sm);
 }
+

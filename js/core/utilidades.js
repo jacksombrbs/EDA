@@ -52,6 +52,18 @@ const Utilidades = {
         });
     },
 
+    normalizarStatusParticipante(status) {
+        return String(status || 'Ativo').trim().toLowerCase();
+    },
+
+    participanteEstaAtivo(participante) {
+        return this.normalizarStatusParticipante(participante?.status) === 'ativo';
+    },
+
+    filtrarParticipantesAtivos(participantes = []) {
+        return participantes.filter(participante => this.participanteEstaAtivo(participante));
+    },
+
     escaparHtml(valor) {
         return String(valor ?? '')
             .replace(/&/g, '&amp;')

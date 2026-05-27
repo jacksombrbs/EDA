@@ -28,12 +28,10 @@ async function renderizarRelatorios(conteudo) {
     codigo += '</div>';
 
     codigo += '<div id="sub-aba-academico" class="sub-aba-relatorio">';
-    codigo += renderizarControlesAcademico(disciplinas, participantes, frequencias, atividades);
     codigo += renderizarDashboardAcademico(participantes, frequencias, atividades, disciplinas);
     codigo += '</div>';
 
     codigo += '<div id="sub-aba-financeiro" class="sub-aba-relatorio oculto">';
-    codigo += renderizarControlesFinanceiro(curso, participantes, pagamentos);
     codigo += renderizarDashboardFinanceiro(participantes, pagamentos, financas, cursos);
     codigo += '</div>';
 
@@ -110,24 +108,25 @@ function filtrarDadosPorCurso(contexto) {
 
     const idCurso = contexto.curso.id;
     const disciplinas = contexto.disciplinas.filter(item => String(item.id_curso) === String(idCurso));
-    const participantes = contexto.participantes.filter(item => String(item.id_curso) === String(idCurso));
+    const participantesCurso = contexto.participantes.filter(item => String(item.id_curso) === String(idCurso));
+    const participantes = participantesCurso.filter(participante => Utilidades.participanteEstaAtivo(participante));
     const idsDisciplinas = new Set(disciplinas.map(item => String(item.id)));
-    const idsParticipantes = new Set(participantes.map(item => String(item.id)));
+    const idsParticipantesAtivos = new Set(participantes.map(item => String(item.id)));
+    const idsParticipantesCurso = new Set(participantesCurso.map(item => String(item.id)));
     const frequencias = contexto.frequencias.filter(item => {
         const pertenceAoCurso = String(item.id_curso || '') === String(idCurso);
         const pertenceADisciplina = idsDisciplinas.has(String(item.id_disciplina || ''));
         return pertenceAoCurso || pertenceADisciplina;
     });
     const atividades = contexto.atividades.filter(item => {
-        const pertenceAoCurso = String(item.id_curso || '') === String(idCurso);
-        const pertenceAoParticipante = idsParticipantes.has(String(item.id_participante || ''));
+        const pertenceAoParticipanteAtivo = idsParticipantesAtivos.has(String(item.id_participante || ''));
         const pertenceADisciplina = idsDisciplinas.has(String(item.id_disciplina || ''));
-        return pertenceAoCurso || (pertenceAoParticipante && pertenceADisciplina);
+        return pertenceAoParticipanteAtivo && pertenceADisciplina;
     });
-    const pagamentos = contexto.pagamentos.filter(item => idsParticipantes.has(String(item.id_participante || '')));
+    const pagamentos = contexto.pagamentos.filter(item => idsParticipantesCurso.has(String(item.id_participante || '')));
     const pagamentos_lote = contexto.pagamentos_lote.filter(lote =>
         Array.isArray(lote.ids_participantes)
-        && lote.ids_participantes.some(idParticipante => idsParticipantes.has(String(idParticipante)))
+        && lote.ids_participantes.some(idParticipante => idsParticipantesCurso.has(String(idParticipante)))
     );
 
     return {

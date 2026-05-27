@@ -20,13 +20,13 @@ async function montarHtmlListaFrequencia(idCurso, idDisciplina, data) {
 
     const mapaParoquias = Object.fromEntries(paroquias.map(paroquia => [paroquia.id, paroquia.nome]));
 
-    let html = '<h2>LISTA DE ASSINATURAS</h2>';
+    let html = '<h2>LISTA DE ASSINATURAS - PARTICIPANTES ATIVOS</h2>';
     html += `<p><strong>Curso:</strong> ${Utilidades.escaparHtml(curso?.nome || '-')}</p>`;
     html += `<p><strong>Disciplina:</strong> ${Utilidades.escaparHtml(disciplina?.nome || '-')}</p>`;
     html += `<p><strong>Data da Aula:</strong> ${Utilidades.formatarData(data)}</p>`;
 
     if (participantes.length === 0) {
-        html += '<p class="texto-centro">Nenhum participante cadastrado neste curso.</p>';
+        html += '<p class="texto-centro">Nenhum participante ativo cadastrado neste curso.</p>';
         return html;
     }
 

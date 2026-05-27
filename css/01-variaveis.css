@@ -10,8 +10,6 @@
     --cor-borda: #d9dde2;
     --cor-fundo-alt: #f4f5f6;
     --cor-marca-700: #7A1C2C;
-    --cor-marca-secundaria: #343860;
-    --cor-marca-destaque: #C3956C;
     --cor-marca-escuro: color-mix(in srgb, #7A1C2C 90%, #191a1a 10%);
     --cor-marca-ativo: color-mix(in srgb, #7A1C2C 75%, #ffffff 25%);
     --cor-vidro: color-mix(in srgb, var(--cor-superficie) 92%, transparent);
@@ -43,6 +41,7 @@
 
     --transicao-padrao: all 160ms cubic-bezier(0, 0, 1, 1);
 
-    --sombra-1: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.06);
+    --altura-grafico-relatorio: 360px;
+
     --sombra-2: 0 4px 8px rgba(16, 24, 40, 0.06), 0 8px 20px rgba(16, 24, 40, 0.08);
 }

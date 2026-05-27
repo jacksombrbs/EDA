@@ -10,11 +10,32 @@ const Busca = {
     },
 
     criarCampoBusca(id, textoExemplo = 'Buscar...') {
+        const idBotaoLimpar = `${id}-limpar`;
         return `
-            <div class="flex mb-md">
-                <input type="text" id="${id}" class="campo-padrao" placeholder="${textoExemplo}">
+            <div class="campo-busca-wrapper flex mb-md pos-relativa">
+                <input type="text" id="${id}" class="campo-padrao campo-busca" placeholder="${textoExemplo}" autocomplete="off">
+                <button type="button" id="${idBotaoLimpar}" class="botao-limpar-busca oculto" aria-label="Limpar busca" title="Limpar busca" onclick="Busca.limparCampo('${id}')">
+                    ${criarIcone('cancelar')}
+                </button>
             </div>
         `;
+    },
+
+    limparCampo(idCampo) {
+        const campoBusca = document.getElementById(idCampo);
+        if (!campoBusca) return;
+
+        campoBusca.value = '';
+        campoBusca.dispatchEvent(new Event('input', { bubbles: true }));
+        campoBusca.focus();
+    },
+
+    atualizarBotaoLimpar(idCampo) {
+        const campoBusca = document.getElementById(idCampo);
+        const botaoLimpar = document.getElementById(`${idCampo}-limpar`);
+        if (!campoBusca || !botaoLimpar) return;
+
+        botaoLimpar.classList.toggle('oculto', !campoBusca.value);
     },
 
     vincularFiltro(idCampo, idCorpoTabela) {
@@ -22,13 +43,17 @@ const Busca = {
         const corpoTabela = document.getElementById(idCorpoTabela);
         if (!campoBusca || !corpoTabela) return;
 
-        campoBusca.addEventListener('input', evento => {
-            const termo = (evento.target.value || '').toLowerCase();
+        const filtrar = () => {
+            const termo = (campoBusca.value || '').toLowerCase();
             corpoTabela.querySelectorAll('tr').forEach(linha => {
                 const textoBusca = (linha.dataset.busca || linha.textContent || '').toLowerCase();
                 linha.classList.toggle('oculto', !textoBusca.includes(termo));
             });
-        });
+            Busca.atualizarBotaoLimpar(idCampo);
+        };
+
+        campoBusca.addEventListener('input', filtrar);
+        filtrar();
     }
 };
 
@@ -295,7 +320,9 @@ function criarSeletor(rotulo, id, opcoes, selecionado = '', obrigatorio = false)
     const obterRotuloOpcao = opcao => typeof opcao === 'object' ? opcao.nome : opcao;
     const opcaoVazia = listaOpcoes.find(opcao => String(obterValorOpcao(opcao)) === '');
     const rotuloPadrao = opcaoVazia ? obterRotuloOpcao(opcaoVazia) : 'Selecione';
-    const opcoesVisiveis = listaOpcoes.filter(opcao => String(obterValorOpcao(opcao)) !== '');
+    const opcoesVisiveis = listaOpcoes
+        .filter(opcao => String(obterValorOpcao(opcao)) !== '')
+        .sort((a, b) => String(obterRotuloOpcao(a) || '').localeCompare(String(obterRotuloOpcao(b) || ''), 'pt-BR', { sensitivity: 'base', numeric: true }));
 
     let textoSelecionado = rotuloPadrao;
     if (selecionado) {

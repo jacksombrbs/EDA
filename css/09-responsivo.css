@@ -1,11 +1,11 @@
 /* 13. RESPONSIVIDADE ========= */
 @media (max-width: 1024px) {
     .md-flex-coluna {
-        flex-direction: column !important;
+        flex-direction: column;
     }
 
     .md-flex-linha {
-        flex-direction: row !important;
+        flex-direction: row;
     }
 
     .linha-cabecalhos-planilha {
@@ -13,35 +13,35 @@
     }
 
     .md-w-total {
-        width: 100% !important;
+        width: 100%;
     }
 
     .md-max-w-total {
-        max-width: 100% !important;
+        max-width: 100%;
     }
 
     .md-texto-centro {
-        text-align: center !important;
+        text-align: center;
     }
 
     .md-texto-esquerda {
-        text-align: left !important;
+        text-align: left;
     }
 
     .md-rolagem-x {
-        overflow-x: auto !important;
+        overflow-x: auto;
     }
 
     .md-p-0 {
-        padding: 0 !important;
+        padding: 0;
     }
 
     .md-p-md {
-        padding: var(--espaco-md) !important;
+        padding: var(--espaco-md);
     }
 
     .md-itens-esquerda {
-        align-items: flex-start !important;
+        align-items: flex-start;
     }
 
     #pagina-administracao {
@@ -55,12 +55,12 @@
 
     .barra-lateral {
         flex: 0 0 auto;
-        flex-direction: row !important;
+        flex-direction: row;
         align-items: center;
-        width: 100% !important;
+        width: 100%;
         min-width: 0;
         gap: var(--espaco-sm);
-        padding: var(--espaco-sm) !important;
+        padding: var(--espaco-sm);
         overflow: hidden;
     }
 
@@ -69,9 +69,9 @@
         width: 100%;
         min-width: 0;
         gap: var(--espaco-sm);
-        padding-bottom: var(--espaco-xs) !important;
-        overflow-x: auto !important;
-        overflow-y: hidden !important;
+        padding-bottom: var(--espaco-xs);
+        overflow-x: auto;
+        overflow-y: hidden;
         scroll-snap-type: x proximity;
     }
 
@@ -87,26 +87,10 @@
         scroll-snap-align: start;
     }
 
-    .navegacao-principal .icone-inline {
-        flex-basis: 24px;
-        width: 24px;
-        height: 24px;
-    }
-
-    .cabecalho-painel-dados {
-        align-items: flex-start;
-        flex-direction: column;
-    }
-
     .grade-paineis-dados,
     .grade-selecao-dados,
     .lista-tabelas-backup {
         grid-template-columns: 1fr;
-    }
-
-    .grade-graficos-relatorios,
-    .grade-relatorios-pdf {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .painel-dashboard-relatorio,
@@ -116,9 +100,6 @@
 }
 
 @media (max-width: 640px) {
-    .grade-metricas-relatorios,
-    .grade-graficos-relatorios,
-    .grade-relatorios-pdf,
     .painel-dashboard-relatorio,
     .grade-metricas-dashboard {
         grid-template-columns: 1fr;

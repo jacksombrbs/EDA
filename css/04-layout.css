@@ -42,7 +42,6 @@
     gap: 12px;
     min-height: 42px;
     padding: var(--espaco-xs) var(--espaco-md);
-    padding-left: var(--espaco-md);
     border-radius: var(--raio-sm);
     color: var(--cor-texto);
     font-size: var(--fonte-md);
@@ -68,7 +67,6 @@
     height: 24px;
 }
 
-
 .grade-paineis-dados {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -85,13 +83,6 @@
     border-radius: var(--raio-md);
     background-color: var(--cor-vidro);
     backdrop-filter: blur(18px);
-}
-
-.cabecalho-painel-dados {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--espaco-sm);
 }
 
 .barra-acoes-dados {
