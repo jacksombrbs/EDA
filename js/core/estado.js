@@ -5,6 +5,7 @@ const AppEstado = {
     cursoSelecionado: null,
     participanteAtual: null,
     frequenciaAtual: null,
+    atividadeAtual: null,
     elementoFocoAntesJanela: null,
     capelasAtuais: [],
     importacaoParoquiasPendentes: [],

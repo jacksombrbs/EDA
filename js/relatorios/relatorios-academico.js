@@ -1,5 +1,10 @@
+function filtrarAtividadesEntreguesRelatorio(atividades = []) {
+    return listarRegistrosAtividadesEntregues(atividades);
+}
+
 function renderizarDashboardAcademico(participantes = [], frequencias = [], atividades = [], disciplinas = []) {
-    const estatisticas = calcularEstatisticasAcademicas(participantes, frequencias, atividades);
+    const atividadesEntregues = filtrarAtividadesEntreguesRelatorio(atividades);
+    const estatisticas = calcularEstatisticasAcademicas(participantes, frequencias, atividadesEntregues);
 
     let painel = criarGradeMetricas([
         { titulo: 'Total de Participantes', valor: estatisticas.totalParticipantes, classe: 'primario', icone: 'participantes' },
@@ -30,7 +35,7 @@ function renderizarDashboardAcademico(participantes = [], frequencias = [], ativ
                 </div>
                 ${criarMetricasRelatorio([
                     { rotulo: 'Disciplinas', valor: disciplinas.length },
-                    { rotulo: 'Entregas', valor: atividades.length }
+                    { rotulo: 'Entregas', valor: atividadesEntregues.length }
                 ])}
             </div>
         </div>
@@ -119,8 +124,10 @@ function obterTextoUltimaAtividade(atividades = [], disciplinas = []) {
 }
 
 function calcularEstatisticasAcademicas(participantes = [], frequencias = [], atividades = []) {
+    atividades = filtrarAtividadesEntreguesRelatorio(atividades);
+
     if (!Array.isArray(participantes) && participantes) {
-        atividades = participantes.atividades || [];
+        atividades = filtrarAtividadesEntreguesRelatorio(participantes.atividades || []);
         frequencias = participantes.frequencias || [];
         participantes = participantes.participantes || [];
     }
@@ -184,11 +191,11 @@ function agruparFrequenciasPorFaixa(participantes = [], frequencias = []) {
 }
 
 function calcularAtividadesParticipante(idParticipante, atividades = []) {
-    return listarAtividadesPorParticipante(idParticipante, atividades).length;
+    return listarAtividadesEntreguesPorParticipante(idParticipante, atividades).length;
 }
 
 function listarAtividadesPorParticipante(idParticipante, atividades = []) {
-    return atividades.filter(atividade => String(atividade.id_participante) === String(idParticipante));
+    return listarAtividadesEntreguesPorParticipante(idParticipante, atividades);
 }
 
 function obterPresencaParticipante(frequencia, idParticipante) {
@@ -300,7 +307,7 @@ function montarHtmlFrequenciaPorDisciplina(idDisciplina, participantes, discipli
     let html = `<h3>Disciplina: ${Utilidades.escaparHtml(disciplina?.nome || '')}</h3>`;
     html += `<table><thead><tr><th>Participantes Presentes (${presentes.size})</th></tr></thead><tbody>`;
     html += presentes.size > 0
-        ? [...presentes].sort().map(nome => `<tr><td><strong class="cor-texto-sucesso">P</strong> &nbsp; ${Utilidades.escaparHtml(nome)}</td></tr>`).join('')
+        ? [...presentes].sort().map(nome => `<tr><td><strong class="cor-texto-sucesso">C</strong> &nbsp; ${Utilidades.escaparHtml(nome)}</td></tr>`).join('')
         : '<tr><td class="texto-centro">Nenhum participante presente registrado.</td></tr>';
     html += '</tbody></table>';
 
@@ -334,6 +341,7 @@ async function gerarPDFAtividadesAcademico() {
     if (!dadosRelatorio) return;
 
     const { curso, disciplinas, participantes, atividades, paroquias } = dadosRelatorio;
+    const atividadesEntregues = filtrarAtividadesEntreguesRelatorio(atividades);
     const disciplinasOrdenadas = [...disciplinas].sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
     const paroquiasMap = criarMapaParoquias(paroquias);
     const agrupados = agruparParticipantesPorParoquiaECapela(participantes);
@@ -367,7 +375,7 @@ async function gerarPDFAtividadesAcademico() {
         participantesGrupo.forEach(participante => {
             html += `<tr><td><strong>${Utilidades.escaparHtml(participante.nome || '-')}</strong></td>`;
             disciplinasOrdenadas.forEach(disciplina => {
-                const entregou = atividades.some(atividade =>
+                const entregou = atividadesEntregues.some(atividade =>
                     String(atividade.id_participante) === String(participante.id)
                     && String(atividade.id_disciplina) === String(disciplina.id)
                 );

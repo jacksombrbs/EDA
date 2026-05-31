@@ -266,7 +266,7 @@ async function montarDadosFichaParticipante(idParticipante, contexto = null) {
     const disciplinasCurso = (dados.disciplinas || []).filter(item => String(item.id_curso) === String(participante.id_curso));
     const pagamentos = obterPagamentosFichaParticipante(participante, dados.pagamentos || [], dados.pagamentos_lote || []);
     const frequencias = filtrarFrequenciasFichaParticipante(participante, dados.frequencias || [], disciplinasCurso);
-    const atividades = (dados.atividades || []).filter(item => String(item.id_participante) === String(participante.id));
+    const atividades = listarAtividadesEntreguesPorParticipante(participante.id, dados.atividades || []);
 
     return {
         participante,
@@ -385,6 +385,7 @@ function calcularResumoFrequenciaParticipante(participante, frequencias = []) {
 }
 
 function calcularResumoAtividadesParticipante(participante, atividades = [], disciplinas = []) {
+    const totalEntregues = atividades.length;
     const lista = [...atividades]
         .sort((a, b) => (b.data_entrega || '').localeCompare(a.data_entrega || ''))
         .map(atividade => {
@@ -392,13 +393,13 @@ function calcularResumoAtividadesParticipante(participante, atividades = [], dis
             return {
                 disciplina: disciplina?.nome || 'Disciplina não informada',
                 data_entrega: atividade.data_entrega || '',
-                descricao: atividade.descricao || 'Entrega de atividade',
+                estado: atividade.estado || 'Entregue',
                 observacoes: atividade.observacoes || ''
             };
         });
 
     return {
-        total: lista.length,
+        total: totalEntregues,
         lista
     };
 }
@@ -474,7 +475,7 @@ function montarListaAtividadesConsultaFicha(atividades = []) {
             ${atividades.map(atividade => `
                 <div class="p-sm raio-sm fundo-superficie-2">
                     <strong class="block cor-texto-escuro">${Utilidades.escaparHtml(atividade.disciplina)}</strong>
-                    <span class="block texto-sm cor-texto-claro">${atividade.data_entrega ? Utilidades.formatarData(atividade.data_entrega) : '-'} · ${Utilidades.escaparHtml(atividade.descricao || '-')}</span>
+                    <span class="block texto-sm cor-texto-claro">${atividade.data_entrega ? Utilidades.formatarData(atividade.data_entrega) : '-'} · ${Utilidades.escaparHtml(atividade.estado || 'Entregue')}</span>
                     ${atividade.observacoes ? `<small class="block texto-sm cor-texto-claro">${Utilidades.escaparHtml(atividade.observacoes)}</small>` : ''}
                 </div>
             `).join('')}
@@ -588,7 +589,7 @@ function montarLinhasAtividadesFichaPDF(atividades = []) {
     return atividades.map(atividade => `
         <div class="atividade-ficha-pdf">
             <strong>${Utilidades.escaparHtml(atividade.disciplina)}</strong>
-            <span>${atividade.data_entrega ? Utilidades.formatarData(atividade.data_entrega) : '-'} · ${Utilidades.escaparHtml(atividade.descricao || '-')}</span>
+            <span>${atividade.data_entrega ? Utilidades.formatarData(atividade.data_entrega) : '-'} · ${Utilidades.escaparHtml(atividade.estado || 'Entregue')}</span>
             ${atividade.observacoes ? `<small>${Utilidades.escaparHtml(atividade.observacoes)}</small>` : ''}
         </div>
     `).join('');

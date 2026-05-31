@@ -119,9 +119,12 @@ function filtrarDadosPorCurso(contexto) {
         return pertenceAoCurso || pertenceADisciplina;
     });
     const atividades = contexto.atividades.filter(item => {
-        const pertenceAoParticipanteAtivo = idsParticipantesAtivos.has(String(item.id_participante || ''));
+        const pertenceAoCurso = String(item.id_curso || '') === String(idCurso);
         const pertenceADisciplina = idsDisciplinas.has(String(item.id_disciplina || ''));
-        return pertenceAoParticipanteAtivo && pertenceADisciplina;
+        const possuiParticipanteAtivo = obterRegistrosAtividade(item)
+            .some(registro => idsParticipantesAtivos.has(String(registro.id_participante || '')));
+
+        return (pertenceAoCurso || pertenceADisciplina) && possuiParticipanteAtivo;
     });
     const pagamentos = contexto.pagamentos.filter(item => idsParticipantesCurso.has(String(item.id_participante || '')));
     const pagamentos_lote = contexto.pagamentos_lote.filter(lote =>

@@ -3,7 +3,7 @@ const NOME_INSTITUCIONAL = 'Comissão Bíblico-Catequética';
 const SUBTITULO_INSTITUCIONAL = 'Escola de Catequistas e Cursos de Formação';
 const CAMINHO_MARCA_INSTITUCIONAL = 'marca-comissao-desenho.svg';
 const VERSAO_APLICATIVO = '1.2.0';
-const VERSAO_DADOS_APLICATIVO = 2;
+const VERSAO_DADOS_APLICATIVO = 3;
 const BANCO_DADOS_NOME = 'escolaDiscipuloAmado_v2';
 const BANCO_DADOS_VERSAO = 2;
 
