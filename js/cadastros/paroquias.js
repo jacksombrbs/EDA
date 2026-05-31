@@ -33,6 +33,9 @@ async function abrirFormularioParoquia(id = null) {
     formulario += '<div class="flex-1 w-total">' + criarCampoFormulario('Nome da Paróquia', 'text', 'nome', paroquia?.nome || '', 'Ex: Paróquia São José', true) + '</div>';
     formulario += '<div class="flex-1 w-total">' + criarCampoFormulario('Setor', 'text', 'setor', paroquia?.setor || '', 'Ex: Setor Portão') + '</div>';
     formulario += '</div>';
+    formulario += '<div class="flex gap-md md-flex-coluna">';
+    formulario += '<div class="flex-1 w-total">' + criarCampoFormulario('CNPJ', 'text', 'cnpj', paroquia?.cnpj || '', '00.000.000/0000-00') + '</div>';
+    formulario += '</div>';
 
     formulario += '<div class="fundo-superficie-2 borda-1 borda-solida borda-cor-padrao raio-sm p-md mt-sm">';
     formulario += '<h3 class="texto-md peso-bold cor-texto-primario mb-sm">Capelas / Comunidades</h3>';
@@ -83,12 +86,18 @@ function obterDadosFormularioParoquia() {
     return {
         nome: document.getElementById('nome')?.value.trim() || '',
         setor: document.getElementById('setor')?.value.trim() || '',
+        cnpj: document.getElementById('cnpj')?.value.trim() || '',
         capelas: AppEstado.capelasAtuais || []
     };
 }
 
 function validarParoquia(dados) {
     if (!Validacao.notificarCamposObrigatorios([{ nome: 'Nome da Paróquia', valor: dados.nome }])) {
+        return { valido: false };
+    }
+
+    if (dados.cnpj && !Validacao.cnpj(dados.cnpj)) {
+        Utilidades.notificacao('Informe um CNPJ válido.', 'erro');
         return { valido: false };
     }
 
@@ -100,6 +109,7 @@ function montarParoquia(dados, id = null) {
         id: id || Utilidades.gerarId(),
         nome: dados.nome,
         setor: dados.setor,
+        cnpj: dados.cnpj,
         capelas: dados.capelas
     };
 }
@@ -111,9 +121,10 @@ function renderizarTabelaParoquias(paroquias) {
             ? `${paroquia.capelas.length} capela(s)`
             : '<span class="cor-texto-claro">Nenhuma</span>';
 
-        return `<tr class="${classeFundo} transicao hover-fundo-superficie-3" data-busca="${Utilidades.escaparHtml(`${paroquia.nome || ''} ${paroquia.setor || ''}`)}">
+        return `<tr class="${classeFundo} transicao hover-fundo-superficie-3" data-busca="${Utilidades.escaparHtml(`${paroquia.nome || ''} ${paroquia.setor || ''} ${paroquia.cnpj || ''}`)}">
             <td class="p-md texto-esquerda peso-bold cor-texto-escuro">${Utilidades.escaparHtml(paroquia.nome || 'Sem nome')}</td>
             <td class="p-md texto-esquerda cor-texto-escuro">${Utilidades.escaparHtml(paroquia.setor || '-')}</td>
+            <td class="p-md texto-esquerda cor-texto-escuro">${Utilidades.escaparHtml(paroquia.cnpj || '-')}</td>
             <td class="p-md texto-esquerda">${capelas}</td>
             <td class="p-md texto-esquerda">
                 ${criarAcoesTabela([
@@ -125,7 +136,7 @@ function renderizarTabelaParoquias(paroquias) {
     }).join('');
 
     return criarContainerTabela(
-        ['Paróquia', 'Setor', 'Capelas', 'Ações'],
+        ['Paróquia', 'Setor', 'CNPJ', 'Capelas', 'Ações'],
         linhas,
         'tabela-paroquias',
         'corpo-tabela-paroquias'

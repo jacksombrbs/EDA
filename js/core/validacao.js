@@ -42,6 +42,26 @@ const Validacao = {
             && calcularDigito(10) === parseInt(numerico.charAt(10), 10);
     },
 
+
+    cnpj(cnpj) {
+        if (!cnpj) return true;
+
+        const numerico = String(cnpj).replace(/\D/g, '');
+        if (numerico.length !== 14 || /^(\d)\1+$/.test(numerico)) return false;
+
+        const calcularDigito = tamanho => {
+            const pesos = tamanho === 12
+                ? [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
+                : [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+            const soma = pesos.reduce((total, peso, indice) => total + Number(numerico[indice]) * peso, 0);
+            const resto = soma % 11;
+            return resto < 2 ? 0 : 11 - resto;
+        };
+
+        return calcularDigito(12) === Number(numerico[12])
+            && calcularDigito(13) === Number(numerico[13]);
+    },
+
     data(data) {
         if (!data) return false;
         if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) return false;
@@ -86,6 +106,10 @@ const Validacao = {
 
     validarCPF(cpf) {
         return this.cpf(cpf);
+    },
+
+    validarCNPJ(cnpj) {
+        return this.cnpj(cnpj);
     },
 
     validarData(data) {

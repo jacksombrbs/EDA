@@ -235,7 +235,8 @@ async function acionarReciboDireto(idPagamento) {
         participante?.nome || 'Participante',
         pagamento.valor,
         pagamento.descricao || pagamento.tipo,
-        pagamento.data
+        pagamento.data,
+        participante?.cpf || ''
     );
 }
 
@@ -249,7 +250,8 @@ async function acionarReciboDiretoLote(idLote) {
         lote.nomes_participantes || [],
         lote.valor_total,
         lote.descricao || lote.tipo,
-        lote.data
+        lote.data,
+        paroquia?.cnpj || ''
     );
 }
 

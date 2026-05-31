@@ -1,6 +1,7 @@
-function gerarReciboGenerico(nomeParticipante, valor, descricao, data) {
+function gerarReciboGenerico(nomeParticipante, valor, descricao, data, cpf = '') {
+    const textoCpf = cpf ? `, CPF <strong>${Utilidades.escaparHtml(cpf)}</strong>` : '';
     const conteudo = `
-        <p>Recebemos de <strong>${Utilidades.escaparHtml(nomeParticipante)}</strong> a importância de <strong>${Utilidades.formatarMoeda(valor)}</strong>.</p>
+        <p>Recebemos de <strong>${Utilidades.escaparHtml(nomeParticipante)}</strong>${textoCpf} a importância de <strong>${Utilidades.formatarMoeda(valor)}</strong>.</p>
         <p>Referente a: <strong>${Utilidades.escaparHtml(descricao || 'Pagamento')}</strong>.</p>
     `;
 
@@ -15,10 +16,11 @@ function gerarReciboGenerico(nomeParticipante, valor, descricao, data) {
     });
 }
 
-function gerarReciboLoteTemplate(nomeParoquia, nomesParticipantes, valorTotal, descricao, data) {
+function gerarReciboLoteTemplate(nomeParoquia, nomesParticipantes, valorTotal, descricao, data, cnpj = '') {
     const lista = nomesParticipantes.map(nome => `<li>${Utilidades.escaparHtml(nome)}</li>`).join('');
+    const textoCnpj = cnpj ? `, CNPJ <strong>${Utilidades.escaparHtml(cnpj)}</strong>` : '';
     const conteudo = `
-        <p>Recebemos de <strong>${Utilidades.escaparHtml(nomeParoquia)}</strong> a importância de <strong>${Utilidades.formatarMoeda(valorTotal)}</strong>.</p>
+        <p>Recebemos de <strong>${Utilidades.escaparHtml(nomeParoquia)}</strong>${textoCnpj} a importância de <strong>${Utilidades.formatarMoeda(valorTotal)}</strong>.</p>
         <p>Referente a: <strong>${Utilidades.escaparHtml(descricao || 'Pagamento em lote')}</strong>.</p>
         <ul class="lista-participantes">${lista}</ul>
     `;

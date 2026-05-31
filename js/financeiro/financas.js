@@ -208,7 +208,8 @@ async function acionarReciboFinancaDireto(id) {
         disciplina?.nome || '',
         financa.valor,
         financa.descricao,
-        financa.data
+        financa.data,
+        palestrante?.cpf || ''
     );
 }
 

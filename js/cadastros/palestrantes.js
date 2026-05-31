@@ -23,9 +23,12 @@ async function abrirFormularioPalestrante(id = null) {
 
     let formulario = '<form id="formulario-palestrante" class="flex flex-coluna w-total" onsubmit="salvarPalestrante(event)">';
     formulario += criarCampoFormulario('Nome do Palestrante', 'text', 'nome', palestrante?.nome || '', 'Ex: João da Silva', true);
-    formulario += '<div class="flex gap-md md-flex-coluna mb-md">';
+    formulario += '<div class="flex gap-md md-flex-coluna">';
     formulario += '<div class="flex-1">' + criarCampoFormulario('Email', 'email', 'email', palestrante?.email || '', 'Ex: joao@email.com') + '</div>';
     formulario += '<div class="flex-1">' + criarCampoFormulario('Telefone', 'text', 'telefone', palestrante?.telefone || '', 'Ex: 00 00000-0000') + '</div>';
+    formulario += '</div>';
+    formulario += '<div class="flex gap-md md-flex-coluna mb-md">';
+    formulario += '<div class="flex-1">' + criarCampoFormulario('CPF', 'text', 'cpf', palestrante?.cpf || '', '000.000.000-00') + '</div>';
     formulario += '</div>';
     formulario += criarRodapeFormulario('', id ? 'Atualizar Palestrante' : 'Salvar Palestrante', { tipoSalvar: 'submit' });
     formulario += '</form>';
@@ -63,7 +66,8 @@ function obterDadosFormularioPalestrante() {
     return {
         nome: document.getElementById('nome')?.value.trim() || '',
         email: document.getElementById('email')?.value.trim() || '',
-        telefone: document.getElementById('telefone')?.value.trim() || ''
+        telefone: document.getElementById('telefone')?.value.trim() || '',
+        cpf: document.getElementById('cpf')?.value.trim() || ''
     };
 }
 
@@ -82,6 +86,11 @@ function validarPalestrante(dados) {
         return { valido: false };
     }
 
+    if (dados.cpf && !Validacao.cpf(dados.cpf)) {
+        Utilidades.notificacao('Informe um CPF válido para o palestrante.', 'erro');
+        return { valido: false };
+    }
+
     return { valido: true, dados };
 }
 
@@ -90,7 +99,8 @@ function montarPalestrante(dados, id = null) {
         id: id || Utilidades.gerarId(),
         nome: dados.nome,
         email: dados.email,
-        telefone: dados.telefone
+        telefone: dados.telefone,
+        cpf: dados.cpf
     };
 }
 
@@ -98,10 +108,11 @@ function renderizarTabelaPalestrantes(palestrantes) {
     const linhas = palestrantes.map((palestrante, indice) => {
         const classeFundo = indice % 2 === 0 ? 'fundo-branco' : 'fundo-superficie-2';
 
-        return `<tr class="${classeFundo} transicao hover-fundo-superficie-3" data-busca="${Utilidades.escaparHtml(palestrante.nome || '')}">
+        return `<tr class="${classeFundo} transicao hover-fundo-superficie-3" data-busca="${Utilidades.escaparHtml(`${palestrante.nome || ''} ${palestrante.cpf || ''}`)}">
             <td class="p-md texto-esquerda"><strong>${Utilidades.escaparHtml(palestrante.nome)}</strong></td>
             <td class="p-md texto-esquerda">${Utilidades.escaparHtml(palestrante.email || '-')}</td>
             <td class="p-md texto-esquerda">${Utilidades.escaparHtml(palestrante.telefone || '-')}</td>
+            <td class="p-md texto-esquerda">${Utilidades.escaparHtml(palestrante.cpf || '-')}</td>
             <td class="p-md texto-esquerda">
                 ${criarAcoesTabela([
                     { rotulo: 'Editar', acao: `editarPalestrante('${palestrante.id}')` },
@@ -112,7 +123,7 @@ function renderizarTabelaPalestrantes(palestrantes) {
     }).join('');
 
     return criarContainerTabela(
-        ['Nome', 'Email', 'Telefone', 'Ações'],
+        ['Nome', 'Email', 'Telefone', 'CPF', 'Ações'],
         linhas,
         'tabela-palestrantes',
         'corpo-tabela-palestrantes'

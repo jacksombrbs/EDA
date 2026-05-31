@@ -256,14 +256,16 @@ function montarHtmlFrequenciaGeral(participantes, disciplinas, frequencias, paro
         html += `<div${quebra}><h3>Paróquia: ${Utilidades.escaparHtml(nomeParoquia)}</h3>`;
         html += '<table><thead><tr><th class="coluna-nome-documento">Participante</th>';
         disciplinasOrdenadas.forEach(disciplina => { html += `<th class="texto-centro">${Utilidades.escaparHtml(disciplina.nome)}</th>`; });
-        html += '</tr></thead><tbody>';
+        html += '<th class="texto-centro">Total</th></tr></thead><tbody>';
 
         participantesGrupo.forEach(participante => {
+            const totalParticipante = calcularFrequenciaParticipante(participante.id, frequencias);
             html += `<tr><td><strong>${Utilidades.escaparHtml(participante.nome || '-')}</strong></td>`;
             disciplinasOrdenadas.forEach(disciplina => {
-                const resultado = calcularResultadoDisciplinaParticipante(participante.id, disciplina.id, frequencias);
-                html += `<td class="texto-centro ${resultado === 'C' ? 'cor-texto-sucesso peso-bold' : (resultado === 'F' ? 'cor-texto-erro peso-bold' : '')}">${resultado}</td>`;
+                const resumoDisciplina = calcularResumoDisciplinaParticipante(participante.id, disciplina.id, frequencias);
+                html += `<td class="texto-centro">${formatarResumoHorasFrequencia(resumoDisciplina)}</td>`;
             });
+            html += `<td class="texto-centro peso-bold ${obterClassePercentualFrequencia(totalParticipante.percentual)}">${formatarResumoTotalFrequencia(totalParticipante)}</td>`;
             html += '</tr>';
         });
 
@@ -309,20 +311,54 @@ function montarHtmlFrequenciaPorDisciplina(idDisciplina, participantes, discipli
     return html;
 }
 
-function calcularResultadoDisciplinaParticipante(idParticipante, idDisciplina, frequencias) {
-    let presencas = 0;
+function calcularResumoDisciplinaParticipante(idParticipante, idDisciplina, frequencias = []) {
+    let total = 0;
+    let comparecimentos = 0;
     let faltas = 0;
+    let horasPrevistas = 0;
+    let horasPresentes = 0;
 
     frequencias.forEach(frequencia => {
         if (String(frequencia.id_disciplina) !== String(idDisciplina)) return;
+
         const presenca = obterPresencaParticipante(frequencia, idParticipante);
         if (presenca === null) return;
-        if (presencaContaComoComparecimento(presenca)) presencas++;
-        else faltas++;
+
+        total++;
+        horasPrevistas += HORAS_AULA_FREQUENCIA;
+        horasPresentes += presenca.horas;
+
+        if (presencaContaComoComparecimento(presenca)) comparecimentos++;
+        if (presenca.estado === ESTADOS_FREQUENCIA.FALTOU) faltas++;
     });
 
-    if (presencas + faltas === 0) return '';
-    return faltas > presencas ? 'F' : 'C';
+    return {
+        total,
+        comparecimentos,
+        faltas,
+        horasPrevistas,
+        horasPresentes,
+        percentual: horasPrevistas > 0 ? Math.round((horasPresentes / horasPrevistas) * 100) : 0
+    };
+}
+
+function formatarResumoHorasFrequencia(resumo) {
+    if (!resumo || resumo.total === 0) return '-';
+    return `${formatarHorasFrequencia(resumo.horasPresentes)}/${formatarHorasFrequencia(resumo.horasPrevistas)}`;
+}
+
+function formatarResumoTotalFrequencia(resumo) {
+    if (!resumo || resumo.total === 0) return '-';
+    return `${formatarHorasFrequencia(resumo.horasPresentes)}/${formatarHorasFrequencia(resumo.horasPrevistas)} (${resumo.percentual}%)`;
+}
+
+function formatarHorasFrequencia(valor) {
+    const numero = Number(valor || 0);
+    return `${Number.isInteger(numero) ? numero : numero.toFixed(1).replace('.', ',')}h`;
+}
+
+function obterClassePercentualFrequencia(percentual) {
+    return percentual >= 75 ? 'cor-texto-sucesso' : 'cor-texto-erro';
 }
 
 async function gerarPDFAtividadesAcademico() {

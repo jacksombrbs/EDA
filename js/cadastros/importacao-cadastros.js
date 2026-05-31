@@ -82,6 +82,7 @@ async function processarPlanilhaParoquias() {
                 const numeroLinha = indice + 2;
                 const nome = linha.Paroquia || linha.Paróquia || linha.PAROQUIA;
                 const setor = linha.Setor || linha.SETOR || '';
+                const cnpj = linha.CNPJ || linha.Cnpj || linha.cnpj || '';
                 const capelasTexto = linha.Capelas || linha.CAPELAS || '';
 
                 if (!nome) {
@@ -90,12 +91,19 @@ async function processarPlanilhaParoquias() {
                 }
 
                 const nomeTexto = nome.toString().trim();
+                const cnpjTexto = cnpj.toString().trim();
+                if (cnpjTexto && !Validacao.cnpj(cnpjTexto)) {
+                    erros.push(`Linha ${numeroLinha}: CNPJ inválido.`);
+                    return;
+                }
+
                 const existente = existentes.find(paroquia => (paroquia.nome || '').toLowerCase() === nomeTexto.toLowerCase());
 
                 validos.push({
                     id: existente?.id || Utilidades.gerarId(),
                     nome: nomeTexto,
                     setor: setor.toString(),
+                    cnpj: cnpjTexto,
                     capelas: capelasTexto
                         ? capelasTexto.toString().split(',').map(capela => capela.trim()).filter(Boolean)
                         : [],
@@ -172,6 +180,7 @@ async function efetivarImportacaoExcelParoquias() {
             id: paroquia.id,
             nome: paroquia.nome,
             setor: paroquia.setor,
+            cnpj: paroquia.cnpj,
             capelas: paroquia.capelas
         });
         processados++;
