@@ -340,9 +340,6 @@ function calcularResumoFinanceiroParticipante(participante, curso, pagamentos = 
     const totalOutros = pagamentosOutros.reduce((total, pagamento) => total + Utilidades.normalizarValorMonetario(pagamento.valor), 0);
     const totalInscricao = pagamentoInscricao ? Utilidades.normalizarValorMonetario(pagamentoInscricao.valor) : 0;
     const totalGeral = totalInscricao + totalMensalidades + totalOutros;
-    const situacaoFinanceira = !pagamentoInscricao
-        ? 'Pendente'
-        : (mensalidadesRestantes === 0 ? 'Quitado' : 'Em dia');
 
     return {
         inscricaoPaga: Boolean(pagamentoInscricao),
@@ -355,9 +352,7 @@ function calcularResumoFinanceiroParticipante(participante, curso, pagamentos = 
         totalMensalidades,
         outrasEntradas: pagamentosOutros,
         totalOutros,
-        totalGeral,
-        situacaoMensalidades: mensalidadesRestantes === 0 ? 'Quitado' : 'Pendente',
-        situacaoFinanceira
+        totalGeral
     };
 }
 
@@ -417,7 +412,7 @@ function montarHtmlConsultaFichaParticipante(dadosFicha) {
         </div>
 
         <div class="grade-metricas-dashboard grade-4-colunas">
-            ${criarCardMetrica('Situação Financeira', financeiro.situacaoFinanceira, financeiro.situacaoFinanceira === 'Pendente' ? 'aviso' : 'sucesso')}
+            ${criarCardMetrica('Inscrição', financeiro.inscricaoTexto, financeiro.inscricaoPaga ? 'sucesso' : 'aviso')}
             ${criarCardMetrica('Mensalidades', `${financeiro.mensalidadesPagas}/${financeiro.quantidadeMensalidades}`, financeiro.mensalidadesRestantes > 0 ? 'primario' : 'sucesso')}
             ${criarCardMetrica('Frequência', frequencia.percentualTexto, frequencia.percentual !== null && frequencia.percentual < 75 ? 'aviso' : 'sucesso')}
             ${criarCardMetrica('Atividades', atividades.total, 'primario')}
@@ -520,14 +515,13 @@ function montarHtmlFichaParticipante(dadosFicha) {
                     ['Setor', paroquia?.setor || '-']
                 ])}
 
-                ${montarBlocoFichaPDF('Situação financeira', [
+                ${montarBlocoFichaPDF('Inscrição e pagamentos', [
                     ['Inscrição', financeiro.inscricaoTexto],
                     ['Valor da inscrição', Utilidades.formatarMoeda(financeiro.valorInscricao)],
                     ['Mensalidades restantes', financeiro.mensalidadesRestantes],
                     ['Total em mensalidades', Utilidades.formatarMoeda(financeiro.totalMensalidades)],
                     ['Outras entradas', Utilidades.formatarMoeda(financeiro.totalOutros)],
-                    ['Total pago', Utilidades.formatarMoeda(financeiro.totalGeral)],
-                    ['Situação', financeiro.situacaoFinanceira]
+                    ['Total pago', Utilidades.formatarMoeda(financeiro.totalGeral)]
                 ])}
 
                 ${montarBlocoFichaPDF('Frequência', [
