@@ -1,8 +1,8 @@
 {
   "name": "Comissão Bíblico-Catequética - Cursos",
   "short_name": "CBC-CTBA",
-  "start_url": "",
-  "scope": "",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#f5efe8",
   "theme_color": "#7a2b2b",
@@ -18,5 +18,9 @@
       "sizes": "512x512",
       "type": "image/png"
     }
+  ],
+  "id": "./",
+  "display_override": [
+    "standalone"
   ]
 }
