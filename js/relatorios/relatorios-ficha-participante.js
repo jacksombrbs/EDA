@@ -357,22 +357,32 @@ function calcularResumoFinanceiroParticipante(participante, curso, pagamentos = 
 }
 
 function calcularResumoFrequenciaParticipante(participante, frequencias = []) {
-    let presencas = 0;
+    let total = 0;
+    let comparecimentos = 0;
     let faltas = 0;
+    let horasPrevistas = 0;
+    let horasPresentes = 0;
 
     frequencias.forEach(frequencia => {
         const presenca = obterPresencaParticipante(frequencia, participante.id);
-        if (presenca === true) presencas++;
-        else faltas++;
+        if (presenca === null) return;
+
+        total++;
+        horasPrevistas += HORAS_AULA_FREQUENCIA;
+        horasPresentes += presenca.horas;
+        if (presencaContaComoComparecimento(presenca)) comparecimentos++;
+        if (presenca.estado === ESTADOS_FREQUENCIA.FALTOU) faltas++;
     });
 
-    const total = presencas + faltas;
-    const percentual = total > 0 ? Math.round((presencas / total) * 100) : null;
+    const percentual = horasPrevistas > 0 ? Math.round((horasPresentes / horasPrevistas) * 100) : null;
 
     return {
         total,
-        presencas,
+        comparecimentos,
+        presencas: comparecimentos,
         faltas,
+        horasPrevistas,
+        horasPresentes,
         percentual,
         percentualTexto: percentual === null ? 'Sem registros' : `${percentual}%`,
         situacao: percentual === null ? 'Sem registros' : (percentual >= 75 ? 'Regular' : 'Atenção')
@@ -434,7 +444,8 @@ function montarHtmlConsultaFichaParticipante(dadosFicha) {
             ])}
             ${montarCartaoConsultaFicha('Frequência', [
                 ['Aulas registradas', frequencia.total],
-                ['Presenças', frequencia.presencas],
+                ['Horas presentes', `${frequencia.horasPresentes}/${frequencia.horasPrevistas}h`],
+                ['Aulas com presença', frequencia.comparecimentos],
                 ['Faltas', frequencia.faltas],
                 ['Situação', frequencia.situacao]
             ])}
@@ -526,7 +537,8 @@ function montarHtmlFichaParticipante(dadosFicha) {
 
                 ${montarBlocoFichaPDF('Frequência', [
                     ['Aulas registradas', frequencia.total],
-                    ['Presenças', frequencia.presencas],
+                    ['Horas presentes', `${frequencia.horasPresentes}/${frequencia.horasPrevistas}h`],
+                    ['Aulas com presença', frequencia.comparecimentos],
                     ['Faltas', frequencia.faltas],
                     ['Percentual', frequencia.percentualTexto],
                     ['Situação', frequencia.situacao]

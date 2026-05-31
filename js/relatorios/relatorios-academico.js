@@ -102,7 +102,7 @@ function renderizarTabelaResumoAcademico(participantes, frequencias, atividades,
     return criarContainerTabela(
         [
             { rotulo: 'Nome do Participante', classes: 'coluna-nome-tabela' },
-            'Frequência (%)',
+            'Frequência por horas (%)',
             'Entregas (Total)',
             'Última Atividade'
         ],
@@ -134,22 +134,24 @@ function calcularEstatisticasAcademicas(participantes = [], frequencias = [], at
 
     participantes = participantes.filter(participante => Utilidades.participanteEstaAtivo(participante));
 
-    let totalRegistros = 0;
-    let totalPresencas = 0;
+    let horasPrevistas = 0;
+    let horasPresentes = 0;
     let participantesEmRisco = 0;
 
     participantes.forEach(participante => {
         const frequencia = calcularFrequenciaParticipante(participante.id, frequencias);
-        totalRegistros += frequencia.total;
-        totalPresencas += frequencia.presentes;
-        if (frequencia.total > 0 && frequencia.percentual < 75) participantesEmRisco++;
+        horasPrevistas += frequencia.horasPrevistas;
+        horasPresentes += frequencia.horasPresentes;
+        if (frequencia.horasPrevistas > 0 && frequencia.percentual < 75) participantesEmRisco++;
     });
+
+    const frequenciaMedia = horasPrevistas > 0 ? Math.round((horasPresentes / horasPrevistas) * 100) : 100;
 
     return {
         totalParticipantes: participantes.length,
         participantes: participantes.length,
-        frequenciaMedia: totalRegistros > 0 ? Math.round((totalPresencas / totalRegistros) * 100) : 100,
-        percentualFrequencia: totalRegistros > 0 ? Math.round((totalPresencas / totalRegistros) * 100) : 100,
+        frequenciaMedia,
+        percentualFrequencia: frequenciaMedia,
         participantesEmRisco,
         entregasTotal: atividades.length,
         atividades: atividades.length
@@ -158,21 +160,31 @@ function calcularEstatisticasAcademicas(participantes = [], frequencias = [], at
 
 function calcularFrequenciaParticipante(idParticipante, frequencias = []) {
     let total = 0;
-    let presentes = 0;
+    let comparecimentos = 0;
+    let faltas = 0;
+    let horasPrevistas = 0;
+    let horasPresentes = 0;
 
     frequencias.forEach(frequencia => {
         const presenca = obterPresencaParticipante(frequencia, idParticipante);
         if (presenca === null) return;
 
         total++;
-        if (presenca) presentes++;
+        horasPrevistas += HORAS_AULA_FREQUENCIA;
+        horasPresentes += presenca.horas;
+
+        if (presencaContaComoComparecimento(presenca)) comparecimentos++;
+        if (presenca.estado === ESTADOS_FREQUENCIA.FALTOU) faltas++;
     });
 
     return {
         total,
-        presentes,
-        faltas: total - presentes,
-        percentual: total > 0 ? Math.round((presentes / total) * 100) : 100
+        comparecimentos,
+        presentes: comparecimentos,
+        faltas,
+        horasPrevistas,
+        horasPresentes,
+        percentual: horasPrevistas > 0 ? Math.round((horasPresentes / horasPrevistas) * 100) : 100
     };
 }
 
@@ -196,29 +208,6 @@ function calcularAtividadesParticipante(idParticipante, atividades = []) {
 
 function listarAtividadesPorParticipante(idParticipante, atividades = []) {
     return listarAtividadesEntreguesPorParticipante(idParticipante, atividades);
-}
-
-function obterPresencaParticipante(frequencia, idParticipante) {
-    const presencas = frequencia?.presencas;
-    if (!presencas) return null;
-
-    if (Array.isArray(presencas)) {
-        const registro = presencas.find(item => String(item.id_participante) === String(idParticipante));
-        if (!registro) return null;
-        return normalizarPresenca(registro.presente);
-    }
-
-    if (Object.prototype.hasOwnProperty.call(presencas, idParticipante)) {
-        return normalizarPresenca(presencas[idParticipante]);
-    }
-
-    return null;
-}
-
-function normalizarPresenca(valor) {
-    if (typeof valor === 'boolean') return valor;
-    const texto = String(valor || '').trim().toUpperCase();
-    return ['C', 'P', 'PRESENTE', 'TRUE', 'SIM'].includes(texto);
 }
 
 async function gerarPDFFrequenciaAcademico() {
@@ -295,7 +284,7 @@ function montarHtmlFrequenciaPorDisciplina(idDisciplina, participantes, discipli
             const presenca = obterPresencaParticipante(frequencia, participante.id);
             if (presenca === null) return;
 
-            if (presenca) {
+            if (presencaContaComoComparecimento(presenca)) {
                 presentes.add(participante.nome || participante.id);
                 ausentes.delete(participante.nome || participante.id);
             } else if (!presentes.has(participante.nome || participante.id)) {
@@ -328,7 +317,7 @@ function calcularResultadoDisciplinaParticipante(idParticipante, idDisciplina, f
         if (String(frequencia.id_disciplina) !== String(idDisciplina)) return;
         const presenca = obterPresencaParticipante(frequencia, idParticipante);
         if (presenca === null) return;
-        if (presenca) presencas++;
+        if (presencaContaComoComparecimento(presenca)) presencas++;
         else faltas++;
     });
 

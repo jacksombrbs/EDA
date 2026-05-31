@@ -45,7 +45,7 @@ async function abrirChamada() {
         id_disciplina: idDisciplina,
         data,
         participantes,
-        presencas: Object.fromEntries(participantes.map(participante => [participante.id, true]))
+        presencas: Object.fromEntries(participantes.map(participante => [participante.id, montarEstadoPresenca()]))
     };
 
     await abrirJanelaFrequencia();
@@ -56,10 +56,10 @@ async function editarFrequencia(id) {
     if (!registro) return Utilidades.notificacao('Frequência não encontrada.', 'erro');
 
     const participantes = await obterParticipantesDoCurso(registro.id_curso);
-    const presencas = Object.fromEntries(participantes.map(participante => [participante.id, false]));
+    const presencas = Object.fromEntries(participantes.map(participante => [participante.id, montarEstadoPresenca(ESTADOS_FREQUENCIA.FALTOU, 0)]));
 
     (registro.presencas || []).forEach(item => {
-        presencas[item.id_participante] = Boolean(item.presente);
+        presencas[item.id_participante] = montarEstadoPresenca(item.estado, item.horas);
     });
 
     AppEstado.frequenciaAtual = {
@@ -77,6 +77,15 @@ async function editarFrequencia(id) {
 async function salvarFrequencia() {
     if (!AppEstado.frequenciaAtual?.id_curso || !AppEstado.frequenciaAtual?.id_disciplina || !AppEstado.frequenciaAtual?.data) {
         return Utilidades.notificacao('Dados da chamada incompletos.', 'erro');
+    }
+
+    for (const participante of AppEstado.frequenciaAtual.participantes) {
+        const presenca = AppEstado.frequenciaAtual.presencas[participante.id];
+        if (presenca?.estado !== ESTADOS_FREQUENCIA.PARCIAL) continue;
+
+        if (presenca.horas <= 0 || presenca.horas >= HORAS_AULA_FREQUENCIA) {
+            return Utilidades.notificacao(`Informe uma carga horária parcial entre 1 e ${HORAS_AULA_FREQUENCIA - 1} horas para ${participante.nome}.`, 'erro');
+        }
     }
 
     const registro = montarRegistroFrequencia(
@@ -119,21 +128,23 @@ async function abrirJanelaFrequencia() {
             </div>
             <div class="md-texto-esquerda texto-direita">
                 <p class="texto-md cor-texto-escuro"><strong>Data:</strong> ${Utilidades.formatarData(AppEstado.frequenciaAtual.data)}</p>
+                <p class="texto-sm cor-texto-claro">Aula completa: ${HORAS_AULA_FREQUENCIA}h</p>
             </div>
         </div>
     `;
 
     const linhas = AppEstado.frequenciaAtual.participantes.map((participante, indice) => {
-        const presente = Boolean(AppEstado.frequenciaAtual.presencas[participante.id]);
+        const presenca = AppEstado.frequenciaAtual.presencas[participante.id] || montarEstadoPresenca();
         const classeFundo = indice % 2 === 0 ? 'fundo-branco' : 'fundo-superficie-2';
-        const texto = presente ? 'Compareceu' : 'Faltou';
-        const classes = presente ? 'fundo-sucesso hover-fundo-sucesso-escuro cor-texto-branco' : 'fundo-erro hover-fundo-erro-escuro cor-texto-branco';
 
         return `
             <tr class="${classeFundo} transicao hover-fundo-superficie-3">
                 <td class="p-md texto-esquerda texto-md peso-medium cor-texto-escuro">${Utilidades.escaparHtml(participante.nome)}</td>
                 <td class="p-md texto-direita">
-                    ${criarBotao(texto, `alternarFrequenciaParticipante('${participante.id}')`, 'neutro', `botao-pequeno w-total ${classes}`, 'button', `id="botao-frequencia-${participante.id}"`)}
+                    <div class="flex gap-sm itens-centro justifica-fim">
+                        ${criarBotao(obterTextoEstadoFrequencia(presenca.estado), `alternarFrequenciaParticipante('${participante.id}')`, 'neutro', `botao-pequeno ${obterClasseEstadoFrequencia(presenca.estado)}`, 'button', `id="botao-frequencia-${participante.id}"`)}
+                        <input type="number" min="1" max="${HORAS_AULA_FREQUENCIA - 1}" step="1" id="horas-frequencia-${participante.id}" class="campo-padrao botao-pequeno ${presenca.estado === ESTADOS_FREQUENCIA.PARCIAL ? '' : 'oculto'}" value="${presenca.estado === ESTADOS_FREQUENCIA.PARCIAL ? Utilidades.escaparHtml(presenca.horas || '') : ''}" placeholder="Horas" onchange="atualizarHorasFrequenciaParticipante('${participante.id}', this.value)" oninput="atualizarHorasFrequenciaParticipante('${participante.id}', this.value)" aria-label="Horas parciais">
+                    </div>
                 </td>
             </tr>
         `;
@@ -149,16 +160,38 @@ async function abrirJanelaFrequencia() {
 function alternarFrequenciaParticipante(idParticipante) {
     if (!AppEstado.frequenciaAtual) return;
 
-    AppEstado.frequenciaAtual.presencas[idParticipante] = !AppEstado.frequenciaAtual.presencas[idParticipante];
-    const botao = document.getElementById(`botao-frequencia-${idParticipante}`);
-    if (!botao) return;
+    const atual = AppEstado.frequenciaAtual.presencas[idParticipante] || montarEstadoPresenca();
+    const proximoEstado = obterProximoEstadoFrequencia(atual.estado);
+    const horasParciais = atual.estado === ESTADOS_FREQUENCIA.PARCIAL ? atual.horas : '';
+    AppEstado.frequenciaAtual.presencas[idParticipante] = montarEstadoPresenca(proximoEstado, proximoEstado === ESTADOS_FREQUENCIA.PARCIAL ? horasParciais : undefined);
+    atualizarLinhaFrequenciaParticipante(idParticipante);
+}
 
-    const presente = Boolean(AppEstado.frequenciaAtual.presencas[idParticipante]);
-    botao.textContent = presente ? 'Compareceu' : 'Faltou';
-    botao.classList.toggle('fundo-sucesso', presente);
-    botao.classList.toggle('hover-fundo-sucesso-escuro', presente);
-    botao.classList.toggle('fundo-erro', !presente);
-    botao.classList.toggle('hover-fundo-erro-escuro', !presente);
+function atualizarHorasFrequenciaParticipante(idParticipante, valor) {
+    if (!AppEstado.frequenciaAtual?.presencas?.[idParticipante]) return;
+
+    const horas = Math.min(Math.max(normalizarHorasFrequencia(valor), 0), HORAS_AULA_FREQUENCIA);
+    AppEstado.frequenciaAtual.presencas[idParticipante] = montarEstadoPresenca(ESTADOS_FREQUENCIA.PARCIAL, horas);
+}
+
+function atualizarLinhaFrequenciaParticipante(idParticipante) {
+    const presenca = AppEstado.frequenciaAtual?.presencas?.[idParticipante];
+    const botao = document.getElementById(`botao-frequencia-${idParticipante}`);
+    const campoHoras = document.getElementById(`horas-frequencia-${idParticipante}`);
+
+    if (!presenca || !botao || !campoHoras) return;
+
+    botao.textContent = obterTextoEstadoFrequencia(presenca.estado);
+    botao.className = `botao-padrao botao-neutro botao-pequeno ${obterClasseEstadoFrequencia(presenca.estado)}`;
+
+    const parcial = presenca.estado === ESTADOS_FREQUENCIA.PARCIAL;
+    campoHoras.classList.toggle('oculto', !parcial);
+    if (parcial) {
+        campoHoras.value = presenca.horas || '';
+        campoHoras.focus();
+    } else {
+        campoHoras.value = '';
+    }
 }
 
 function renderizarTabelaFrequencias(frequencias, cursos, disciplinas) {
@@ -174,7 +207,7 @@ function renderizarTabelaFrequencias(frequencias, cursos, disciplinas) {
                 <td class="p-md peso-medium">${Utilidades.formatarData(registro.data)}</td>
                 <td class="p-md">${Utilidades.escaparHtml(curso?.nome || 'Não encontrado')}</td>
                 <td class="p-md peso-bold">${Utilidades.escaparHtml(disciplina?.nome || 'Não encontrada')}</td>
-                <td class="p-md">${resumo.presentes}/${resumo.total} (${resumo.percentual}%)</td>
+                <td class="p-md">${resumo.comparecimentos}/${resumo.total}</td>
                 <td class="p-md">${criarAcoesTabela([
                     { rotulo: 'Editar', acao: `editarFrequencia('${registro.id}')` },
                     { rotulo: 'Excluir', acao: `excluirFrequencia('${registro.id}')`, perigo: true }
@@ -182,7 +215,7 @@ function renderizarTabelaFrequencias(frequencias, cursos, disciplinas) {
             </tr>`;
         }).join('');
 
-    return criarContainerTabela(['Data', 'Curso', 'Disciplina', 'Presenças', 'Ações'], linhas);
+    return criarContainerTabela(['Data', 'Curso', 'Disciplina', 'Comparecimentos', 'Ações'], linhas);
 }
 
 async function iniciarNovaChamada() {

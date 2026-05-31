@@ -77,6 +77,7 @@
 .fundo-superficie-2 { background-color: var(--cor-superficie-2); }
 .fundo-sucesso { background-color: var(--cor-sucesso); }
 .fundo-erro { background-color: var(--cor-erro); }
+.fundo-aviso { background-color: var(--cor-aviso); }
 .fundo-sobreposicao { background: color-mix(in srgb, var(--cor-texto) 50%, transparent); }
 .fundo-toast-sucesso { background: color-mix(in srgb, var(--cor-sucesso) 20%, var(--cor-superficie) 80%); }
 .fundo-toast-erro { background: color-mix(in srgb, var(--cor-erro) 20%, var(--cor-superficie) 80%); }
@@ -100,6 +101,7 @@
 .hover-fundo-superficie-3:hover { background-color: var(--cor-superficie-3); }
 .hover-fundo-erro-escuro:hover { background-color: var(--cor-erro-escuro); }
 .hover-fundo-sucesso-escuro:hover { background-color: var(--cor-sucesso-escuro); }
+.hover-fundo-aviso-escuro:hover { background-color: color-mix(in srgb, var(--cor-aviso) 85%, var(--cor-texto) 15%); }
 .active-fundo-marca-ativo:active { background-color: var(--cor-marca-ativo); }
 
 /* 11. OUTROS UTILITÁRIOS ========= */
