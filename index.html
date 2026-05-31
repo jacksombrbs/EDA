@@ -1,5 +1,6 @@
 ﻿<!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,71 +14,91 @@
     <link rel="stylesheet" href="css/07-tabelas.css">
     <link rel="stylesheet" href="css/08-relatorios.css">
     <link rel="stylesheet" href="css/09-responsivo.css">
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#7a2b2b">
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js', { scope: '/' })
+                .then(reg => console.log('SW registrado:', reg))
+                .catch(err => console.error('Falha ao registrar SW:', err));
+        }
+    </script>
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <script> if ("serviceWorker" in navigator) {navigator.serviceWorker.register("sw.js");}</script>
-
 </head>
+
 <body class="fonte-padrao fundo-cinza cor-texto-escuro antialiased h-total w-total">
-    
+
     <div id="aplicacao" class="w-total min-h-100vh rolagem-oculta pos-relativa">
         <div id="pagina-inicio" class="flex flex-coluna itens-centro justifica-centro h-tela w-tela fundo-cinza p-md">
             <div class="cartao-inicial">
-                <img src="marca-comissao-desenho.svg" alt="Desenho da Comissão Bíblico-Catequética" class="logo-inicial">
+                <img src="marca-comissao-desenho.svg" alt="Desenho da Comissão Bíblico-Catequética"
+                    class="logo-inicial">
                 <h1 class="texto-xl peso-bold cor-texto-primario mb-sm">Comissão Bíblico-Catequética</h1>
                 <p class="texto-md cor-texto-claro mb-lg">Gestão de cursos, participantes e finanças</p>
-                <button class="botao-padrao botao-primario active-fundo-marca-ativo w-total" onclick="irParaAdministracao()">
+                <button class="botao-padrao botao-primario active-fundo-marca-ativo w-total"
+                    onclick="irParaAdministracao()">
                     Painel de Administração
                 </button>
             </div>
         </div>
 
         <div id="pagina-administracao" class="w-tela h-tela fundo-cinza flex flex-linha md-flex-coluna oculto">
-            
+
             <aside class="barra-lateral fundo-cinza flex flex-coluna justifica-inicio p-md md-w-total">
-                <nav class="navegacao-principal flex flex-coluna gap-sm rolagem-y md-flex-linha md-rolagem-x md-p-0 pb-md">
+                <nav
+                    class="navegacao-principal flex flex-coluna gap-sm rolagem-y md-flex-linha md-rolagem-x md-p-0 pb-md">
                     <div class="item-menu indicador-lateral-ativo" data-aba="cursos" onclick="trocarAba('cursos')">
                         <span class="icone-inline" data-icone="cursos" aria-hidden="true"></span>Cursos
                     </div>
-                    
-                    <div class="item-menu indicador-lateral-ativo" data-aba="palestrantes" onclick="trocarAba('palestrantes')">
+
+                    <div class="item-menu indicador-lateral-ativo" data-aba="palestrantes"
+                        onclick="trocarAba('palestrantes')">
                         <span class="icone-inline" data-icone="palestrantes" aria-hidden="true"></span>Palestrantes
                     </div>
-                    
-                    <div class="item-menu indicador-lateral-ativo" data-aba="disciplinas" onclick="trocarAba('disciplinas')">
+
+                    <div class="item-menu indicador-lateral-ativo" data-aba="disciplinas"
+                        onclick="trocarAba('disciplinas')">
                         <span class="icone-inline" data-icone="disciplinas" aria-hidden="true"></span>Disciplinas
                     </div>
-                    
-                    <div class="item-menu indicador-lateral-ativo" data-aba="paroquias" onclick="trocarAba('paroquias')">
+
+                    <div class="item-menu indicador-lateral-ativo" data-aba="paroquias"
+                        onclick="trocarAba('paroquias')">
                         <span class="icone-inline" data-icone="paroquias" aria-hidden="true"></span>Paróquias
                     </div>
-                    
-                    <div class="item-menu indicador-lateral-ativo" data-aba="participantes" onclick="trocarAba('participantes')">
+
+                    <div class="item-menu indicador-lateral-ativo" data-aba="participantes"
+                        onclick="trocarAba('participantes')">
                         <span class="icone-inline" data-icone="participantes" aria-hidden="true"></span>Participantes
                     </div>
-                    
-                    <div class="item-menu indicador-lateral-ativo" data-aba="frequencia" onclick="trocarAba('frequencia')">
+
+                    <div class="item-menu indicador-lateral-ativo" data-aba="frequencia"
+                        onclick="trocarAba('frequencia')">
                         <span class="icone-inline" data-icone="frequencia" aria-hidden="true"></span>Frequência
                     </div>
-                    
-                    <div class="item-menu indicador-lateral-ativo" data-aba="atividades" onclick="trocarAba('atividades')">
+
+                    <div class="item-menu indicador-lateral-ativo" data-aba="atividades"
+                        onclick="trocarAba('atividades')">
                         <span class="icone-inline" data-icone="atividades" aria-hidden="true"></span>Atividades
                     </div>
 
                     <div class="item-menu indicador-lateral-ativo" data-aba="financas" onclick="trocarAba('financas')">
                         <span class="icone-inline" data-icone="financas" aria-hidden="true"></span>Finanças
                     </div>
-                    
-                    <div class="item-menu indicador-lateral-ativo" data-aba="pagamentos" onclick="trocarAba('pagamentos')">
+
+                    <div class="item-menu indicador-lateral-ativo" data-aba="pagamentos"
+                        onclick="trocarAba('pagamentos')">
                         <span class="icone-inline" data-icone="pagamentos" aria-hidden="true"></span>Pagamentos
                     </div>
-                                       
 
-                    <div class="item-menu indicador-lateral-ativo" data-aba="relatorios" onclick="trocarAba('relatorios')">
+
+                    <div class="item-menu indicador-lateral-ativo" data-aba="relatorios"
+                        onclick="trocarAba('relatorios')">
                         <span class="icone-inline" data-icone="relatorios" aria-hidden="true"></span>Relatórios
                     </div>
-                    
+
                     <div class="item-menu indicador-lateral-ativo" data-aba="avisos" onclick="trocarAba('avisos')">
                         <span class="icone-inline" data-icone="avisos" aria-hidden="true"></span>Avisos
                     </div>
@@ -92,16 +113,21 @@
                 <div id="conteudo-administracao" class="w-total"></div>
             </main>
 
-            <button class="botao-padrao botao-flutuante botao-sair-discreto" onclick="sairAdministracao()" title="Sair" aria-label="Sair">
+            <button class="botao-padrao botao-flutuante botao-sair-discreto" onclick="sairAdministracao()" title="Sair"
+                aria-label="Sair">
                 <span class="icone-inline" data-icone="sair" aria-hidden="true"></span>
             </button>
         </div>
 
-        <div id="janela-formulario" class="pos-fixa inset-0 flex fundo-sobreposicao itens-centro justifica-centro z-maximo p-lg rolagem-y oculto" role="dialog" aria-modal="true" aria-labelledby="titulo-janela" aria-hidden="true" tabindex="-1">
+        <div id="janela-formulario"
+            class="pos-fixa inset-0 flex fundo-sobreposicao itens-centro justifica-centro z-maximo p-lg rolagem-y oculto"
+            role="dialog" aria-modal="true" aria-labelledby="titulo-janela" aria-hidden="true" tabindex="-1">
             <div class="janela-conteudo">
-                <div class="flex justifica-espaco itens-centro pb-md mb-lg borda-base-1 borda-base-solida borda-cor-padrao">
+                <div
+                    class="flex justifica-espaco itens-centro pb-md mb-lg borda-base-1 borda-base-solida borda-cor-padrao">
                     <h3 id="titulo-janela" class="texto-lg peso-bold cor-texto-primario">Formulário</h3>
-                    <button class="botao-padrao botao-secundario botao-fechar-janela" onclick="fecharJanela('janela-formulario')" aria-label="Fechar janela">
+                    <button class="botao-padrao botao-secundario botao-fechar-janela"
+                        onclick="fecharJanela('janela-formulario')" aria-label="Fechar janela">
                         <span class="icone-inline" data-icone="cancelar" aria-hidden="true"></span>
                     </button>
                 </div>
@@ -111,7 +137,8 @@
 
     </div>
 
-    <button id="botao-topo" class="botao-padrao botao-flutuante botao-topo oculto" onclick="voltarAoTopo()" title="Voltar ao topo" aria-label="Voltar ao topo">
+    <button id="botao-topo" class="botao-padrao botao-flutuante botao-topo oculto" onclick="voltarAoTopo()"
+        title="Voltar ao topo" aria-label="Voltar ao topo">
         <span class="icone-inline" data-icone="topo" aria-hidden="true"></span>
     </button>
 
@@ -152,4 +179,5 @@
     <script src="js/relatorios/relatorios.js"></script>
     <script src="js/dados/dados.js"></script>
 </body>
+
 </html>

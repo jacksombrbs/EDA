@@ -1,3 +1,4 @@
-self.addEventListener("install", () => {
-  self.skipWaiting();
-});
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js', { scope: '/' })
+        .catch(err => console.error('SW registration failed:', err));
+}
