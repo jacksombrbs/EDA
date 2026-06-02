@@ -81,7 +81,7 @@ const Utilidades = {
     montarNomeParticipanteComStatus(participante = {}, mostrarStatus = false) {
         const nome = this.escaparHtml(participante.nome || '-');
         if (!mostrarStatus || this.participanteEstaAtivo(participante)) return nome;
-        return `${nome}<br><span class="texto-xs cor-texto-erro peso-bold">Desistente</span>`;
+        return `${nome} <span class="texto-xs cor-texto-erro peso-bold">(Desistente)</span>`;
     },
 
     escaparHtml(valor) {
