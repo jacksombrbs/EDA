@@ -403,7 +403,10 @@ async function abrirFormularioPagamentoLote(id = null) {
     });
     document.getElementById('valor_unitario_lote')?.addEventListener('input', atualizarValorPagamentoLote);
     document.getElementById('descricao_lote')?.addEventListener('input', atualizarValorPagamentoLote);
-    document.getElementById('recipiente-participantes-lote')?.addEventListener('change', atualizarValorPagamentoLote);
+    document.getElementById('recipiente-participantes-lote')?.addEventListener('change', async () => {
+        await atualizarReferenciasPagamentoLote(lote, participantes);
+        atualizarValorPagamentoLote();
+    });
 
     await atualizarFormularioPagamentoLote(participantes, lote);
     Interface.abrirJanela('janela-formulario');
@@ -421,55 +424,47 @@ async function atualizarReferenciasPagamentoLote(lote = null) {
     if (!recipiente) return;
 
     const curso = idCurso ? await bd.obter('cursos', idCurso) : null;
-    const disciplinas = await bd.obterTodos('disciplinas');
-    const opcoes = montarOpcoesCobrancaLote(curso, disciplinas.filter(disciplina => String(disciplina.id_curso) === String(idCurso)));
-    const marcadas = new Set((lote?.cobrancas || []).map(codificarCobrancaPagamento));
+    const [disciplinas, pagamentos] = await Promise.all([
+        bd.obterTodos('disciplinas'),
+        bd.obterTodos('pagamentos')
+    ]);
+    const disciplinasCurso = disciplinas.filter(disciplina => String(disciplina.id_curso) === String(idCurso));
+    const participantesBase = obterParticipantesBaseCobrancasLote(participantes);
+    const opcoes = montarOpcoesCobrancaLote(curso, disciplinasCurso, participantesBase, pagamentos, { ignorarLoteId: AppEstado.registroEmEdicao });
+    const marcadasAtuais = new Set(Array.from(document.querySelectorAll('.marcador-cobranca-lote:checked')).map(campo => campo.value));
+    const marcadas = new Set([...(lote?.cobrancas || []).map(codificarCobrancaPagamento), ...marcadasAtuais]);
     if (lote && marcadas.size === 0) marcadas.add(montarValorOpcaoCobranca(lote));
     const tipoSelecionado = obterTipoCobrancaSelecionado(opcoes, lote?.tipo === 'Múltiplas' ? '' : lote?.tipo);
     recipiente.innerHTML = montarControleCobrancasPagamento(opcoes, marcadas, 'marcador-cobranca-lote', 'tipo_cobranca_lote', tipoSelecionado);
     atualizarGrupoCobrancasPagamento('tipo_cobranca_lote', 'marcador-cobranca-lote');
 }
 
-function montarOpcoesCobrancaLote(curso = null, disciplinas = []) {
+function montarOpcoesCobrancaLote(curso = null, disciplinas = [], participantes = [], pagamentos = [], contexto = {}) {
     if (!curso) return [{ id: '', nome: 'Selecione o curso para listar as cobranças disponíveis.', valor: 0, descricao: '' }];
+    if (!participantes.length) return [{ id: '', nome: 'Selecione curso e paróquia para listar as cobranças abertas do lote.', valor: 0, descricao: '' }];
 
-    const opcoes = [];
-    if (Utilidades.normalizarValorMonetario(curso.valor_inscricao) > 0) {
-        opcoes.push({ id: 'Inscrição||inscricao||', tipo: 'Inscrição', nome: `Inscrição - ${Utilidades.formatarMoeda(curso.valor_inscricao)}`, descricao: 'Inscrição', valor: Utilidades.normalizarValorMonetario(curso.valor_inscricao) });
-    }
+    const mapaOpcoes = new Map();
+    const participantesConsiderados = participantes.filter(participante => String(participante.id_curso) === String(curso.id));
 
-    if (cursoCobraPorMensalidade(curso)) {
-        const quantidade = Number(curso.quantidade_mensalidades || 0);
-        for (let indice = 1; indice <= quantidade; indice++) {
-            opcoes.push({ id: `Mensalidade||mensalidade-${indice}||${indice}`, tipo: 'Mensalidade', nome: `Mensalidade ${indice} - ${Utilidades.formatarMoeda(curso.valor_mensalidade)}`, descricao: `Mensalidade ${indice}`, valor: Utilidades.normalizarValorMonetario(curso.valor_mensalidade) });
-        }
-    }
-
-    if (cursoCobraPorDisciplina(curso)) {
-        [...disciplinas].sort((a, b) => compararTextoFinanceiro(a.nome, b.nome)).forEach(disciplina => {
-            const valor = Utilidades.normalizarValorMonetario(disciplina.valor_disciplina);
-            if (valor <= 0) return;
-            opcoes.push({ id: `Disciplina||${disciplina.id}||`, tipo: 'Disciplina', nome: `${disciplina.nome} - ${Utilidades.formatarMoeda(valor)}`, descricao: disciplina.nome, valor });
+    participantesConsiderados.forEach(participante => {
+        const obrigacoesAbertas = obterObrigacoesAbertasParticipante(participante, curso, disciplinas, [], pagamentos, contexto);
+        obrigacoesAbertas.forEach(obrigacao => {
+            const chave = codificarCobrancaPagamento(obrigacao);
+            const registro = mapaOpcoes.get(chave) || { obrigacao, ocorrencias: 0 };
+            registro.ocorrencias++;
+            mapaOpcoes.set(chave, registro);
         });
-    }
+    });
 
-    if (cursoCobraPorEncontro(curso)) {
-        const valor = Utilidades.normalizarValorMonetario(curso.valor_encontro);
-        [...disciplinas].sort((a, b) => compararTextoFinanceiro(a.nome, b.nome)).forEach(disciplina => {
-            const quantidadeEncontros = Math.max(Number(disciplina.quantidade_encontros || 1), 1);
-            for (let indice = 1; indice <= quantidadeEncontros; indice++) {
-                if (encontroDisciplinaEhGratuito(disciplina, indice) || valor <= 0) continue;
-                const descricao = `${disciplina.nome || 'Disciplina'} — Encontro ${indice}`;
-                opcoes.push({
-                    id: `Encontro||${disciplina.id}-encontro-${indice}||${indice}`,
-                    tipo: 'Encontro',
-                    nome: `${descricao} - ${Utilidades.formatarMoeda(valor)}`,
-                    descricao,
-                    valor
-                });
-            }
-        });
-    }
+    const opcoes = Array.from(mapaOpcoes.values())
+        .filter(registro => registro.ocorrencias === participantesConsiderados.length)
+        .map(({ obrigacao }) => ({
+            id: codificarCobrancaPagamento(obrigacao),
+            tipo: obrigacao.tipo,
+            nome: `${obrigacao.descricao} - ${Utilidades.formatarMoeda(obrigacao.valor)}`,
+            descricao: obrigacao.descricao,
+            valor: Utilidades.normalizarValorMonetario(obrigacao.valor)
+        }));
 
     opcoes.push({ id: 'Outros||outros||', tipo: 'Outros', nome: 'Outros - valor manual', descricao: 'Outros', valor: 0 });
     return ordenarOpcoesCobrancaPagamento(opcoes);
@@ -633,6 +628,29 @@ function ordenarPagamentosLote(lotes = [], paroquias = [], cursos = []) {
     });
 }
 
+function obterParticipantesFiltradosLote(participantes = []) {
+    const idCurso = document.getElementById('id_curso_lote')?.value || '';
+    const idParoquia = document.getElementById('id_paroquia_lote')?.value || '';
+
+    if (!idCurso || !idParoquia) return [];
+
+    return participantes
+        .filter(participante => String(participante.id_curso) === String(idCurso))
+        .filter(participante => String(participante.id_paroquia) === String(idParoquia))
+        .filter(participante => Utilidades.participanteEstaAtivo(participante));
+}
+
+function obterParticipantesBaseCobrancasLote(participantes = []) {
+    const idsMarcados = new Set(obterIdsParticipantesLoteMarcados().map(String));
+    const filtrados = obterParticipantesFiltradosLote(participantes);
+
+    if (idsMarcados.size > 0) {
+        return filtrados.filter(participante => idsMarcados.has(String(participante.id)));
+    }
+
+    return filtrados;
+}
+
 function renderizarParticipantesLotePagamento(participantes, lote = null) {
     const idCurso = document.getElementById('id_curso_lote')?.value || '';
     const idParoquia = document.getElementById('id_paroquia_lote')?.value || '';
@@ -640,10 +658,11 @@ function renderizarParticipantesLotePagamento(participantes, lote = null) {
     if (!recipiente) return;
 
     const idsMarcados = new Set((lote?.ids_participantes || []).map(String));
-    const filtrados = participantes
-        .filter(participante => String(participante.id_curso) === String(idCurso))
-        .filter(participante => String(participante.id_paroquia) === String(idParoquia))
-        .filter(participante => Utilidades.participanteEstaAtivo(participante) || idsMarcados.has(String(participante.id)))
+    const ativos = obterParticipantesFiltradosLote(participantes);
+    const inativosMarcados = participantes
+        .filter(participante => idsMarcados.has(String(participante.id)))
+        .filter(participante => !ativos.some(ativo => String(ativo.id) === String(participante.id)));
+    const filtrados = [...ativos, ...inativosMarcados]
         .sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
 
     if (!idCurso || !idParoquia) {
