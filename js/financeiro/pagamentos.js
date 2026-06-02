@@ -212,11 +212,11 @@ function atualizarGrupoCobrancasPagamento(idSeletorTipo, classeMarcador) {
 }
 
 function codificarCobrancaPagamento(obrigacao) {
-    return [obrigacao.tipo, obrigacao.referencia_id || '', obrigacao.referencia_indice || ''].join('||');
+    return obterChaveCobrancaFinanceira(obrigacao.tipo, obrigacao.referencia_id, obrigacao.referencia_indice);
 }
 
 function montarValorOpcaoCobranca(pagamento = {}) {
-    return [pagamento.tipo || '', pagamento.referencia_id || '', pagamento.referencia_indice || ''].join('||');
+    return obterChaveCobrancaFinanceira(pagamento.tipo, pagamento.referencia_id, pagamento.referencia_indice);
 }
 
 function decodificarCobrancaPagamento(valor = '') {
@@ -299,36 +299,42 @@ function montarDescricaoPagamento(cobrancas = []) {
 async function salvarPagamento(eventoOuOpcoes = {}) {
     const opcoes = eventoOuOpcoes && typeof eventoOuOpcoes.preventDefault === 'function' ? {} : eventoOuOpcoes;
     if (eventoOuOpcoes && typeof eventoOuOpcoes.preventDefault === 'function') eventoOuOpcoes.preventDefault();
+    if (AppEstado.salvandoPagamento) return null;
 
-    const dados = await obterDadosFormularioPagamento();
-    if (!validarFormularioPagamento(dados)) return null;
+    AppEstado.salvandoPagamento = true;
+    try {
+        const dados = await obterDadosFormularioPagamento();
+        if (!validarFormularioPagamento(dados)) return null;
 
-    const dadosPagamentos = [];
-    for (const cobranca of dados.cobrancas) {
-        const dadosPagamento = montarDadosPagamentoPorCobranca(dados, cobranca);
-        const validacao = await validarPagamento(dadosPagamento, { ignorarPagamentoId: AppEstado.registroEmEdicao });
-        if (!validacao.valido) {
-            Utilidades.notificacao(validacao.mensagem, 'erro');
-            return null;
+        const dadosPagamentos = [];
+        for (const cobranca of dados.cobrancas) {
+            const dadosPagamento = montarDadosPagamentoPorCobranca(dados, cobranca);
+            const validacao = await validarPagamento(dadosPagamento, { ignorarPagamentoId: AppEstado.registroEmEdicao });
+            if (!validacao.valido) {
+                Utilidades.notificacao(validacao.mensagem, 'erro');
+                return null;
+            }
+            dadosPagamentos.push(dadosPagamento);
         }
-        dadosPagamentos.push(dadosPagamento);
-    }
 
-    if (AppEstado.registroEmEdicao && dadosPagamentos.length > 1) {
-        await bd.excluir('pagamentos', AppEstado.registroEmEdicao);
-    }
+        if (AppEstado.registroEmEdicao) {
+            await bd.excluir('pagamentos', AppEstado.registroEmEdicao);
+        }
 
-    const pagamentosSalvos = [];
-    for (const dadosPagamento of dadosPagamentos) {
-        const pagamento = montarPagamento(dadosPagamento, dadosPagamentos.length === 1 ? AppEstado.registroEmEdicao : null);
-        await bd.salvar('pagamentos', pagamento);
-        pagamentosSalvos.push(pagamento);
-    }
+        const pagamentosSalvos = [];
+        for (const dadosPagamento of dadosPagamentos) {
+            const pagamento = montarPagamento(dadosPagamento, dadosPagamentos.length === 1 ? AppEstado.registroEmEdicao : null);
+            await bd.salvar('pagamentos', pagamento);
+            pagamentosSalvos.push(pagamento);
+        }
 
-    if (opcoes.notificar !== false) Utilidades.notificacao(AppEstado.registroEmEdicao ? 'Pagamento atualizado!' : 'Pagamento salvo com sucesso!', 'sucesso');
-    if (opcoes.fecharJanela !== false) Interface.fecharJanela('janela-formulario');
-    if (opcoes.renderizar !== false) await renderizarAbaAtual();
-    return pagamentosSalvos;
+        if (opcoes.notificar !== false) Utilidades.notificacao(AppEstado.registroEmEdicao ? 'Pagamento atualizado!' : 'Pagamento salvo com sucesso!', 'sucesso');
+        if (opcoes.fecharJanela !== false) Interface.fecharJanela('janela-formulario');
+        if (opcoes.renderizar !== false) await renderizarAbaAtual();
+        return pagamentosSalvos;
+    } finally {
+        AppEstado.salvandoPagamento = false;
+    }
 }
 
 async function salvarPagamentoEGerarRecibo() {
@@ -472,37 +478,44 @@ function montarOpcoesCobrancaLote(curso = null, disciplinas = []) {
 async function salvarPagamentoLote(eventoOuOpcoes = {}) {
     const opcoes = eventoOuOpcoes && typeof eventoOuOpcoes.preventDefault === 'function' ? {} : eventoOuOpcoes;
     if (eventoOuOpcoes && typeof eventoOuOpcoes.preventDefault === 'function') eventoOuOpcoes.preventDefault();
+    if (AppEstado.salvandoPagamentoLote) return null;
 
-    const dados = await obterDadosFormularioPagamentoLote();
-    if (!validarFormularioPagamentoLote(dados)) return null;
+    AppEstado.salvandoPagamentoLote = true;
+    try {
+        const dados = await obterDadosFormularioPagamentoLote();
+        if (!validarFormularioPagamentoLote(dados)) return null;
 
-    for (const cobranca of dados.cobrancas) {
-        if (cobranca.tipo === 'Outros') continue;
-        for (const idParticipante of dados.ids_participantes) {
-            const validacao = await validarPagamento(montarDadosPagamentoPorCobranca({ ...dados, id_participante: idParticipante }, cobranca), { ignorarLoteId: AppEstado.registroEmEdicao });
-            if (!validacao.valido) {
-                const participante = (await bd.obterTodos('participantes')).find(item => String(item.id) === String(idParticipante));
-                Utilidades.notificacao(`${participante?.nome || 'Participante'}: ${validacao.mensagem}`, 'erro');
-                return null;
+        const participantes = await bd.obterTodos('participantes');
+        for (const cobranca of dados.cobrancas) {
+            if (cobranca.tipo === 'Outros') continue;
+            for (const idParticipante of dados.ids_participantes) {
+                const validacao = await validarPagamento(montarDadosPagamentoPorCobranca({ ...dados, id_participante: idParticipante }, cobranca), { ignorarLoteId: AppEstado.registroEmEdicao });
+                if (!validacao.valido) {
+                    const participante = participantes.find(item => String(item.id) === String(idParticipante));
+                    Utilidades.notificacao(`${participante?.nome || 'Participante'}: ${validacao.mensagem}`, 'erro');
+                    return null;
+                }
             }
         }
-    }
 
-    const lote = montarPagamentoLote(dados, AppEstado.registroEmEdicao);
-    await bd.salvar('pagamentos_lote', lote);
+        const lote = montarPagamentoLote(dados, AppEstado.registroEmEdicao);
+        await bd.salvar('pagamentos_lote', lote);
 
-    await removerPagamentosDoLote(lote.id);
-    for (const idParticipante of lote.ids_participantes) {
-        for (const cobranca of lote.cobrancas) {
-            const pagamento = montarPagamento(montarDadosPagamentoPorCobranca({ ...dados, id_participante: idParticipante, id_lote: lote.id }, cobranca));
-            await bd.salvar('pagamentos', pagamento);
+        await removerPagamentosDoLote(lote.id);
+        for (const idParticipante of lote.ids_participantes) {
+            for (const cobranca of lote.cobrancas) {
+                const pagamento = montarPagamento(montarDadosPagamentoPorCobranca({ ...dados, id_participante: idParticipante, id_lote: lote.id }, cobranca));
+                await bd.salvar('pagamentos', pagamento);
+            }
         }
-    }
 
-    if (opcoes.notificar !== false) Utilidades.notificacao(AppEstado.registroEmEdicao ? 'Pagamento em lote atualizado!' : 'Pagamento em lote salvo com sucesso!', 'sucesso');
-    if (opcoes.fecharJanela !== false) Interface.fecharJanela('janela-formulario');
-    if (opcoes.renderizar !== false) await renderizarAbaAtual();
-    return lote;
+        if (opcoes.notificar !== false) Utilidades.notificacao(AppEstado.registroEmEdicao ? 'Pagamento em lote atualizado!' : 'Pagamento em lote salvo com sucesso!', 'sucesso');
+        if (opcoes.fecharJanela !== false) Interface.fecharJanela('janela-formulario');
+        if (opcoes.renderizar !== false) await renderizarAbaAtual();
+        return lote;
+    } finally {
+        AppEstado.salvandoPagamentoLote = false;
+    }
 }
 
 async function salvarPagamentoLoteEGerarRecibo() {
@@ -766,6 +779,17 @@ function montarDadosPagamentoPorCobranca(dados, cobranca) {
     };
 }
 
+function cobrancasPossuemDuplicidade(cobrancas = []) {
+    const chaves = new Set();
+    return cobrancas.some(cobranca => {
+        if (!cobranca || cobranca.tipo === 'Outros') return false;
+        const chave = obterChaveCobrancaFinanceira(cobranca.tipo, cobranca.referencia_id, cobranca.referencia_indice);
+        if (chaves.has(chave)) return true;
+        chaves.add(chave);
+        return false;
+    });
+}
+
 function validarFormularioPagamento(dados) {
     if (!Validacao.notificarCamposObrigatorios([
         { nome: 'Participante', valor: dados.id_participante },
@@ -777,6 +801,11 @@ function validarFormularioPagamento(dados) {
 
     if (!Validacao.listaNaoVazia(dados.cobrancas)) {
         Utilidades.notificacao('Selecione ao menos uma cobrança.', 'erro');
+        return false;
+    }
+
+    if (cobrancasPossuemDuplicidade(dados.cobrancas)) {
+        Utilidades.notificacao('A mesma cobrança foi selecionada mais de uma vez.', 'erro');
         return false;
     }
 
@@ -814,6 +843,11 @@ function validarFormularioPagamentoLote(dados) {
 
     if (!Validacao.listaNaoVazia(dados.ids_participantes)) {
         Utilidades.notificacao('Selecione ao menos um participante para o lote.', 'erro');
+        return false;
+    }
+
+    if (cobrancasPossuemDuplicidade(dados.cobrancas)) {
+        Utilidades.notificacao('A mesma cobrança foi selecionada mais de uma vez.', 'erro');
         return false;
     }
 

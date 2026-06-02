@@ -82,6 +82,28 @@ function encontroDisciplinaEhGratuito(disciplina = null, indiceEncontro = 1) {
     return Number(indiceEncontro || 0) <= obterQuantidadeEncontrosGratuitos(disciplina);
 }
 
+function normalizarReferenciaIndicePagamento(valor = null) {
+    if (valor === null || valor === undefined || String(valor).trim() === '') return '';
+    const numero = Number(valor);
+    return Number.isFinite(numero) ? String(numero) : String(valor).trim();
+}
+
+function obterChaveCobrancaFinanceira(tipo = '', referenciaId = '', referenciaIndice = null) {
+    return [
+        String(tipo || '').trim(),
+        String(referenciaId || '').trim(),
+        normalizarReferenciaIndicePagamento(referenciaIndice)
+    ].join('||');
+}
+
+function obterChavePagamentoFinanceiro(pagamento = {}) {
+    return obterChaveCobrancaFinanceira(pagamento.tipo, pagamento.referencia_id, pagamento.referencia_indice);
+}
+
+function obterChaveObrigacaoFinanceira(obrigacao = {}) {
+    return obterChaveCobrancaFinanceira(obrigacao.tipo, obrigacao.referencia_id, obrigacao.referencia_indice);
+}
+
 function pagamentoPertenceAoParticipante(pagamento, idParticipante, contexto = {}) {
     return String(pagamento.id_participante) === String(idParticipante)
         && String(pagamento.id) !== String(contexto.ignorarPagamentoId || '')
@@ -89,19 +111,19 @@ function pagamentoPertenceAoParticipante(pagamento, idParticipante, contexto = {
 }
 
 function pagamentoQuitaReferencia(pagamento, tipo, referenciaId = '', referenciaIndice = null) {
-    if (pagamento.tipo !== tipo) return false;
-    if (referenciaId && String(pagamento.referencia_id || '') !== String(referenciaId)) return false;
-    if (referenciaIndice !== null && Number(pagamento.referencia_indice || 0) !== Number(referenciaIndice)) return false;
-    return true;
+    return obterChavePagamentoFinanceiro(pagamento) === obterChaveCobrancaFinanceira(tipo, referenciaId, referenciaIndice);
+}
+
+function obterPagamentoObrigacao(obrigacao, pagamentos = [], contexto = {}) {
+    const chaveObrigacao = obterChaveObrigacaoFinanceira(obrigacao);
+    return pagamentos.find(item =>
+        pagamentoPertenceAoParticipante(item, obrigacao.id_participante, contexto)
+        && obterChavePagamentoFinanceiro(item) === chaveObrigacao
+    ) || null;
 }
 
 function obterDataPagamentoObrigacao(obrigacao, pagamentos = [], contexto = {}) {
-    const pagamento = pagamentos.find(item =>
-        pagamentoPertenceAoParticipante(item, obrigacao.id_participante, contexto)
-        && pagamentoQuitaReferencia(item, obrigacao.tipo, obrigacao.referencia_id, obrigacao.referencia_indice ?? null)
-    );
-
-    return pagamento?.data || '';
+    return obterPagamentoObrigacao(obrigacao, pagamentos, contexto)?.data || '';
 }
 
 function montarObrigacaoFinanceira(dados, pagamentos = [], contexto = {}) {
@@ -254,15 +276,22 @@ async function validarPagamento(dados, contexto = {}) {
         return { valido: false, mensagem: 'Selecione o participante.' };
     }
 
-    const abertas = await obterObrigacoesAbertasPagamento(dados.id_participante, contexto);
-    const obrigacao = abertas.find(item =>
-        item.tipo === dados.tipo
-        && String(item.referencia_id || '') === String(dados.referencia_id || '')
-        && String(item.referencia_indice || '') === String(dados.referencia_indice || '')
-    );
+    const { participante, curso, disciplinas, frequencias, pagamentos } = await obterContextoObrigacoesParticipante(dados.id_participante, contexto);
+    if (!participante || !curso) {
+        return { valido: false, mensagem: 'Participante ou curso não encontrado.' };
+    }
+
+    const chavePagamento = obterChavePagamentoFinanceiro(dados);
+    const obrigacoes = calcularObrigacoesFinanceirasParticipante(participante, curso, disciplinas, frequencias, pagamentos, contexto);
+    const obrigacao = obrigacoes.find(item => obterChaveObrigacaoFinanceira(item) === chavePagamento);
 
     if (!obrigacao) {
-        return { valido: false, mensagem: 'Esta cobrança já foi paga ou não está aberta para o participante.' };
+        return { valido: false, mensagem: 'Esta cobrança não existe para o participante.' };
+    }
+
+    const pagamentoExistente = obterPagamentoObrigacao(obrigacao, pagamentos, contexto);
+    if (pagamentoExistente) {
+        return { valido: false, mensagem: 'Esta cobrança já foi paga para o participante.' };
     }
 
     return { valido: true };

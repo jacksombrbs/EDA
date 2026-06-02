@@ -191,7 +191,8 @@ async function gerarPDFMensalidadesFinanceiro() {
             html += `<tr><td><strong>${Utilidades.escaparHtml(participante.nome || '-')}</strong></td>`;
             html += `<td class="texto-centro"><strong>${desistente ? 'Desistente' : (resumo.pendentes > 0 ? 'Pendente' : 'Em dia')}</strong></td>`;
             obrigacoesCurso.forEach(modelo => {
-                const obrigacao = obrigacoes.find(item => item.tipo === modelo.tipo && String(item.referencia_id || '') === String(modelo.referencia_id || '') && String(item.referencia_indice || '') === String(modelo.referencia_indice || ''));
+                const chaveModelo = obterChaveCobrancaFinanceira(modelo.tipo, modelo.referencia_id, modelo.referencia_indice);
+                const obrigacao = obrigacoes.find(item => obterChaveObrigacaoFinanceira(item) === chaveModelo);
                 html += `<td class="texto-centro"><strong>${formatarPagamentoObrigacaoRelatorio(obrigacao)}</strong></td>`;
             });
             html += `<td class="texto-centro"><strong>${resumo.pendente > 0 ? Utilidades.formatarMoeda(resumo.pendente) : ''}</strong></td>`;
@@ -210,16 +211,24 @@ function montarObrigacoesModeloCurso(curso, disciplinas = [], frequencias = []) 
 
     if (cursoCobraPorMensalidade(curso)) {
         const quantidade = Number(curso.quantidade_mensalidades || 0);
-        for (let indice = 1; indice <= quantidade; indice++) modelos.push({ tipo: 'Mensalidade', referencia_id: `mensalidade-${indice}`, referencia_indice: indice, rotulo: `P${indice}` });
+        const valor = Utilidades.normalizarValorMonetario(curso.valor_mensalidade || 0);
+        for (let indice = 1; indice <= quantidade; indice++) {
+            if (valor > 0) modelos.push({ tipo: 'Mensalidade', referencia_id: `mensalidade-${indice}`, referencia_indice: indice, rotulo: `P${indice}` });
+        }
     } else if (cursoCobraPorDisciplina(curso)) {
-        disciplinas.forEach(disciplina => modelos.push({ tipo: 'Disciplina', referencia_id: disciplina.id, rotulo: disciplina.nome || 'Disciplina' }));
+        disciplinas
+            .filter(disciplina => Utilidades.normalizarValorMonetario(disciplina.valor_disciplina) > 0)
+            .sort((a, b) => compararTextoFinanceiro(a.nome, b.nome))
+            .forEach(disciplina => modelos.push({ tipo: 'Disciplina', referencia_id: disciplina.id, rotulo: disciplina.nome || 'Disciplina' }));
     } else if (cursoCobraPorEncontro(curso)) {
+        const valor = Utilidades.normalizarValorMonetario(curso.valor_encontro || 0);
         disciplinas
             .filter(disciplina => String(disciplina.id_curso) === String(curso.id))
-            .sort((a, b) => (a.nome || '').localeCompare(b.nome || ''))
+            .sort((a, b) => compararTextoFinanceiro(a.nome, b.nome))
             .forEach(disciplina => {
                 const quantidadeEncontros = Math.max(Number(disciplina.quantidade_encontros || 1), 1);
                 for (let indice = 1; indice <= quantidadeEncontros; indice++) {
+                    if (valor <= 0 || encontroDisciplinaEhGratuito(disciplina, indice)) continue;
                     modelos.push({
                         tipo: 'Encontro',
                         referencia_id: `${disciplina.id}-encontro-${indice}`,
@@ -230,7 +239,7 @@ function montarObrigacoesModeloCurso(curso, disciplinas = [], frequencias = []) 
             });
     }
 
-    return modelos;
+    return ordenarObrigacoesFinanceiras(modelos);
 }
 
 function formatarPagamentoObrigacaoRelatorio(obrigacao) {
