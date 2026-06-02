@@ -439,7 +439,8 @@ function montarHtmlConsultaFichaParticipante(dadosFicha) {
                 ['Inscrição', financeiro.inscricaoTexto],
                 ['Valor da inscrição', Utilidades.formatarMoeda(financeiro.valorInscricao)],
                 ['Cobranças pendentes', financeiro.obrigacoesPendentes],
-                ['Total pago', Utilidades.formatarMoeda(financeiro.totalGeral)]
+                ['Total pago', Utilidades.formatarMoeda(financeiro.totalGeral)],
+                ['Valor a pagar', Utilidades.formatarMoeda(financeiro.valorPendente)]
             ])}
             ${montarCartaoConsultaFicha('Frequência', [
                 ['Aulas registradas', frequencia.total],
@@ -531,7 +532,8 @@ function montarHtmlFichaParticipante(dadosFicha) {
                     ['Cobranças pendentes', financeiro.obrigacoesPendentes],
                     ['Total em cobranças', Utilidades.formatarMoeda(financeiro.totalObrigacoes)],
                     ['Outras entradas', Utilidades.formatarMoeda(financeiro.totalOutros)],
-                    ['Total pago', Utilidades.formatarMoeda(financeiro.totalGeral)]
+                    ['Total pago', Utilidades.formatarMoeda(financeiro.totalGeral)],
+                    ['Valor a pagar', Utilidades.formatarMoeda(financeiro.valorPendente)]
                 ])}
 
                 ${montarBlocoFichaPDF('Frequência', [
@@ -551,7 +553,7 @@ function montarHtmlFichaParticipante(dadosFicha) {
             </div>
 
             <div class="resumo-final-ficha">
-                <p><strong>Resumo:</strong> inscrição ${financeiro.inscricaoTexto.toLowerCase()}; cobranças ${financeiro.obrigacoesPagas} pagas e ${financeiro.obrigacoesPendentes} pendentes; frequência ${frequencia.percentualTexto} (${frequencia.situacao}); ${atividades.total} atividade(s) registrada(s).</p>
+                <p><strong>Resumo:</strong> inscrição ${financeiro.inscricaoTexto.toLowerCase()}; cobranças ${financeiro.obrigacoesPagas} pagas e ${financeiro.obrigacoesPendentes} pendentes; total pago ${Utilidades.formatarMoeda(financeiro.totalGeral)}; valor a pagar ${Utilidades.formatarMoeda(financeiro.valorPendente)}; frequência ${frequencia.percentualTexto} (${frequencia.situacao}); ${atividades.total} atividade(s) registrada(s).</p>
             </div>
         </section>
     `;
