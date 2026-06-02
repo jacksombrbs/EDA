@@ -275,7 +275,7 @@ function atualizarCamposCobrancaDisciplina(disciplina = null) {
         recipiente.innerHTML = `
             <input type="hidden" id="valor_disciplina" value="0">
             <div class="flex gap-md md-flex-coluna">
-                <div class="flex-1 w-total">${criarCampoFormulario('Quantidade de Encontros', 'number', 'quantidade_encontros', quantidadeAtual, 'Ex: 3', true)}</div>
+                <div class="flex-1 w-total">${criarCampoFormulario('Quant. de Encontros', 'number', 'quantidade_encontros', quantidadeAtual, 'Ex: 3', true)}</div>
                 <div class="flex-1 w-total">${criarCampoFormulario('Encontros Gratuitos', 'number', 'encontros_gratuitos', gratuitosAtual, 'Ex: 1')}</div>
             </div>
             <p class="texto-sm cor-texto-claro m-zero mt-xs">Use encontros gratuitos para itens cobertos pela inscrição. Eles não geram cobrança no pagamento.</p>
