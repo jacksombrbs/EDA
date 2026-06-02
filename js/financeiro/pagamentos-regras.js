@@ -105,9 +105,12 @@ function obterChaveObrigacaoFinanceira(obrigacao = {}) {
 }
 
 function pagamentoPertenceAoParticipante(pagamento, idParticipante, contexto = {}) {
+    const ignorarPagamentoId = String(contexto.ignorarPagamentoId || '');
+    const ignorarLoteId = String(contexto.ignorarLoteId || '');
+
     return String(pagamento.id_participante) === String(idParticipante)
-        && String(pagamento.id) !== String(contexto.ignorarPagamentoId || '')
-        && String(pagamento.id_lote || '') !== String(contexto.ignorarLoteId || '');
+        && (!ignorarPagamentoId || String(pagamento.id) !== ignorarPagamentoId)
+        && (!ignorarLoteId || String(pagamento.id_lote || '') !== ignorarLoteId);
 }
 
 function pagamentoQuitaReferencia(pagamento, tipo, referenciaId = '', referenciaIndice = null) {

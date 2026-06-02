@@ -1,5 +1,12 @@
 function filtrarAtividadesEntreguesRelatorio(atividades = []) {
-    return listarRegistrosAtividadesEntregues(atividades);
+    const lista = Array.isArray(atividades) ? atividades : [];
+    const possuiLancamentos = lista.some(atividade => Array.isArray(atividade.registros));
+
+    if (possuiLancamentos) {
+        return listarRegistrosAtividadesEntregues(lista);
+    }
+
+    return lista.filter(registro => atividadeEstaEntregue(registro));
 }
 
 function renderizarPainelAcademico(participantes = [], frequencias = [], atividades = [], disciplinas = [], curso = null) {

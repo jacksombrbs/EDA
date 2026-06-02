@@ -45,7 +45,7 @@ function renderizarPainelRelatorios(contexto) {
 
 function renderizarCardsResumo(contexto = {}) {
     const academico = calcularEstatisticasAcademicas(contexto.participantes || [], contexto.frequencias || [], contexto.atividades || []);
-    const financeiro = calcularEstatisticasFinanceiras(contexto.participantes || [], contexto.pagamentos || [], contexto.financas || [], contexto.cursos || []);
+    const financeiro = calcularEstatisticasFinanceiras(contexto.participantesTodosCurso || contexto.participantes || [], contexto.pagamentos || [], contexto.financas || [], contexto.cursos || [], contexto.disciplinas || [], contexto.frequencias || []);
 
     return criarGradeMetricas([
         { titulo: 'Participantes', valor: academico.totalParticipantes, classe: 'primario' },
@@ -61,7 +61,7 @@ function renderizarBlocoGraficos(contexto = {}) {
     return `
         <div class="painel-relatorio">
             <div class="area-grafico-relatorio">${criarGradeGraficos([montarGraficoFrequencia(contexto.participantes || [], contexto.frequencias || [])])}</div>
-            <div class="area-grafico-relatorio">${criarGradeGraficos([montarGraficoPagamentos(contexto.participantes || [], contexto.pagamentos || [], contexto.cursos || [])])}</div>
+            <div class="area-grafico-relatorio">${criarGradeGraficos([montarGraficoPagamentos(contexto.participantesTodosCurso || contexto.participantes || [], contexto.pagamentos || [], contexto.cursos || [], contexto.disciplinas || [], contexto.frequencias || [])])}</div>
         </div>
     `;
 }
@@ -91,7 +91,7 @@ function renderizarAbasPainelRelatorios(contexto) {
             ${renderizarPainelAcademico(contexto.participantes, contexto.frequencias, contexto.atividades, contexto.disciplinas, contexto.curso)}
         </div>
         <div id="sub-aba-financeiro" class="sub-aba-relatorio oculto">
-            ${renderizarPainelFinanceiro(contexto.participantes, contexto.pagamentos, contexto.financas, contexto.cursos, contexto.disciplinas, contexto.frequencias)}
+            ${renderizarPainelFinanceiro(contexto.participantesTodosCurso || contexto.participantes, contexto.pagamentos, contexto.financas, contexto.cursos, contexto.disciplinas, contexto.frequencias)}
         </div>
     `;
 }

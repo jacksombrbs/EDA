@@ -554,9 +554,24 @@ function renderizarTabelaPagamentosIndividuais(pagamentos, participantes, cursos
     const individuais = pagamentos.filter(pagamento => !pagamento.id_lote);
     if (individuais.length === 0) return codigo + criarMensagemVazia('Nenhum pagamento individual cadastrado ainda.');
 
-    individuais.sort((a, b) => new Date(b.data) - new Date(a.data));
+    ordenarPagamentosIndividuais(individuais, participantes, cursos);
     const linhas = individuais.map((pagamento, indice) => montarLinhaPagamentoIndividual(pagamento, participantes, cursos, indice)).join('');
     return codigo + criarContainerTabela(['Participante', 'Curso', 'Tipo', 'Descrição', 'Valor', 'Data', 'Ações'], linhas, 'tabela-pagamentos', 'corpo-tabela-pagamentos');
+}
+
+function ordenarPagamentosIndividuais(pagamentos = [], participantes = [], cursos = []) {
+    return pagamentos.sort((a, b) => {
+        const participanteA = participantes.find(item => String(item.id) === String(a.id_participante));
+        const participanteB = participantes.find(item => String(item.id) === String(b.id_participante));
+        const cursoA = cursos.find(item => String(item.id) === String(participanteA?.id_curso));
+        const cursoB = cursos.find(item => String(item.id) === String(participanteB?.id_curso));
+
+        return compararTextoFinanceiro(participanteA?.nome, participanteB?.nome)
+            || compararTextoFinanceiro(cursoA?.nome, cursoB?.nome)
+            || obterOrdemTipoCobrancaPagamento(a.tipo) - obterOrdemTipoCobrancaPagamento(b.tipo)
+            || compararTextoFinanceiro(a.descricao, b.descricao)
+            || String(b.data || '').localeCompare(String(a.data || ''));
+    });
 }
 
 function montarLinhaPagamentoIndividual(pagamento, participantes, cursos, indice) {
@@ -580,7 +595,7 @@ function montarLinhaPagamentoIndividual(pagamento, participantes, cursos, indice
 
 function renderizarTabelaLotesPagamento(lotes, paroquias, cursos = []) {
     if (lotes.length === 0) return '';
-    lotes.sort((a, b) => new Date(b.data) - new Date(a.data));
+    ordenarPagamentosLote(lotes, paroquias, cursos);
     const linhas = lotes.map((lote, indice) => {
         const paroquia = paroquias.find(item => String(item.id) === String(lote.id_paroquia));
         const curso = cursos.find(item => String(item.id) === String(lote.id_curso));
@@ -601,6 +616,21 @@ function renderizarTabelaLotesPagamento(lotes, paroquias, cursos = []) {
     }).join('');
     return '<h3 class="texto-md peso-bold cor-texto-primario mb-sm mt-md">Pagamentos em Lote</h3>'
         + criarContainerTabela(['Paróquia', 'Curso', 'Tipo', 'Descrição', 'Valor Total', 'Data', 'Ações'], linhas, 'tabela-lotes', 'corpo-tabela-lotes', 'mb-lg');
+}
+
+function ordenarPagamentosLote(lotes = [], paroquias = [], cursos = []) {
+    return lotes.sort((a, b) => {
+        const paroquiaA = paroquias.find(item => String(item.id) === String(a.id_paroquia));
+        const paroquiaB = paroquias.find(item => String(item.id) === String(b.id_paroquia));
+        const cursoA = cursos.find(item => String(item.id) === String(a.id_curso));
+        const cursoB = cursos.find(item => String(item.id) === String(b.id_curso));
+
+        return compararTextoFinanceiro(paroquiaA?.nome, paroquiaB?.nome)
+            || compararTextoFinanceiro(cursoA?.nome, cursoB?.nome)
+            || obterOrdemTipoCobrancaPagamento(a.tipo) - obterOrdemTipoCobrancaPagamento(b.tipo)
+            || compararTextoFinanceiro(a.descricao, b.descricao)
+            || String(b.data || '').localeCompare(String(a.data || ''));
+    });
 }
 
 function renderizarParticipantesLotePagamento(participantes, lote = null) {
