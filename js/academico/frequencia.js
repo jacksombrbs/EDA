@@ -36,16 +36,23 @@ async function abrirChamada() {
     if (!idDisciplina) return Utilidades.notificacao('Selecione uma disciplina.', 'erro');
     if (!data) return Utilidades.notificacao('Informe a data da aula.', 'erro');
 
-    const participantes = await obterParticipantesDoCurso(idCurso);
+    const [disciplina, participantes] = await Promise.all([
+        bd.obter('disciplinas', idDisciplina),
+        obterParticipantesDoCurso(idCurso)
+    ]);
+    if (!disciplina) return Utilidades.notificacao('Disciplina não encontrada.', 'erro');
     if (participantes.length === 0) return Utilidades.notificacao('Nenhum participante ativo matriculado neste curso.', 'aviso');
+
+    const cargaHoraria = obterCargaHorariaDisciplina(disciplina);
 
     AppEstado.frequenciaAtual = {
         id: null,
         id_curso: idCurso,
         id_disciplina: idDisciplina,
         data,
+        carga_horaria: cargaHoraria,
         participantes,
-        presencas: Object.fromEntries(participantes.map(participante => [participante.id, montarEstadoPresenca()]))
+        presencas: Object.fromEntries(participantes.map(participante => [participante.id, montarEstadoPresenca(ESTADOS_FREQUENCIA.COMPARECEU, cargaHoraria, cargaHoraria)]))
     };
 
     await abrirJanelaFrequencia();
@@ -55,11 +62,20 @@ async function editarFrequencia(id) {
     const registro = await bd.obter('frequencias', id);
     if (!registro) return Utilidades.notificacao('Frequência não encontrada.', 'erro');
 
-    const participantes = await obterParticipantesDoCurso(registro.id_curso);
-    const presencas = Object.fromEntries(participantes.map(participante => [participante.id, montarEstadoPresenca(ESTADOS_FREQUENCIA.FALTOU, 0)]));
+    const disciplina = await bd.obter('disciplinas', registro.id_disciplina);
+    const cargaHoraria = obterCargaHorariaFrequencia(registro, disciplina);
+    const idsRegistrados = new Set((registro.presencas || []).map(item => String(item.id_participante)));
+    const todosParticipantes = await bd.obterTodos('participantes');
+    const participantes = todosParticipantes
+        .filter(participante =>
+            String(participante.id_curso) === String(registro.id_curso)
+            && (Utilidades.participanteEstaAtivo(participante) || idsRegistrados.has(String(participante.id)))
+        )
+        .sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+    const presencas = Object.fromEntries(participantes.map(participante => [participante.id, montarEstadoPresenca(ESTADOS_FREQUENCIA.FALTOU, 0, cargaHoraria)]));
 
     (registro.presencas || []).forEach(item => {
-        presencas[item.id_participante] = montarEstadoPresenca(item.estado, item.horas);
+        presencas[item.id_participante] = montarEstadoPresenca(item.estado, item.horas, cargaHoraria);
     });
 
     AppEstado.frequenciaAtual = {
@@ -67,6 +83,7 @@ async function editarFrequencia(id) {
         id_curso: registro.id_curso,
         id_disciplina: registro.id_disciplina,
         data: registro.data,
+        carga_horaria: cargaHoraria,
         participantes,
         presencas
     };
@@ -79,12 +96,14 @@ async function salvarFrequencia() {
         return Utilidades.notificacao('Dados da chamada incompletos.', 'erro');
     }
 
+    const cargaHoraria = normalizarCargaHoraria(AppEstado.frequenciaAtual.carga_horaria, CARGA_HORARIA_PADRAO);
+
     for (const participante of AppEstado.frequenciaAtual.participantes) {
         const presenca = AppEstado.frequenciaAtual.presencas[participante.id];
         if (presenca?.estado !== ESTADOS_FREQUENCIA.PARCIAL) continue;
 
-        if (presenca.horas <= 0 || presenca.horas >= HORAS_AULA_FREQUENCIA) {
-            return Utilidades.notificacao(`Informe uma carga horária parcial entre 1 e ${HORAS_AULA_FREQUENCIA - 1} horas para ${participante.nome}.`, 'erro');
+        if (presenca.horas <= 0 || presenca.horas >= cargaHoraria) {
+            return Utilidades.notificacao(`Informe uma carga horária parcial entre 1 e ${formatarHorasCargaHoraria(cargaHoraria)} para ${participante.nome}.`, 'erro');
         }
     }
 
@@ -94,11 +113,19 @@ async function salvarFrequencia() {
         AppEstado.frequenciaAtual.data,
         AppEstado.frequenciaAtual.participantes,
         AppEstado.frequenciaAtual.presencas,
+        cargaHoraria,
         AppEstado.frequenciaAtual.id
     );
 
     await bd.salvar('frequencias', registro);
-    Utilidades.notificacao(AppEstado.frequenciaAtual.id ? 'Frequência atualizada com sucesso!' : 'Diário salvo com sucesso!', 'sucesso');
+
+    const desistentesAtualizados = await atualizarDesistentesPorFalta(AppEstado.frequenciaAtual.id_curso);
+    const mensagemBase = AppEstado.frequenciaAtual.id ? 'Frequência atualizada com sucesso!' : 'Diário salvo com sucesso!';
+    const mensagemDesistentes = desistentesAtualizados.length > 0
+        ? ` ${desistentesAtualizados.length} participante(s) atualizado(s) como desistente(s) por faltas.`
+        : '';
+
+    Utilidades.notificacao(`${mensagemBase}${mensagemDesistentes}`, 'sucesso');
     AppEstado.frequenciaAtual = null;
     Interface.fecharJanela('janela-formulario');
     await renderizarAbaAtual();
@@ -117,6 +144,7 @@ async function abrirJanelaFrequencia() {
         bd.obter('cursos', AppEstado.frequenciaAtual.id_curso),
         bd.obter('disciplinas', AppEstado.frequenciaAtual.id_disciplina)
     ]);
+    const cargaHoraria = normalizarCargaHoraria(AppEstado.frequenciaAtual.carga_horaria, obterCargaHorariaDisciplina(disciplina));
 
     document.getElementById('titulo-janela').textContent = AppEstado.frequenciaAtual.id ? 'Editar Diário de Classe' : 'Novo Diário de Classe';
 
@@ -128,13 +156,13 @@ async function abrirJanelaFrequencia() {
             </div>
             <div class="md-texto-esquerda texto-direita">
                 <p class="texto-md cor-texto-escuro"><strong>Data:</strong> ${Utilidades.formatarData(AppEstado.frequenciaAtual.data)}</p>
-                <p class="texto-sm cor-texto-claro">Aula completa: ${HORAS_AULA_FREQUENCIA}h</p>
+                <div class="flex itens-centro gap-sm justifica-fim md-justifica-inicio"><label for="carga-horaria-chamada" class="texto-sm cor-texto-claro">Carga horária do encontro</label><input type="number" min="0.5" step="0.5" id="carga-horaria-chamada" class="campo-padrao botao-pequeno" value="${cargaHoraria}" onchange="atualizarCargaHorariaChamada(this.value)" oninput="atualizarCargaHorariaChamada(this.value)"></div>
             </div>
         </div>
     `;
 
     const linhas = AppEstado.frequenciaAtual.participantes.map((participante, indice) => {
-        const presenca = AppEstado.frequenciaAtual.presencas[participante.id] || montarEstadoPresenca();
+        const presenca = AppEstado.frequenciaAtual.presencas[participante.id] || montarEstadoPresenca(ESTADOS_FREQUENCIA.COMPARECEU, cargaHoraria, cargaHoraria);
         const classeFundo = indice % 2 === 0 ? 'fundo-branco' : 'fundo-superficie-2';
 
         return `
@@ -143,7 +171,7 @@ async function abrirJanelaFrequencia() {
                 <td class="p-md texto-direita">
                     <div class="flex gap-sm itens-centro justifica-fim">
                         ${criarBotao(obterTextoEstadoFrequencia(presenca.estado), `alternarFrequenciaParticipante('${participante.id}')`, 'neutro', `botao-pequeno ${obterClasseEstadoFrequencia(presenca.estado)}`, 'button', `id="botao-frequencia-${participante.id}"`)}
-                        <input type="number" min="1" max="${HORAS_AULA_FREQUENCIA - 1}" step="1" id="horas-frequencia-${participante.id}" class="campo-padrao botao-pequeno ${presenca.estado === ESTADOS_FREQUENCIA.PARCIAL ? '' : 'oculto'}" value="${presenca.estado === ESTADOS_FREQUENCIA.PARCIAL ? Utilidades.escaparHtml(presenca.horas || '') : ''}" placeholder="Horas" onchange="atualizarHorasFrequenciaParticipante('${participante.id}', this.value)" oninput="atualizarHorasFrequenciaParticipante('${participante.id}', this.value)" aria-label="Horas parciais">
+                        <input type="number" min="0.5" max="${cargaHoraria - 0.5}" step="0.5" id="horas-frequencia-${participante.id}" class="campo-padrao botao-pequeno ${presenca.estado === ESTADOS_FREQUENCIA.PARCIAL ? '' : 'oculto'}" value="${presenca.estado === ESTADOS_FREQUENCIA.PARCIAL ? Utilidades.escaparHtml(presenca.horas || '') : ''}" placeholder="Horas" onchange="atualizarHorasFrequenciaParticipante('${participante.id}', this.value)" oninput="atualizarHorasFrequenciaParticipante('${participante.id}', this.value)" aria-label="Horas parciais">
                     </div>
                 </td>
             </tr>
@@ -157,21 +185,40 @@ async function abrirJanelaFrequencia() {
     Interface.abrirJanela('janela-formulario');
 }
 
+
+function atualizarCargaHorariaChamada(valor) {
+    if (!AppEstado.frequenciaAtual) return;
+
+    const cargaHoraria = normalizarCargaHoraria(valor, AppEstado.frequenciaAtual.carga_horaria || CARGA_HORARIA_PADRAO);
+    AppEstado.frequenciaAtual.carga_horaria = cargaHoraria;
+
+    Object.keys(AppEstado.frequenciaAtual.presencas || {}).forEach(idParticipante => {
+        const presenca = AppEstado.frequenciaAtual.presencas[idParticipante];
+        if (!presenca) return;
+        AppEstado.frequenciaAtual.presencas[idParticipante] = montarEstadoPresenca(presenca.estado, presenca.horas, cargaHoraria);
+
+        const campoHoras = document.getElementById(`horas-frequencia-${idParticipante}`);
+        if (campoHoras) campoHoras.max = String(Math.max(cargaHoraria - 0.5, 0.5));
+    });
+}
+
 function alternarFrequenciaParticipante(idParticipante) {
     if (!AppEstado.frequenciaAtual) return;
 
-    const atual = AppEstado.frequenciaAtual.presencas[idParticipante] || montarEstadoPresenca();
+    const cargaHoraria = normalizarCargaHoraria(AppEstado.frequenciaAtual.carga_horaria, CARGA_HORARIA_PADRAO);
+    const atual = AppEstado.frequenciaAtual.presencas[idParticipante] || montarEstadoPresenca(ESTADOS_FREQUENCIA.COMPARECEU, cargaHoraria, cargaHoraria);
     const proximoEstado = obterProximoEstadoFrequencia(atual.estado);
     const horasParciais = atual.estado === ESTADOS_FREQUENCIA.PARCIAL ? atual.horas : '';
-    AppEstado.frequenciaAtual.presencas[idParticipante] = montarEstadoPresenca(proximoEstado, proximoEstado === ESTADOS_FREQUENCIA.PARCIAL ? horasParciais : undefined);
+    AppEstado.frequenciaAtual.presencas[idParticipante] = montarEstadoPresenca(proximoEstado, proximoEstado === ESTADOS_FREQUENCIA.PARCIAL ? horasParciais : undefined, cargaHoraria);
     atualizarLinhaFrequenciaParticipante(idParticipante);
 }
 
 function atualizarHorasFrequenciaParticipante(idParticipante, valor) {
     if (!AppEstado.frequenciaAtual?.presencas?.[idParticipante]) return;
 
-    const horas = Math.min(Math.max(normalizarHorasFrequencia(valor), 0), HORAS_AULA_FREQUENCIA);
-    AppEstado.frequenciaAtual.presencas[idParticipante] = montarEstadoPresenca(ESTADOS_FREQUENCIA.PARCIAL, horas);
+    const cargaHoraria = normalizarCargaHoraria(AppEstado.frequenciaAtual.carga_horaria, CARGA_HORARIA_PADRAO);
+    const horas = Math.min(Math.max(normalizarHorasFrequencia(valor), 0), cargaHoraria);
+    AppEstado.frequenciaAtual.presencas[idParticipante] = montarEstadoPresenca(ESTADOS_FREQUENCIA.PARCIAL, horas, cargaHoraria);
 }
 
 function atualizarLinhaFrequenciaParticipante(idParticipante) {
@@ -201,12 +248,14 @@ function renderizarTabelaFrequencias(frequencias, cursos, disciplinas) {
             const curso = cursos.find(item => String(item.id) === String(registro.id_curso));
             const disciplina = disciplinas.find(item => String(item.id) === String(registro.id_disciplina));
             const resumo = calcularResumoFrequencia(registro);
+            const cargaHoraria = obterCargaHorariaFrequencia(registro, disciplina);
             const classeFundo = indice % 2 === 0 ? 'fundo-branco' : 'fundo-superficie-2';
 
             return `<tr class="${classeFundo} transicao hover-fundo-superficie-3">
                 <td class="p-md peso-medium">${Utilidades.formatarData(registro.data)}</td>
                 <td class="p-md">${Utilidades.escaparHtml(curso?.nome || 'Não encontrado')}</td>
                 <td class="p-md peso-bold">${Utilidades.escaparHtml(disciplina?.nome || 'Não encontrada')}</td>
+                <td class="p-md">${formatarHorasCargaHoraria(cargaHoraria)}</td>
                 <td class="p-md">${resumo.comparecimentos}/${resumo.total}</td>
                 <td class="p-md">${criarAcoesTabela([
                     { rotulo: 'Editar', acao: `editarFrequencia('${registro.id}')` },
@@ -215,7 +264,7 @@ function renderizarTabelaFrequencias(frequencias, cursos, disciplinas) {
             </tr>`;
         }).join('');
 
-    return criarContainerTabela(['Data', 'Curso', 'Disciplina', 'Comparecimentos', 'Ações'], linhas);
+    return criarContainerTabela(['Data', 'Curso', 'Disciplina', 'Carga Horária', 'Comparecimentos', 'Ações'], linhas);
 }
 
 async function iniciarNovaChamada() {

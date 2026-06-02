@@ -1,6 +1,6 @@
 async function renderizarRelatorios(conteudo) {
     const contexto = await carregarContextoRelatorios();
-    const { cursos, curso, participantes, disciplinas, frequencias, atividades, pagamentos, financas } = contexto;
+    const { cursos, curso, participantes, participantesTodosCurso, disciplinas, frequencias, atividades, pagamentos, financas } = contexto;
     const titulo = curso ? `Painéis e Relatórios - ${curso.nome || 'Curso sem nome'}` : 'Painéis e Relatórios';
 
     let codigo = '<div class="pagina-conteudo pagina-relatorios">';
@@ -28,11 +28,11 @@ async function renderizarRelatorios(conteudo) {
     codigo += '</div>';
 
     codigo += '<div id="sub-aba-academico" class="sub-aba-relatorio">';
-    codigo += renderizarDashboardAcademico(participantes, frequencias, atividades, disciplinas);
+    codigo += renderizarPainelAcademico(participantes, frequencias, atividades, disciplinas, curso);
     codigo += '</div>';
 
     codigo += '<div id="sub-aba-financeiro" class="sub-aba-relatorio oculto">';
-    codigo += renderizarDashboardFinanceiro(participantes, pagamentos, financas, cursos);
+    codigo += renderizarPainelFinanceiro(participantesTodosCurso || participantes, pagamentos, financas, cursos, disciplinas, frequencias);
     codigo += '</div>';
 
     codigo += '<div id="sub-aba-ficha" class="sub-aba-relatorio oculto">';
@@ -110,6 +110,7 @@ function filtrarDadosPorCurso(contexto) {
     const disciplinas = contexto.disciplinas.filter(item => String(item.id_curso) === String(idCurso));
     const participantesCurso = contexto.participantes.filter(item => String(item.id_curso) === String(idCurso));
     const participantes = participantesCurso.filter(participante => Utilidades.participanteEstaAtivo(participante));
+    const participantesTodosCurso = participantesCurso;
     const idsDisciplinas = new Set(disciplinas.map(item => String(item.id)));
     const idsParticipantesAtivos = new Set(participantes.map(item => String(item.id)));
     const idsParticipantesCurso = new Set(participantesCurso.map(item => String(item.id)));
@@ -136,6 +137,7 @@ function filtrarDadosPorCurso(contexto) {
         ...contexto,
         disciplinas,
         participantes,
+        participantesTodosCurso,
         frequencias,
         atividades,
         pagamentos,

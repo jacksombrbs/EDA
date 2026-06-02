@@ -93,15 +93,15 @@
         grid-template-columns: 1fr;
     }
 
-    .painel-dashboard-relatorio,
-    .grade-metricas-dashboard {
+    .painel-relatorio,
+    .grade-metricas-painel {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
 @media (max-width: 640px) {
-    .painel-dashboard-relatorio,
-    .grade-metricas-dashboard {
+    .painel-relatorio,
+    .grade-metricas-painel {
         grid-template-columns: 1fr;
         flex-direction: column;
         align-items: stretch;

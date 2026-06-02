@@ -273,8 +273,8 @@ async function montarDadosFichaParticipante(idParticipante, contexto = null) {
         curso,
         paroquia,
         disciplinas: disciplinasCurso,
-        financeiro: calcularResumoFinanceiroParticipante(participante, curso, pagamentos),
-        frequencia: calcularResumoFrequenciaParticipante(participante, frequencias),
+        financeiro: calcularResumoFinanceiroParticipante(participante, curso, disciplinasCurso, frequencias, pagamentos),
+        frequencia: calcularResumoFrequenciaParticipante(participante, frequencias, curso),
         atividades: calcularResumoAtividadesParticipante(participante, atividades, disciplinasCurso),
         dataGeracao: new Date().toISOString().split('T')[0]
     };
@@ -328,35 +328,34 @@ function filtrarFrequenciasFichaParticipante(participante, frequencias = [], dis
     });
 }
 
-function calcularResumoFinanceiroParticipante(participante, curso, pagamentos = []) {
-    const pagamentosOrdenados = [...pagamentos].sort((a, b) => (a.data || '').localeCompare(b.data || ''));
-    const pagamentoInscricao = pagamentosOrdenados.find(pagamento => pagamento.tipo === 'Inscrição') || null;
-    const pagamentosMensalidade = pagamentosOrdenados.filter(pagamento => pagamento.tipo === 'Mensalidade');
-    const pagamentosOutros = pagamentosOrdenados.filter(pagamento => pagamento.tipo === 'Outros');
-    const mensalidadesPagas = pagamentosMensalidade.reduce((total, pagamento) => total + (Number(pagamento.quantidade) || 1), 0);
-    const quantidadeMensalidades = Number(curso?.quantidade_mensalidades || 0);
-    const mensalidadesRestantes = Math.max(quantidadeMensalidades - mensalidadesPagas, 0);
-    const totalMensalidades = pagamentosMensalidade.reduce((total, pagamento) => total + Utilidades.normalizarValorMonetario(pagamento.valor), 0);
+function calcularResumoFinanceiroParticipante(participante, curso, disciplinas = [], frequencias = [], pagamentos = []) {
+    const obrigacoes = calcularObrigacoesFinanceirasParticipante(participante, curso, disciplinas, frequencias, pagamentos);
+    const resumo = calcularResumoObrigacoes(obrigacoes);
+    const inscricao = obrigacoes.find(item => item.tipo === 'Inscrição');
+    const pagamentosOutros = pagamentos.filter(pagamento => pagamento.tipo === 'Outros');
     const totalOutros = pagamentosOutros.reduce((total, pagamento) => total + Utilidades.normalizarValorMonetario(pagamento.valor), 0);
-    const totalInscricao = pagamentoInscricao ? Utilidades.normalizarValorMonetario(pagamentoInscricao.valor) : 0;
-    const totalGeral = totalInscricao + totalMensalidades + totalOutros;
+    const pagos = obrigacoes.filter(item => item.pago).length;
 
     return {
-        inscricaoPaga: Boolean(pagamentoInscricao),
-        inscricaoTexto: pagamentoInscricao ? 'Paga' : 'Pendente',
-        valorInscricao: curso ? Utilidades.normalizarValorMonetario(curso.valor_inscricao) : totalInscricao,
-        dataInscricao: pagamentoInscricao?.data || '',
-        mensalidadesPagas,
-        mensalidadesRestantes,
-        quantidadeMensalidades,
-        totalMensalidades,
+        inscricaoPaga: Boolean(inscricao?.pago),
+        inscricaoTexto: inscricao ? (inscricao.pago ? 'Paga' : 'Pendente') : 'Não cobrada',
+        valorInscricao: inscricao?.valor || 0,
+        dataInscricao: inscricao?.data_pagamento || '',
+        tipoCobranca: obterTipoCobrancaCurso(curso),
+        obrigacoes,
+        obrigacoesPagas: pagos,
+        obrigacoesTotal: obrigacoes.length,
+        obrigacoesPendentes: resumo.pendentes,
+        valorPendente: resumo.pendente,
+        totalObrigacoes: resumo.total,
+        totalPagoObrigacoes: resumo.pago,
         outrasEntradas: pagamentosOutros,
         totalOutros,
-        totalGeral
+        totalGeral: resumo.pago + totalOutros
     };
 }
 
-function calcularResumoFrequenciaParticipante(participante, frequencias = []) {
+function calcularResumoFrequenciaParticipante(participante, frequencias = [], curso = null) {
     let total = 0;
     let comparecimentos = 0;
     let faltas = 0;
@@ -368,7 +367,7 @@ function calcularResumoFrequenciaParticipante(participante, frequencias = []) {
         if (presenca === null) return;
 
         total++;
-        horasPrevistas += HORAS_AULA_FREQUENCIA;
+        horasPrevistas += obterCargaHorariaFrequencia(frequencia);
         horasPresentes += presenca.horas;
         if (presencaContaComoComparecimento(presenca)) comparecimentos++;
         if (presenca.estado === ESTADOS_FREQUENCIA.FALTOU) faltas++;
@@ -385,7 +384,7 @@ function calcularResumoFrequenciaParticipante(participante, frequencias = []) {
         horasPresentes,
         percentual,
         percentualTexto: percentual === null ? 'Sem registros' : `${percentual}%`,
-        situacao: percentual === null ? 'Sem registros' : (percentual >= 75 ? 'Regular' : 'Atenção')
+        situacao: percentual === null ? 'Sem registros' : (percentual >= obterPercentualMinimoCurso(curso) ? 'Regular' : 'Atenção')
     };
 }
 
@@ -421,14 +420,14 @@ function montarHtmlConsultaFichaParticipante(dadosFicha) {
             <div class="texto-md cor-texto-claro">Código: <strong class="cor-texto-escuro">${Utilidades.escaparHtml(participante.codigo_acesso || '-')}</strong></div>
         </div>
 
-        <div class="grade-metricas-dashboard grade-4-colunas">
+        <div class="grade-metricas-painel grade-4-colunas">
             ${criarCardMetrica('Inscrição', financeiro.inscricaoTexto, financeiro.inscricaoPaga ? 'sucesso' : 'aviso')}
-            ${criarCardMetrica('Mensalidades', `${financeiro.mensalidadesPagas}/${financeiro.quantidadeMensalidades}`, financeiro.mensalidadesRestantes > 0 ? 'primario' : 'sucesso')}
-            ${criarCardMetrica('Frequência', frequencia.percentualTexto, frequencia.percentual !== null && frequencia.percentual < 75 ? 'aviso' : 'sucesso')}
+            ${criarCardMetrica('Cobranças', `${financeiro.obrigacoesPagas}/${financeiro.obrigacoesTotal}`, financeiro.obrigacoesPendentes > 0 ? 'aviso' : 'sucesso')}
+            ${criarCardMetrica('Frequência', frequencia.percentualTexto, frequencia.situacao === 'Atenção' ? 'aviso' : 'sucesso')}
             ${criarCardMetrica('Atividades', atividades.total, 'primario')}
         </div>
 
-        <div class="grade-metricas-dashboard grade-2-colunas">
+        <div class="grade-metricas-painel grade-2-colunas">
             ${montarCartaoConsultaFicha('Identificação', [
                 ['Status', participante.status || '-'],
                 ['Curso', curso?.nome || '-'],
@@ -439,7 +438,7 @@ function montarHtmlConsultaFichaParticipante(dadosFicha) {
             ${montarCartaoConsultaFicha('Financeiro', [
                 ['Inscrição', financeiro.inscricaoTexto],
                 ['Valor da inscrição', Utilidades.formatarMoeda(financeiro.valorInscricao)],
-                ['Mensalidades restantes', financeiro.mensalidadesRestantes],
+                ['Cobranças pendentes', financeiro.obrigacoesPendentes],
                 ['Total pago', Utilidades.formatarMoeda(financeiro.totalGeral)]
             ])}
             ${montarCartaoConsultaFicha('Frequência', [
@@ -512,7 +511,7 @@ function montarHtmlFichaParticipante(dadosFicha) {
 
             <div class="grade-resumo-ficha-pdf">
                 ${criarItemFichaPDF('Inscrição', financeiro.inscricaoTexto)}
-                ${criarItemFichaPDF('Mensalidades', `${financeiro.mensalidadesPagas}/${financeiro.quantidadeMensalidades}`)}
+                ${criarItemFichaPDF('Cobranças', `${financeiro.obrigacoesPagas}/${financeiro.obrigacoesTotal}`)}
                 ${criarItemFichaPDF('Frequência', frequencia.percentualTexto)}
                 ${criarItemFichaPDF('Atividades', atividades.total)}
             </div>
@@ -529,8 +528,8 @@ function montarHtmlFichaParticipante(dadosFicha) {
                 ${montarBlocoFichaPDF('Inscrição e pagamentos', [
                     ['Inscrição', financeiro.inscricaoTexto],
                     ['Valor da inscrição', Utilidades.formatarMoeda(financeiro.valorInscricao)],
-                    ['Mensalidades restantes', financeiro.mensalidadesRestantes],
-                    ['Total em mensalidades', Utilidades.formatarMoeda(financeiro.totalMensalidades)],
+                    ['Cobranças pendentes', financeiro.obrigacoesPendentes],
+                    ['Total em cobranças', Utilidades.formatarMoeda(financeiro.totalObrigacoes)],
                     ['Outras entradas', Utilidades.formatarMoeda(financeiro.totalOutros)],
                     ['Total pago', Utilidades.formatarMoeda(financeiro.totalGeral)]
                 ])}
@@ -552,7 +551,7 @@ function montarHtmlFichaParticipante(dadosFicha) {
             </div>
 
             <div class="resumo-final-ficha">
-                <p><strong>Resumo:</strong> inscrição ${financeiro.inscricaoTexto.toLowerCase()}; mensalidades ${financeiro.mensalidadesPagas} pagas e ${financeiro.mensalidadesRestantes} restantes; frequência ${frequencia.percentualTexto} (${frequencia.situacao}); ${atividades.total} atividade(s) registrada(s).</p>
+                <p><strong>Resumo:</strong> inscrição ${financeiro.inscricaoTexto.toLowerCase()}; cobranças ${financeiro.obrigacoesPagas} pagas e ${financeiro.obrigacoesPendentes} pendentes; frequência ${frequencia.percentualTexto} (${frequencia.situacao}); ${atividades.total} atividade(s) registrada(s).</p>
             </div>
         </section>
     `;

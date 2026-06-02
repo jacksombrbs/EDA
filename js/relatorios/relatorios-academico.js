@@ -2,21 +2,22 @@ function filtrarAtividadesEntreguesRelatorio(atividades = []) {
     return listarRegistrosAtividadesEntregues(atividades);
 }
 
-function renderizarDashboardAcademico(participantes = [], frequencias = [], atividades = [], disciplinas = []) {
+function renderizarPainelAcademico(participantes = [], frequencias = [], atividades = [], disciplinas = [], curso = null) {
     const atividadesEntregues = filtrarAtividadesEntreguesRelatorio(atividades);
-    const estatisticas = calcularEstatisticasAcademicas(participantes, frequencias, atividadesEntregues);
+    const percentualMinimo = obterPercentualMinimoCurso(curso);
+    const estatisticas = calcularEstatisticasAcademicas(participantes, frequencias, atividadesEntregues, percentualMinimo);
 
     let painel = criarGradeMetricas([
-        { titulo: 'Total de Participantes', valor: estatisticas.totalParticipantes, classe: 'primario', icone: 'participantes' },
-        { titulo: 'Frequência Média', valor: `${estatisticas.frequenciaMedia}%`, classe: estatisticas.frequenciaMedia >= 75 ? 'sucesso' : (estatisticas.frequenciaMedia >= 50 ? 'aviso' : 'erro'), icone: 'frequencia' },
-        { titulo: 'Em Risco (<75%)', valor: estatisticas.participantesEmRisco, classe: estatisticas.participantesEmRisco > 0 ? 'erro' : 'sucesso', icone: 'frequencia' },
-        { titulo: 'Total de Entregas', valor: estatisticas.entregasTotal, classe: 'primario', icone: 'atividades' }
+        { titulo: 'Total de Participantes', valor: estatisticas.totalParticipantes, classe: 'primario', icone: 'participantes', acao: "filtrarTabelaAcademica('')" },
+        { titulo: 'Frequência Média', valor: `${estatisticas.frequenciaMedia}%`, classe: estatisticas.frequenciaMedia >= percentualMinimo ? 'sucesso' : (estatisticas.frequenciaMedia >= Math.floor(percentualMinimo / 2) ? 'aviso' : 'erro'), icone: 'frequencia' },
+        { titulo: `Em Risco (<${percentualMinimo}%)`, valor: estatisticas.participantesEmRisco, classe: estatisticas.participantesEmRisco > 0 ? 'erro' : 'sucesso', icone: 'frequencia', acao: "filtrarTabelaAcademica('risco')" },
+        { titulo: 'Total de Entregas', valor: estatisticas.entregasTotal, classe: 'primario', icone: 'atividades', acao: "filtrarTabelaAcademica('com-atividade')" }
     ], 4);
 
-    const htmlGrafico = criarGradeGraficos([montarGraficoFrequencia(participantes, frequencias)]);
+    const htmlGrafico = criarGradeGraficos([montarGraficoFrequencia(participantes, frequencias, percentualMinimo)]);
 
     const htmlRelatorios = `
-        <div class="lista-relatorios-dashboard">
+        <div class="lista-relatorios-painel">
             <div class="cartao-geracao-relatorio">
                 <div class="cabecalho-relatorio">
                     <h3 class="texto-md peso-bold cor-texto-primario m-zero">Relatório de Frequência</h3>
@@ -42,9 +43,9 @@ function renderizarDashboardAcademico(participantes = [], frequencias = [], ativ
     `;
 
     painel += `
-        <div class="painel-dashboard-relatorio">
+        <div class="painel-relatorio">
             <div class="area-grafico-relatorio">${htmlGrafico}</div>
-            <div class="coluna-relatorios-dashboard">${htmlRelatorios}</div>
+            <div class="coluna-relatorios-painel">${htmlRelatorios}</div>
         </div>
     `;
 
@@ -52,7 +53,7 @@ function renderizarDashboardAcademico(participantes = [], frequencias = [], ativ
     painel += '<h3 class="texto-md peso-bold cor-texto-primario m-zero">Resumo Geral Acadêmico</h3>';
     painel += '<div class="w-total">' + criarCampoFormulario('', 'text', 'busca-tabela-acad', '', 'Pesquisar por participante...', false) + '</div>';
     painel += '</div>';
-    painel += renderizarTabelaResumoAcademico(participantes, frequencias, atividades, disciplinas);
+    painel += renderizarTabelaResumoAcademico(participantes, frequencias, atividades, disciplinas, percentualMinimo);
 
     setTimeout(() => {
         Busca.vincularFiltro('busca-tabela-acad', 'corpo-tabela-acad');
@@ -77,7 +78,7 @@ function renderizarDashboardAcademico(participantes = [], frequencias = [], ativ
     return painel;
 }
 
-function renderizarTabelaResumoAcademico(participantes, frequencias, atividades, disciplinas) {
+function renderizarTabelaResumoAcademico(participantes, frequencias, atividades, disciplinas, percentualMinimo = PERCENTUAL_MINIMO_FREQUENCIA_PADRAO) {
     let linhas = '';
 
     if (participantes.length === 0) {
@@ -85,12 +86,13 @@ function renderizarTabelaResumoAcademico(participantes, frequencias, atividades,
     } else {
         participantes.forEach((participante, indice) => {
             const frequencia = calcularFrequenciaParticipante(participante.id, frequencias);
-            const classeTaxa = frequencia.percentual >= 75 ? 'cor-texto-sucesso' : 'cor-texto-erro';
+            const classeTaxa = obterClassePercentualFrequencia(frequencia.percentual, percentualMinimo);
             const entregas = listarAtividadesPorParticipante(participante.id, atividades);
             const ultimaEntrega = obterTextoUltimaAtividade(entregas, disciplinas);
             const classeFundo = indice % 2 === 0 ? 'fundo-branco' : 'fundo-superficie-2';
+            const termosBusca = `${participante.nome || ''} ${frequencia.percentual < percentualMinimo ? 'risco' : 'regular'} ${entregas.length > 0 ? 'com-atividade' : 'sem-atividade'}`.toLowerCase();
 
-            linhas += `<tr class="linha-participante-acad ${classeFundo} transicao hover-fundo-superficie-3" data-busca="${Utilidades.escaparHtml((participante.nome || '').toLowerCase())}">
+            linhas += `<tr class="linha-participante-acad ${classeFundo} transicao hover-fundo-superficie-3" data-busca="${Utilidades.escaparHtml(termosBusca)}">
                 <td class="p-md texto-esquerda peso-bold cor-texto-escuro coluna-nome-tabela">${Utilidades.escaparHtml(participante.nome || '-')}</td>
                 <td class="p-md texto-centro peso-bold ${classeTaxa}">${frequencia.percentual}%</td>
                 <td class="p-md texto-centro peso-bold cor-texto-escuro">${entregas.length}</td>
@@ -123,10 +125,11 @@ function obterTextoUltimaAtividade(atividades = [], disciplinas = []) {
     return `${disciplina ? disciplina.nome : 'Atividade'} (${data})`;
 }
 
-function calcularEstatisticasAcademicas(participantes = [], frequencias = [], atividades = []) {
+function calcularEstatisticasAcademicas(participantes = [], frequencias = [], atividades = [], percentualMinimo = PERCENTUAL_MINIMO_FREQUENCIA_PADRAO) {
     atividades = filtrarAtividadesEntreguesRelatorio(atividades);
 
     if (!Array.isArray(participantes) && participantes) {
+        percentualMinimo = obterPercentualMinimoCurso(participantes.curso) || percentualMinimo;
         atividades = filtrarAtividadesEntreguesRelatorio(participantes.atividades || []);
         frequencias = participantes.frequencias || [];
         participantes = participantes.participantes || [];
@@ -142,7 +145,7 @@ function calcularEstatisticasAcademicas(participantes = [], frequencias = [], at
         const frequencia = calcularFrequenciaParticipante(participante.id, frequencias);
         horasPrevistas += frequencia.horasPrevistas;
         horasPresentes += frequencia.horasPresentes;
-        if (frequencia.horasPrevistas > 0 && frequencia.percentual < 75) participantesEmRisco++;
+        if (frequencia.horasPrevistas > 0 && frequencia.percentual < percentualMinimo) participantesEmRisco++;
     });
 
     const frequenciaMedia = horasPrevistas > 0 ? Math.round((horasPresentes / horasPrevistas) * 100) : 100;
@@ -170,7 +173,7 @@ function calcularFrequenciaParticipante(idParticipante, frequencias = []) {
         if (presenca === null) return;
 
         total++;
-        horasPrevistas += HORAS_AULA_FREQUENCIA;
+        horasPrevistas += obterCargaHorariaFrequencia(frequencia);
         horasPresentes += presenca.horas;
 
         if (presencaContaComoComparecimento(presenca)) comparecimentos++;
@@ -188,15 +191,16 @@ function calcularFrequenciaParticipante(idParticipante, frequencias = []) {
     };
 }
 
-function agruparFrequenciasPorFaixa(participantes = [], frequencias = []) {
-    const faixas = { '0-49%': 0, '50-74%': 0, '75-100%': 0 };
+function agruparFrequenciasPorFaixa(participantes = [], frequencias = [], percentualMinimo = PERCENTUAL_MINIMO_FREQUENCIA_PADRAO) {
+    const limiteIntermediario = Math.floor(percentualMinimo / 2);
+    const faixas = { [`0-${limiteIntermediario - 1}%`]: 0, [`${limiteIntermediario}-${percentualMinimo - 1}%`]: 0, [`${percentualMinimo}-100%`]: 0 };
     const participantesConsiderados = participantes.filter(participante => Utilidades.participanteEstaAtivo(participante));
 
     participantesConsiderados.forEach(participante => {
         const frequencia = calcularFrequenciaParticipante(participante.id, frequencias);
-        if (frequencia.percentual < 50) faixas['0-49%']++;
-        else if (frequencia.percentual < 75) faixas['50-74%']++;
-        else faixas['75-100%']++;
+        if (frequencia.percentual < limiteIntermediario) faixas[`0-${limiteIntermediario - 1}%`]++;
+        else if (frequencia.percentual < percentualMinimo) faixas[`${limiteIntermediario}-${percentualMinimo - 1}%`]++;
+        else faixas[`${percentualMinimo}-100%`]++;
     });
 
     return faixas;
@@ -222,7 +226,7 @@ async function gerarPDFFrequenciaAcademico() {
     const dadosRelatorio = await obterDadosCursoRelatorio();
     if (!dadosRelatorio) return;
 
-    const { curso, disciplinas, participantes, frequencias, paroquias } = dadosRelatorio;
+    const { curso, disciplinas, participantes, participantesTodosCurso, frequencias, paroquias } = dadosRelatorio;
     const dataHoje = new Date().toLocaleDateString('pt-BR');
     const paroquiasMap = criarMapaParoquias(paroquias);
 
@@ -231,17 +235,17 @@ async function gerarPDFFrequenciaAcademico() {
     html += `<p><strong>Data de Emissão:</strong> ${dataHoje}</p>`;
 
     if (tipoRelatorio === 'geral') {
-        html += montarHtmlFrequenciaGeral(participantes, disciplinas, frequencias, paroquiasMap);
-        dispararImpressao('Relatório de Frequência Geral', html);
+        html += montarHtmlFrequenciaGeral(participantesTodosCurso || participantes, disciplinas, frequencias, paroquiasMap, curso);
+        dispararImpressao('Relatório de Frequência Geral', html, { orientacao: 'paisagem' });
         return;
     }
 
-    html += montarHtmlFrequenciaPorDisciplina(idDisciplina, participantes, disciplinas, frequencias);
+    html += montarHtmlFrequenciaPorDisciplina(idDisciplina, participantesTodosCurso || participantes, disciplinas, frequencias);
     const disciplina = disciplinas.find(item => String(item.id) === String(idDisciplina));
     dispararImpressao(`Relatório de Frequência - ${disciplina?.nome || 'Disciplina'}`, html);
 }
 
-function montarHtmlFrequenciaGeral(participantes, disciplinas, frequencias, paroquiasMap) {
+function montarHtmlFrequenciaGeral(participantes, disciplinas, frequencias, paroquiasMap, curso = null) {
     if (disciplinas.length === 0) return '<p>Nenhuma disciplina cadastrada.</p>';
 
     const disciplinasOrdenadas = [...disciplinas].sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
@@ -265,7 +269,7 @@ function montarHtmlFrequenciaGeral(participantes, disciplinas, frequencias, paro
                 const resumoDisciplina = calcularResumoDisciplinaParticipante(participante.id, disciplina.id, frequencias);
                 html += `<td class="texto-centro">${formatarResumoHorasFrequencia(resumoDisciplina)}</td>`;
             });
-            html += `<td class="texto-centro peso-bold ${obterClassePercentualFrequencia(totalParticipante.percentual)}">${formatarResumoTotalFrequencia(totalParticipante)}</td>`;
+            html += `<td class="texto-centro peso-bold ${obterClassePercentualFrequencia(totalParticipante.percentual, obterPercentualMinimoCurso(curso))}">${formatarResumoTotalFrequencia(totalParticipante)}</td>`;
             html += '</tr>';
         });
 
@@ -278,36 +282,29 @@ function montarHtmlFrequenciaGeral(participantes, disciplinas, frequencias, paro
 function montarHtmlFrequenciaPorDisciplina(idDisciplina, participantes, disciplinas, frequencias) {
     const disciplina = disciplinas.find(item => String(item.id) === String(idDisciplina));
     const registrosDisciplina = frequencias.filter(item => String(item.id_disciplina) === String(idDisciplina));
-    const presentes = new Set();
-    const ausentes = new Set();
-
-    registrosDisciplina.forEach(frequencia => {
-        participantes.forEach(participante => {
-            const presenca = obterPresencaParticipante(frequencia, participante.id);
-            if (presenca === null) return;
-
-            if (presencaContaComoComparecimento(presenca)) {
-                presentes.add(participante.nome || participante.id);
-                ausentes.delete(participante.nome || participante.id);
-            } else if (!presentes.has(participante.nome || participante.id)) {
-                ausentes.add(participante.nome || participante.id);
-            }
-        });
-    });
 
     let html = `<h3>Disciplina: ${Utilidades.escaparHtml(disciplina?.nome || '')}</h3>`;
-    html += `<table><thead><tr><th>Participantes Presentes (${presentes.size})</th></tr></thead><tbody>`;
-    html += presentes.size > 0
-        ? [...presentes].sort().map(nome => `<tr><td><strong class="cor-texto-sucesso">C</strong> &nbsp; ${Utilidades.escaparHtml(nome)}</td></tr>`).join('')
-        : '<tr><td class="texto-centro">Nenhum participante presente registrado.</td></tr>';
-    html += '</tbody></table>';
+    html += `<p><strong>Carga horária:</strong> ${formatarHorasFrequencia(obterCargaHorariaDisciplina(disciplina))}</p>`;
 
-    html += `<table><thead><tr><th>Participantes Ausentes (${ausentes.size})</th></tr></thead><tbody>`;
-    html += ausentes.size > 0
-        ? [...ausentes].sort().map(nome => `<tr><td><strong class="cor-texto-erro">F</strong> &nbsp; ${Utilidades.escaparHtml(nome)}</td></tr>`).join('')
-        : '<tr><td class="texto-centro">Nenhum participante ausente registrado.</td></tr>';
-    html += '</tbody></table>';
+    if (registrosDisciplina.length === 0) {
+        return html + '<p>Nenhuma frequência registrada para esta disciplina.</p>';
+    }
 
+    html += '<table><thead><tr><th class="coluna-nome-documento">Participante</th><th class="texto-centro">Horas</th><th class="texto-centro">Situação</th></tr></thead><tbody>';
+
+    participantes
+        .sort((a, b) => (a.nome || '').localeCompare(b.nome || ''))
+        .forEach(participante => {
+            const resumo = calcularResumoDisciplinaParticipante(participante.id, idDisciplina, frequencias);
+            const compareceu = resumo.comparecimentos > 0;
+            html += `<tr>
+                <td><strong>${Utilidades.escaparHtml(participante.nome || '-')}</strong></td>
+                <td class="texto-centro">${formatarResumoHorasFrequencia(resumo)}</td>
+                <td class="texto-centro ${compareceu ? 'cor-texto-sucesso' : 'cor-texto-erro'}">${compareceu ? 'Compareceu' : 'Faltou'}</td>
+            </tr>`;
+        });
+
+    html += '</tbody></table>';
     return html;
 }
 
@@ -325,7 +322,7 @@ function calcularResumoDisciplinaParticipante(idParticipante, idDisciplina, freq
         if (presenca === null) return;
 
         total++;
-        horasPrevistas += HORAS_AULA_FREQUENCIA;
+        horasPrevistas += obterCargaHorariaFrequencia(frequencia);
         horasPresentes += presenca.horas;
 
         if (presencaContaComoComparecimento(presenca)) comparecimentos++;
@@ -357,8 +354,8 @@ function formatarHorasFrequencia(valor) {
     return `${Number.isInteger(numero) ? numero : numero.toFixed(1).replace('.', ',')}h`;
 }
 
-function obterClassePercentualFrequencia(percentual) {
-    return percentual >= 75 ? 'cor-texto-sucesso' : 'cor-texto-erro';
+function obterClassePercentualFrequencia(percentual, percentualMinimo = PERCENTUAL_MINIMO_FREQUENCIA_PADRAO) {
+    return percentual >= percentualMinimo ? 'cor-texto-sucesso' : 'cor-texto-erro';
 }
 
 async function gerarPDFAtividadesAcademico() {
@@ -439,4 +436,12 @@ function agruparParticipantesPorParoquiaECapela(participantes = []) {
         grupos[chave].participantes.push(participante);
         return grupos;
     }, {});
+}
+
+function filtrarTabelaAcademica(termo = '') {
+    const campo = document.getElementById('busca-tabela-acad');
+    if (!campo) return;
+    campo.value = termo;
+    campo.dispatchEvent(new Event('input', { bubbles: true }));
+    campo.focus();
 }

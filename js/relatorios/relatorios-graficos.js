@@ -84,8 +84,8 @@ function obterCoresGrafico(indice = 0, borda = false) {
     return `rgba(${cor}, ${borda ? '0.8' : '0.1'})`;
 }
 
-function montarGraficoFrequencia(participantes = [], frequencias = []) {
-    const faixas = agruparFrequenciasPorFaixa(participantes, frequencias);
+function montarGraficoFrequencia(participantes = [], frequencias = [], percentualMinimo = PERCENTUAL_MINIMO_FREQUENCIA_PADRAO) {
+    const faixas = agruparFrequenciasPorFaixa(participantes, frequencias, percentualMinimo);
 
     return {
         id: 'grafico-frequencia-academico',
@@ -112,8 +112,8 @@ function montarGraficoFrequencia(participantes = [], frequencias = []) {
     };
 }
 
-function montarGraficoPagamentos(participantes = [], pagamentos = [], cursos = []) {
-    const status = agruparPagamentosPorStatus(participantes, pagamentos, cursos);
+function montarGraficoPagamentos(participantes = [], pagamentos = [], cursos = [], disciplinas = [], frequencias = []) {
+    const status = agruparPagamentosPorStatus(participantes, pagamentos, cursos, disciplinas, frequencias);
 
     return {
         id: 'grafico-pagamentos-financeiro',

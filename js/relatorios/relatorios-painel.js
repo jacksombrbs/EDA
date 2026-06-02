@@ -1,8 +1,10 @@
-function criarCardMetrica(titulo, valor, classe = '', icone = '') {
+function criarCardMetrica(titulo, valor, classe = '', icone = '', acao = '') {
     const iconeHtml = icone ? `<span class="icone-metrica" data-icone="${Utilidades.escaparHtml(icone)}"></span>` : '';
+    const atributos = acao ? ` role="button" tabindex="0" onclick="${Utilidades.escaparHtml(acao)}" onkeydown="if(event.key==='Enter'){${Utilidades.escaparHtml(acao)}}"` : '';
+    const classeCursor = acao ? ' cursor-apontador' : '';
 
     return `
-        <div class="cartao-metrica ${classe}">
+        <div class="cartao-metrica ${classe}${classeCursor}"${atributos}>
             ${iconeHtml}
             <span>${Utilidades.escaparHtml(titulo)}</span>
             <strong>${Utilidades.escaparHtml(valor)}</strong>
@@ -14,10 +16,10 @@ function criarGradeMetricas(itens = [], colunas = 3) {
     const classeColunas = `grade-${colunas}-colunas`;
     const conteudo = itens.map(item => {
         if (typeof item === 'string') return item;
-        return criarCardMetrica(item.titulo, item.valor, item.classe || '', item.icone || '');
+        return criarCardMetrica(item.titulo, item.valor, item.classe || '', item.icone || '', item.acao || '');
     }).join('');
 
-    return `<div class="grade-metricas-dashboard ${classeColunas}">${conteudo}</div>`;
+    return `<div class="grade-metricas-painel ${classeColunas}">${conteudo}</div>`;
 }
 
 function criarMetricasRelatorio(itens = []) {
@@ -33,7 +35,7 @@ function criarMetricasRelatorio(itens = []) {
     `;
 }
 
-function renderizarDashboardRelatorios(contexto) {
+function renderizarPainelRelatorios(contexto) {
     return `
         ${renderizarCardsResumo(contexto)}
         ${renderizarBlocoGraficos(contexto)}
@@ -57,7 +59,7 @@ function renderizarCardsResumo(contexto = {}) {
 
 function renderizarBlocoGraficos(contexto = {}) {
     return `
-        <div class="painel-dashboard-relatorio">
+        <div class="painel-relatorio">
             <div class="area-grafico-relatorio">${criarGradeGraficos([montarGraficoFrequencia(contexto.participantes || [], contexto.frequencias || [])])}</div>
             <div class="area-grafico-relatorio">${criarGradeGraficos([montarGraficoPagamentos(contexto.participantes || [], contexto.pagamentos || [], contexto.cursos || [])])}</div>
         </div>
@@ -66,7 +68,7 @@ function renderizarBlocoGraficos(contexto = {}) {
 
 function renderizarBlocoRelatoriosPDF() {
     return `
-        <div class="lista-relatorios-dashboard">
+        <div class="lista-relatorios-painel">
             <div class="cartao-geracao-relatorio">
                 <div class="cabecalho-relatorio">
                     <h3 class="texto-md peso-bold cor-texto-primario m-zero">Relatório de Frequência</h3>
@@ -75,7 +77,7 @@ function renderizarBlocoRelatoriosPDF() {
             </div>
             <div class="cartao-geracao-relatorio">
                 <div class="cabecalho-relatorio">
-                    <h3 class="texto-md peso-bold cor-texto-primario m-zero">Mensalidades</h3>
+                    <h3 class="texto-md peso-bold cor-texto-primario m-zero">Financeiro</h3>
                     ${criarBotao('Gerar Relatório', 'gerarPDFMensalidades()', 'contorno', 'botao-pequeno')}
                 </div>
             </div>
@@ -83,13 +85,13 @@ function renderizarBlocoRelatoriosPDF() {
     `;
 }
 
-function renderizarAbasDashboardRelatorios(contexto) {
+function renderizarAbasPainelRelatorios(contexto) {
     return `
         <div id="sub-aba-academico" class="sub-aba-relatorio">
-            ${renderizarDashboardAcademico(contexto.participantes, contexto.frequencias, contexto.atividades, contexto.disciplinas)}
+            ${renderizarPainelAcademico(contexto.participantes, contexto.frequencias, contexto.atividades, contexto.disciplinas, contexto.curso)}
         </div>
         <div id="sub-aba-financeiro" class="sub-aba-relatorio oculto">
-            ${renderizarDashboardFinanceiro(contexto.participantes, contexto.pagamentos, contexto.financas, contexto.cursos)}
+            ${renderizarPainelFinanceiro(contexto.participantes, contexto.pagamentos, contexto.financas, contexto.cursos, contexto.disciplinas, contexto.frequencias)}
         </div>
     `;
 }

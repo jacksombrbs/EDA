@@ -1,4 +1,58 @@
-const TIPOS_PAGAMENTO = ['Inscrição', 'Mensalidade', 'Outros'];
+const TIPOS_COBRANCA_CURSO = {
+    MENSAL: 'Mensal',
+    ENCONTRO: 'Por encontro',
+    DISCIPLINA: 'Por disciplina',
+    GRATUITO: 'Gratuito'
+};
+
+const TIPOS_PAGAMENTO = ['Inscrição', 'Mensalidade', 'Encontro', 'Disciplina', 'Outros'];
+
+function compararTextoFinanceiro(a = '', b = '') {
+    return String(a || '').localeCompare(String(b || ''), 'pt-BR', { sensitivity: 'base', numeric: true });
+}
+
+function obterOrdemTipoObrigacao(tipo = '') {
+    const ordem = ['Inscrição', 'Mensalidade', 'Disciplina', 'Encontro', 'Outros'];
+    const indice = ordem.indexOf(tipo);
+    return indice === -1 ? ordem.length : indice;
+}
+
+function ordenarObrigacoesFinanceiras(obrigacoes = []) {
+    return [...obrigacoes].sort((a, b) => {
+        const ordemTipo = obterOrdemTipoObrigacao(a.tipo) - obterOrdemTipoObrigacao(b.tipo);
+        if (ordemTipo !== 0) return ordemTipo;
+
+        if (a.tipo === 'Mensalidade') {
+            return Number(a.referencia_indice || 0) - Number(b.referencia_indice || 0);
+        }
+
+        const ordemDescricao = compararTextoFinanceiro(a.descricao, b.descricao);
+        if (ordemDescricao !== 0) return ordemDescricao;
+
+        return Number(a.referencia_indice || 0) - Number(b.referencia_indice || 0);
+    });
+}
+
+function obterTipoCobrancaCurso(curso = null) {
+    const tipo = String(curso?.tipo_cobranca || '').trim();
+    return Object.values(TIPOS_COBRANCA_CURSO).includes(tipo) ? tipo : TIPOS_COBRANCA_CURSO.MENSAL;
+}
+
+function cursoCobraPorMensalidade(curso = null) {
+    return obterTipoCobrancaCurso(curso) === TIPOS_COBRANCA_CURSO.MENSAL;
+}
+
+function cursoCobraPorEncontro(curso = null) {
+    return obterTipoCobrancaCurso(curso) === TIPOS_COBRANCA_CURSO.ENCONTRO;
+}
+
+function cursoCobraPorDisciplina(curso = null) {
+    return obterTipoCobrancaCurso(curso) === TIPOS_COBRANCA_CURSO.DISCIPLINA;
+}
+
+function cursoEhGratuito(curso = null) {
+    return obterTipoCobrancaCurso(curso) === TIPOS_COBRANCA_CURSO.GRATUITO;
+}
 
 async function obterParticipantePagamento(idParticipante) {
     return idParticipante ? await bd.obter('participantes', idParticipante) : null;
@@ -10,86 +64,205 @@ async function obterCursoParticipante(idParticipante) {
     return await bd.obter('cursos', participante.id_curso);
 }
 
-async function participanteJaPagouInscricao(idParticipante, contexto = {}) {
-    const pagamentos = await bd.obterTodos('pagamentos');
-    const lotes = await bd.obterTodos('pagamentos_lote');
+function obterValorDisciplina(disciplina = null) {
+    return Utilidades.normalizarValorMonetario(disciplina?.valor_disciplina || 0);
+}
 
-    const emPagamentoIndividual = pagamentos.some(pagamento =>
-        String(pagamento.id_participante) === String(idParticipante)
-        && pagamento.tipo === 'Inscrição'
+function obterValorEncontroCurso(curso = null) {
+    return Utilidades.normalizarValorMonetario(curso?.valor_encontro || 0);
+}
+
+function obterQuantidadeEncontrosGratuitos(disciplina = null) {
+    const total = Math.max(Number(disciplina?.quantidade_encontros || 1), 1);
+    const gratuitos = Math.max(Number(disciplina?.encontros_gratuitos || 0), 0);
+    return Math.min(gratuitos, total);
+}
+
+function encontroDisciplinaEhGratuito(disciplina = null, indiceEncontro = 1) {
+    return Number(indiceEncontro || 0) <= obterQuantidadeEncontrosGratuitos(disciplina);
+}
+
+function pagamentoPertenceAoParticipante(pagamento, idParticipante, contexto = {}) {
+    return String(pagamento.id_participante) === String(idParticipante)
         && String(pagamento.id) !== String(contexto.ignorarPagamentoId || '')
-        && String(pagamento.id_lote || '') !== String(contexto.ignorarLoteId || '')
-    );
-
-    const emLote = lotes.some(lote =>
-        lote.tipo === 'Inscrição'
-        && Array.isArray(lote.ids_participantes)
-        && lote.ids_participantes.map(String).includes(String(idParticipante))
-        && String(lote.id) !== String(contexto.ignorarLoteId || '')
-    );
-
-    return emPagamentoIndividual || emLote;
+        && String(pagamento.id_lote || '') !== String(contexto.ignorarLoteId || '');
 }
 
-async function validarInscricaoUnica(dados, contexto = {}) {
-    const idsParticipantes = dados.ids_participantes || [dados.id_participante];
-    const participantesBloqueados = [];
+function pagamentoQuitaReferencia(pagamento, tipo, referenciaId = '', referenciaIndice = null) {
+    if (pagamento.tipo !== tipo) return false;
+    if (referenciaId && String(pagamento.referencia_id || '') !== String(referenciaId)) return false;
+    if (referenciaIndice !== null && Number(pagamento.referencia_indice || 0) !== Number(referenciaIndice)) return false;
+    return true;
+}
 
-    for (const idParticipante of idsParticipantes) {
-        if (await participanteJaPagouInscricao(idParticipante, contexto)) {
-            const participante = await bd.obter('participantes', idParticipante);
-            participantesBloqueados.push(participante?.nome || idParticipante);
+function obterDataPagamentoObrigacao(obrigacao, pagamentos = [], contexto = {}) {
+    const pagamento = pagamentos.find(item =>
+        pagamentoPertenceAoParticipante(item, obrigacao.id_participante, contexto)
+        && pagamentoQuitaReferencia(item, obrigacao.tipo, obrigacao.referencia_id, obrigacao.referencia_indice ?? null)
+    );
+
+    return pagamento?.data || '';
+}
+
+function montarObrigacaoFinanceira(dados, pagamentos = [], contexto = {}) {
+    const dataPagamento = obterDataPagamentoObrigacao(dados, pagamentos, contexto);
+    return {
+        ...dados,
+        pago: Boolean(dataPagamento),
+        data_pagamento: dataPagamento
+    };
+}
+
+function calcularObrigacoesFinanceirasParticipante(participante, curso, disciplinas = [], frequencias = [], pagamentos = [], contexto = {}) {
+    if (!participante || !curso) return [];
+
+    const obrigacoes = [];
+    const idParticipante = participante.id;
+    const valorInscricao = Utilidades.normalizarValorMonetario(curso.valor_inscricao || 0);
+    const tipoCobranca = obterTipoCobrancaCurso(curso);
+
+    if (valorInscricao > 0) {
+        obrigacoes.push(montarObrigacaoFinanceira({
+            id: `inscricao-${idParticipante}`,
+            id_participante: idParticipante,
+            tipo: 'Inscrição',
+            referencia_tipo: 'inscricao',
+            referencia_id: 'inscricao',
+            descricao: 'Inscrição',
+            valor: valorInscricao,
+            ordem: 0
+        }, pagamentos, contexto));
+    }
+
+    if (tipoCobranca === TIPOS_COBRANCA_CURSO.MENSAL) {
+        const quantidade = Number(curso.quantidade_mensalidades || 0);
+        const valor = Utilidades.normalizarValorMonetario(curso.valor_mensalidade || 0);
+        for (let indice = 1; indice <= quantidade; indice++) {
+            obrigacoes.push(montarObrigacaoFinanceira({
+                id: `mensalidade-${idParticipante}-${indice}`,
+                id_participante: idParticipante,
+                tipo: 'Mensalidade',
+                referencia_tipo: 'mensalidade',
+                referencia_id: `mensalidade-${indice}`,
+                referencia_indice: indice,
+                descricao: `Mensalidade ${indice}`,
+                valor,
+                ordem: indice
+            }, pagamentos, contexto));
         }
     }
 
-    if (participantesBloqueados.length > 0) {
-        return {
-            valido: false,
-            mensagem: `Não foi possível salvar. Os seguintes participantes já quitaram a inscrição: ${participantesBloqueados.join(', ')}.`
-        };
+    if (tipoCobranca === TIPOS_COBRANCA_CURSO.ENCONTRO) {
+        const valor = obterValorEncontroCurso(curso);
+        let ordem = 1;
+        disciplinas
+            .filter(disciplina => String(disciplina.id_curso) === String(curso.id))
+            .sort((a, b) => compararTextoFinanceiro(a.nome, b.nome))
+            .forEach(disciplina => {
+                const quantidadeEncontros = Math.max(Number(disciplina.quantidade_encontros || 1), 1);
+                for (let indice = 1; indice <= quantidadeEncontros; indice++) {
+                    if (encontroDisciplinaEhGratuito(disciplina, indice) || valor <= 0) continue;
+                    obrigacoes.push(montarObrigacaoFinanceira({
+                        id: `encontro-${idParticipante}-${disciplina.id}-${indice}`,
+                        id_participante: idParticipante,
+                        tipo: 'Encontro',
+                        referencia_tipo: 'encontro',
+                        referencia_id: `${disciplina.id}-encontro-${indice}`,
+                        referencia_indice: indice,
+                        descricao: `${disciplina.nome || 'Disciplina'} — Encontro ${indice}`,
+                        valor,
+                        ordem
+                    }, pagamentos, contexto));
+                    ordem++;
+                }
+            });
     }
 
-    return { valido: true };
+    if (tipoCobranca === TIPOS_COBRANCA_CURSO.DISCIPLINA) {
+        disciplinas
+            .filter(disciplina => String(disciplina.id_curso) === String(curso.id))
+            .sort((a, b) => compararTextoFinanceiro(a.nome, b.nome))
+            .forEach((disciplina, indice) => {
+                const valor = obterValorDisciplina(disciplina);
+                if (valor <= 0) return;
+                obrigacoes.push(montarObrigacaoFinanceira({
+                    id: `disciplina-${idParticipante}-${disciplina.id}`,
+                    id_participante: idParticipante,
+                    tipo: 'Disciplina',
+                    referencia_tipo: 'disciplina',
+                    referencia_id: disciplina.id,
+                    descricao: disciplina.nome || 'Disciplina',
+                    valor,
+                    ordem: indice + 1
+                }, pagamentos, contexto));
+            });
+    }
+
+    return ordenarObrigacoesFinanceiras(obrigacoes);
 }
 
-async function calcularMensalidadesPagas(idParticipante, contexto = {}) {
-    const pagamentos = await bd.obterTodos('pagamentos');
-
-    return pagamentos
-        .filter(pagamento =>
-            String(pagamento.id_participante) === String(idParticipante)
-            && pagamento.tipo === 'Mensalidade'
-            && String(pagamento.id) !== String(contexto.ignorarPagamentoId || '')
-            && String(pagamento.id_lote || '') !== String(contexto.ignorarLoteId || '')
-        )
-        .reduce((total, pagamento) => total + (Number(pagamento.quantidade) || 1), 0);
-}
-
-async function calcularMensalidadesRestantes(idParticipante, contexto = {}) {
-    const curso = await obterCursoParticipante(idParticipante);
-    const quantidadeCurso = Number(curso?.quantidade_mensalidades || 0);
-    const pagas = await calcularMensalidadesPagas(idParticipante, contexto);
-    return Math.max(quantidadeCurso - pagas, 0);
-}
-
-async function validarLimiteMensalidades(dados, contexto = {}) {
-    const idsParticipantes = dados.ids_participantes || [dados.id_participante];
-    const quantidade = Number(dados.quantidade || 1);
-    const bloqueados = [];
-
-    for (const idParticipante of idsParticipantes) {
-        const restantes = await calcularMensalidadesRestantes(idParticipante, contexto);
-        if (quantidade > restantes) {
-            const participante = await bd.obter('participantes', idParticipante);
-            bloqueados.push(`${participante?.nome || idParticipante} resta ${restantes}`);
+function calcularResumoObrigacoes(obrigacoes = []) {
+    return obrigacoes.reduce((resumo, obrigacao) => {
+        resumo.total += Utilidades.normalizarValorMonetario(obrigacao.valor);
+        if (obrigacao.pago) resumo.pago += Utilidades.normalizarValorMonetario(obrigacao.valor);
+        else {
+            resumo.pendente += Utilidades.normalizarValorMonetario(obrigacao.valor);
+            resumo.pendentes++;
         }
+        return resumo;
+    }, { total: 0, pago: 0, pendente: 0, pendentes: 0 });
+}
+
+function obterObrigacoesAbertasParticipante(participante, curso, disciplinas = [], frequencias = [], pagamentos = [], contexto = {}) {
+    return calcularObrigacoesFinanceirasParticipante(participante, curso, disciplinas, frequencias, pagamentos, contexto)
+        .filter(obrigacao => !obrigacao.pago);
+}
+
+async function obterContextoObrigacoesParticipante(idParticipante, contexto = {}) {
+    const participante = await obterParticipantePagamento(idParticipante);
+    const curso = participante?.id_curso ? await bd.obter('cursos', participante.id_curso) : null;
+    const [disciplinas, frequencias, pagamentos] = await Promise.all([
+        bd.obterTodos('disciplinas'),
+        bd.obterTodos('frequencias'),
+        bd.obterTodos('pagamentos')
+    ]);
+
+    return {
+        participante,
+        curso,
+        disciplinas: disciplinas.filter(disciplina => String(disciplina.id_curso) === String(curso?.id || '')),
+        frequencias: frequencias.filter(frequencia => String(frequencia.id_curso || '') === String(curso?.id || '')),
+        pagamentos,
+        contexto
+    };
+}
+
+async function obterObrigacoesAbertasPagamento(idParticipante, contexto = {}) {
+    const dados = await obterContextoObrigacoesParticipante(idParticipante, contexto);
+    if (!dados.participante || !dados.curso) return [];
+    return obterObrigacoesAbertasParticipante(dados.participante, dados.curso, dados.disciplinas, dados.frequencias, dados.pagamentos, contexto);
+}
+
+async function validarPagamento(dados, contexto = {}) {
+    if (!TIPOS_PAGAMENTO.includes(dados.tipo)) {
+        return { valido: false, mensagem: 'Tipo de pagamento inválido.' };
     }
 
-    if (bloqueados.length > 0) {
-        return {
-            valido: false,
-            mensagem: `Não foi possível salvar. Os seguintes participantes não possuem mensalidades suficientes em aberto: ${bloqueados.join(', ')}.`
-        };
+    if (dados.tipo === 'Outros') return { valido: true };
+
+    if (!dados.id_participante) {
+        return { valido: false, mensagem: 'Selecione o participante.' };
+    }
+
+    const abertas = await obterObrigacoesAbertasPagamento(dados.id_participante, contexto);
+    const obrigacao = abertas.find(item =>
+        item.tipo === dados.tipo
+        && String(item.referencia_id || '') === String(dados.referencia_id || '')
+        && String(item.referencia_indice || '') === String(dados.referencia_indice || '')
+    );
+
+    if (!obrigacao) {
+        return { valido: false, mensagem: 'Esta cobrança já foi paga ou não está aberta para o participante.' };
     }
 
     return { valido: true };
@@ -114,30 +287,19 @@ async function validarParticipantesMesmoCurso(idsParticipantes) {
     return { valido: true, id_curso: participantes[0]?.id_curso || '' };
 }
 
-async function obterValorPagamentoParticipante(idParticipante, tipo, quantidade = 1, valorManual = 0) {
+async function obterValorPagamentoParticipante(idParticipante, tipo, quantidade = 1, valorManual = 0, referencia = {}) {
     if (tipo === 'Outros') return Utilidades.normalizarValorMonetario(valorManual);
 
-    const curso = await obterCursoParticipante(idParticipante);
-    if (!curso) return 0;
+    const abertas = await obterObrigacoesAbertasPagamento(idParticipante, {
+        ignorarPagamentoId: AppEstado.registroEmEdicao,
+        ignorarLoteId: AppEstado.registroEmEdicao
+    });
 
-    if (tipo === 'Inscrição') return Utilidades.normalizarValorMonetario(curso.valor_inscricao);
-    if (tipo === 'Mensalidade') return Utilidades.normalizarValorMonetario(curso.valor_mensalidade) * (Number(quantidade) || 1);
+    const obrigacao = abertas.find(item =>
+        item.tipo === tipo
+        && (!referencia.referencia_id || String(item.referencia_id || '') === String(referencia.referencia_id || ''))
+        && (!referencia.referencia_indice || Number(item.referencia_indice || 0) === Number(referencia.referencia_indice || 0))
+    );
 
-    return 0;
-}
-
-async function validarPagamento(dados, contexto = {}) {
-    if (!TIPOS_PAGAMENTO.includes(dados.tipo)) {
-        return { valido: false, mensagem: 'Tipo de pagamento inválido.' };
-    }
-
-    if (dados.tipo === 'Inscrição') {
-        return await validarInscricaoUnica(dados, contexto);
-    }
-
-    if (dados.tipo === 'Mensalidade') {
-        return await validarLimiteMensalidades(dados, contexto);
-    }
-
-    return { valido: true };
+    return obrigacao ? Utilidades.normalizarValorMonetario(obrigacao.valor) : 0;
 }

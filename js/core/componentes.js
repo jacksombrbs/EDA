@@ -263,6 +263,8 @@ function abrirDocumentoImpressao(titulo, htmlConteudo, opcoes = {}) {
 
     const incluirCabecalho = opcoes.incluirCabecalho !== false;
     const estilosExtras = opcoes.estilosExtras || '';
+    const orientacaoPagina = opcoes.orientacao === 'paisagem' ? 'landscape' : 'portrait';
+    const estilosPagina = `@page { size: A4 ${orientacaoPagina}; margin: 10mm; } @media print { body { margin: 10mm; } }`;
 
     const htmlCompleto = `
         <!DOCTYPE html>
@@ -270,7 +272,7 @@ function abrirDocumentoImpressao(titulo, htmlConteudo, opcoes = {}) {
         <head>
             <meta charset="UTF-8">
             <title>${titulo}</title>
-            <style>${criarEstilosDocumento()}${estilosExtras}</style>
+            <style>${criarEstilosDocumento()}${estilosPagina}${estilosExtras}</style>
         </head>
         <body>
             ${incluirCabecalho ? criarCabecalhoDocumento() : ''}

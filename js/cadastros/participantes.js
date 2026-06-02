@@ -41,7 +41,7 @@ async function abrirFormularioParticipante(id = null) {
 
     document.getElementById('titulo-janela').textContent = id ? 'Editar Participante' : 'Novo Participante';
 
-    let formulario = '<form id="formulario-participante" class="flex flex-coluna gap-md w-total" onsubmit="salvarParticipante(event)">';
+    let formulario = '<form id="formulario-participante" class="flex flex-coluna gap-md w-total" onsubmit="salvarParticipante(event)" novalidate>';
     formulario += '<div class="flex gap-md md-flex-coluna">';
     formulario += '<div class="flex-1">' + criarCampoFormulario('Nome Completo', 'text', 'nome', participante?.nome || '', '', true) + '</div>';
     formulario += '<div class="flex-1">' + criarSeletor('Status', 'status', opcoesStatus, participante?.status || 'Ativo') + '</div>';

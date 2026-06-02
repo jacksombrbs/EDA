@@ -24,6 +24,7 @@ async function montarHtmlListaFrequencia(idCurso, idDisciplina, data) {
     html += `<p><strong>Curso:</strong> ${Utilidades.escaparHtml(curso?.nome || '-')}</p>`;
     html += `<p><strong>Disciplina:</strong> ${Utilidades.escaparHtml(disciplina?.nome || '-')}</p>`;
     html += `<p><strong>Data da Aula:</strong> ${Utilidades.formatarData(data)}</p>`;
+    html += `<p><strong>Carga horária:</strong> ${formatarHorasCargaHoraria(obterCargaHorariaDisciplina(disciplina))}</p>`;
 
     if (participantes.length === 0) {
         html += '<p class="texto-centro">Nenhum participante ativo cadastrado neste curso.</p>';

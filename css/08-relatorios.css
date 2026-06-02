@@ -48,7 +48,7 @@
     align-self: flex-start;
 }
 
-.grade-metricas-dashboard {
+.grade-metricas-painel {
     display: grid;
     gap: var(--espaco-md);
     margin-bottom: var(--espaco-lg);
@@ -92,7 +92,7 @@
     font-size: var(--fonte-xl);
 }
 
-.painel-dashboard-relatorio {
+.painel-relatorio {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
     gap: var(--espaco-md);
@@ -122,22 +122,22 @@
     min-height: 0;
 }
 
-.lista-relatorios-dashboard {
+.lista-relatorios-painel {
     display: flex;
     flex-direction: column;
     gap: var(--espaco-md);
 }
 
-.coluna-relatorios-dashboard {
+.coluna-relatorios-painel {
     min-height: var(--altura-grafico-relatorio);
 }
 
-.painel-dashboard-relatorio > .area-grafico-relatorio {
+.painel-relatorio > .area-grafico-relatorio {
     display: flex;
     min-height: var(--altura-grafico-relatorio);
 }
 
-.painel-dashboard-relatorio > .area-grafico-relatorio .grade-graficos {
+.painel-relatorio > .area-grafico-relatorio .grade-graficos {
     flex: 1;
 }
 

@@ -1,8 +1,25 @@
+
+function normalizarReferenciaRecibo(descricao = '') {
+    let texto = String(descricao || 'Pagamento').trim();
+    texto = texto
+        .replace(/^(aos\s+encontros:\s*){2,}/i, 'aos encontros: ')
+        .replace(/^(às\s+disciplinas:\s*){2,}/i, 'às disciplinas: ')
+        .replace(/^(às\s+mensalidades:\s*){2,}/i, 'às mensalidades: ');
+    return texto || 'Pagamento';
+}
+
+function montarLinhaReferenciaRecibo(descricao = '') {
+    const texto = normalizarReferenciaRecibo(descricao);
+    const inicioDinamico = /^(à|às|ao|aos|a\s|a:)/i.test(texto);
+    const prefixo = inicioDinamico ? 'Referente' : 'Referente a:';
+    return `${prefixo} <strong>${Utilidades.escaparHtml(texto)}</strong>.`;
+}
+
 function gerarReciboGenerico(nomeParticipante, valor, descricao, data, cpf = '') {
     const textoCpf = cpf ? `, CPF <strong>${Utilidades.escaparHtml(cpf)}</strong>` : '';
     const conteudo = `
         <p>Recebemos de <strong>${Utilidades.escaparHtml(nomeParticipante)}</strong>${textoCpf} a importância de <strong>${Utilidades.formatarMoeda(valor)}</strong>.</p>
-        <p>Referente a: <strong>${Utilidades.escaparHtml(descricao || 'Pagamento')}</strong>.</p>
+        <p>${montarLinhaReferenciaRecibo(descricao || 'Pagamento')}</p>
     `;
 
     gerarReciboPadrao('Recibo de Pagamento', {
@@ -21,7 +38,7 @@ function gerarReciboLoteTemplate(nomeParoquia, nomesParticipantes, valorTotal, d
     const textoCnpj = cnpj ? `, CNPJ <strong>${Utilidades.escaparHtml(cnpj)}</strong>` : '';
     const conteudo = `
         <p>Recebemos de <strong>${Utilidades.escaparHtml(nomeParoquia)}</strong>${textoCnpj} a importância de <strong>${Utilidades.formatarMoeda(valorTotal)}</strong>.</p>
-        <p>Referente a: <strong>${Utilidades.escaparHtml(descricao || 'Pagamento em lote')}</strong>.</p>
+        <p>${montarLinhaReferenciaRecibo(descricao || 'Pagamento em lote')}</p>
         <ul class="lista-participantes">${lista}</ul>
     `;
 
