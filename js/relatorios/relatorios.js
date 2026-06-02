@@ -112,7 +112,6 @@ function filtrarDadosPorCurso(contexto) {
     const participantes = participantesCurso.filter(participante => Utilidades.participanteEstaAtivo(participante));
     const participantesTodosCurso = participantesCurso;
     const idsDisciplinas = new Set(disciplinas.map(item => String(item.id)));
-    const idsParticipantesAtivos = new Set(participantes.map(item => String(item.id)));
     const idsParticipantesCurso = new Set(participantesCurso.map(item => String(item.id)));
     const frequencias = contexto.frequencias.filter(item => {
         const pertenceAoCurso = String(item.id_curso || '') === String(idCurso);
@@ -122,10 +121,10 @@ function filtrarDadosPorCurso(contexto) {
     const atividades = contexto.atividades.filter(item => {
         const pertenceAoCurso = String(item.id_curso || '') === String(idCurso);
         const pertenceADisciplina = idsDisciplinas.has(String(item.id_disciplina || ''));
-        const possuiParticipanteAtivo = obterRegistrosAtividade(item)
-            .some(registro => idsParticipantesAtivos.has(String(registro.id_participante || '')));
+        const possuiParticipanteDoCurso = obterRegistrosAtividade(item)
+            .some(registro => idsParticipantesCurso.has(String(registro.id_participante || '')));
 
-        return (pertenceAoCurso || pertenceADisciplina) && possuiParticipanteAtivo;
+        return (pertenceAoCurso || pertenceADisciplina) && possuiParticipanteDoCurso;
     });
     const pagamentos = contexto.pagamentos.filter(item => idsParticipantesCurso.has(String(item.id_participante || '')));
     const pagamentos_lote = contexto.pagamentos_lote.filter(lote =>

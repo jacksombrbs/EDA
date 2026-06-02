@@ -64,6 +64,26 @@ const Utilidades = {
         return participantes.filter(participante => this.participanteEstaAtivo(participante));
     },
 
+    ordenarParticipantesPorNome(participantes = []) {
+        return [...participantes].sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR', { sensitivity: 'base' }));
+    },
+
+    filtrarParticipantesDoCurso(participantes = [], idCurso = '', opcoes = {}) {
+        const mostrarTodos = opcoes.mostrarTodos === true;
+        return this.ordenarParticipantesPorNome(
+            participantes.filter(participante =>
+                String(participante.id_curso || '') === String(idCurso || '')
+                && (mostrarTodos || this.participanteEstaAtivo(participante))
+            )
+        );
+    },
+
+    montarNomeParticipanteComStatus(participante = {}, mostrarStatus = false) {
+        const nome = this.escaparHtml(participante.nome || '-');
+        if (!mostrarStatus || this.participanteEstaAtivo(participante)) return nome;
+        return `${nome}<br><span class="texto-xs cor-texto-erro peso-bold">Desistente</span>`;
+    },
+
     escaparHtml(valor) {
         return String(valor ?? '')
             .replace(/&/g, '&amp;')

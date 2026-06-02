@@ -82,6 +82,31 @@ function encontroDisciplinaEhGratuito(disciplina = null, indiceEncontro = 1) {
     return Number(indiceEncontro || 0) <= obterQuantidadeEncontrosGratuitos(disciplina);
 }
 
+
+function obterFrequenciasDisciplinaOrdenadas(frequencias = [], idDisciplina = '') {
+    return frequencias
+        .filter(frequencia => String(frequencia.id_disciplina || '') === String(idDisciplina))
+        .sort((a, b) => {
+            const comparacaoData = String(a.data || '').localeCompare(String(b.data || ''));
+            if (comparacaoData !== 0) return comparacaoData;
+            return String(a.id || '').localeCompare(String(b.id || ''));
+        });
+}
+
+function obterFrequenciaEncontroDisciplina(frequencias = [], idDisciplina = '', indiceEncontro = 1) {
+    return obterFrequenciasDisciplinaOrdenadas(frequencias, idDisciplina)[Number(indiceEncontro || 1) - 1] || null;
+}
+
+function obterSituacaoEncontroParticipante(idParticipante, disciplina = null, indiceEncontro = 1, frequencias = []) {
+    const frequencia = obterFrequenciaEncontroDisciplina(frequencias, disciplina?.id, indiceEncontro);
+    if (!frequencia) return 'previsto';
+
+    const presenca = obterPresencaParticipante(frequencia, idParticipante);
+    if (!presenca) return 'previsto';
+    if (presenca.estado === ESTADOS_FREQUENCIA.FALTOU) return 'faltou';
+    return 'compareceu';
+}
+
 function normalizarReferenciaIndicePagamento(valor = null) {
     if (valor === null || valor === undefined || String(valor).trim() === '') return '';
     const numero = Number(valor);
@@ -187,6 +212,7 @@ function calcularObrigacoesFinanceirasParticipante(participante, curso, discipli
                 const quantidadeEncontros = Math.max(Number(disciplina.quantidade_encontros || 1), 1);
                 for (let indice = 1; indice <= quantidadeEncontros; indice++) {
                     if (encontroDisciplinaEhGratuito(disciplina, indice) || valor <= 0) continue;
+                    const situacaoEncontro = obterSituacaoEncontroParticipante(idParticipante, disciplina, indice, frequencias);
                     obrigacoes.push(montarObrigacaoFinanceira({
                         id: `encontro-${idParticipante}-${disciplina.id}-${indice}`,
                         id_participante: idParticipante,
@@ -196,7 +222,9 @@ function calcularObrigacoesFinanceirasParticipante(participante, curso, discipli
                         referencia_indice: indice,
                         descricao: `${disciplina.nome || 'Disciplina'} — Encontro ${indice}`,
                         valor,
-                        ordem
+                        ordem,
+                        situacao_encontro: situacaoEncontro,
+                        cobranca_pendente: situacaoEncontro === 'faltou'
                     }, pagamentos, contexto));
                     ordem++;
                 }
@@ -228,19 +256,25 @@ function calcularObrigacoesFinanceirasParticipante(participante, curso, discipli
 
 function calcularResumoObrigacoes(obrigacoes = []) {
     return obrigacoes.reduce((resumo, obrigacao) => {
-        resumo.total += Utilidades.normalizarValorMonetario(obrigacao.valor);
-        if (obrigacao.pago) resumo.pago += Utilidades.normalizarValorMonetario(obrigacao.valor);
-        else {
-            resumo.pendente += Utilidades.normalizarValorMonetario(obrigacao.valor);
+        const valor = Utilidades.normalizarValorMonetario(obrigacao.valor);
+        resumo.total += valor;
+        if (obrigacao.pago) resumo.pago += valor;
+        else if (obrigacao.cobranca_pendente !== false) {
+            resumo.pendente += valor;
             resumo.pendentes++;
         }
         return resumo;
     }, { total: 0, pago: 0, pendente: 0, pendentes: 0 });
 }
 
+function obrigacaoPodeSerPaga(obrigacao = {}) {
+    if (obrigacao.pago) return false;
+    return !(obrigacao.tipo === 'Encontro' && obrigacao.situacao_encontro === 'compareceu');
+}
+
 function obterObrigacoesAbertasParticipante(participante, curso, disciplinas = [], frequencias = [], pagamentos = [], contexto = {}) {
     return calcularObrigacoesFinanceirasParticipante(participante, curso, disciplinas, frequencias, pagamentos, contexto)
-        .filter(obrigacao => !obrigacao.pago);
+        .filter(obrigacaoPodeSerPaga);
 }
 
 async function obterContextoObrigacoesParticipante(idParticipante, contexto = {}) {

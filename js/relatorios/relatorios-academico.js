@@ -10,7 +10,7 @@ function filtrarAtividadesEntreguesRelatorio(atividades = []) {
 }
 
 function renderizarPainelAcademico(participantes = [], frequencias = [], atividades = [], disciplinas = [], curso = null) {
-    const atividadesEntregues = filtrarAtividadesEntreguesRelatorio(atividades);
+    const atividadesEntregues = filtrarAtividadesPorParticipantesRelatorio(atividades, participantes);
     const percentualMinimo = obterPercentualMinimoCurso(curso);
     const estatisticas = calcularEstatisticasAcademicas(participantes, frequencias, atividadesEntregues, percentualMinimo);
 
@@ -44,6 +44,17 @@ function renderizarPainelAcademico(participantes = [], frequencias = [], ativida
                 ${criarMetricasRelatorio([
                     { rotulo: 'Disciplinas', valor: disciplinas.length },
                     { rotulo: 'Entregas', valor: atividadesEntregues.length }
+                ])}
+            </div>
+
+            <div class="cartao-geracao-relatorio">
+                <div class="cabecalho-relatorio">
+                    <h3 class="texto-md peso-bold cor-texto-primario m-zero">Status dos Participantes</h3>
+                    ${criarBotao('Gerar Relatório', 'gerarPDFStatusParticipantes()', 'contorno', 'botao-pequeno')}
+                </div>
+                ${criarMetricasRelatorio([
+                    { rotulo: 'Ativos', valor: participantes.length },
+                    { rotulo: 'Curso', valor: disciplinas.length ? 'Com disciplinas' : 'Sem disciplinas' }
                 ])}
             </div>
         </div>
@@ -83,6 +94,20 @@ function renderizarPainelAcademico(participantes = [], frequencias = [], ativida
     }, 0);
 
     return painel;
+}
+
+
+
+function filtrarAtividadesPorParticipantesRelatorio(atividades = [], participantes = []) {
+    const idsParticipantes = new Set(participantes.map(participante => String(participante.id)));
+    return filtrarAtividadesEntreguesRelatorio(atividades)
+        .filter(atividade => idsParticipantes.has(String(atividade.id_participante || '')));
+}
+
+function formatarParticipanteDocumento(participante, mostrarStatus = false) {
+    const nome = `<strong>${Utilidades.escaparHtml(participante.nome || '-')}</strong>`;
+    if (!mostrarStatus || Utilidades.participanteEstaAtivo(participante)) return nome;
+    return `${nome}<br><span class="cor-texto-erro peso-bold">Desistente</span>`;
 }
 
 function renderizarTabelaResumoAcademico(participantes, frequencias, atividades, disciplinas, percentualMinimo = PERCENTUAL_MINIMO_FREQUENCIA_PADRAO) {
@@ -234,6 +259,8 @@ async function gerarPDFFrequenciaAcademico() {
     if (!dadosRelatorio) return;
 
     const { curso, disciplinas, participantes, participantesTodosCurso, frequencias, paroquias } = dadosRelatorio;
+    const participantesRelatorio = Utilidades.ordenarParticipantesPorNome(participantesTodosCurso || participantes);
+    const mostrarTodos = true;
     const dataHoje = new Date().toLocaleDateString('pt-BR');
     const paroquiasMap = criarMapaParoquias(paroquias);
 
@@ -242,17 +269,17 @@ async function gerarPDFFrequenciaAcademico() {
     html += `<p><strong>Data de Emissão:</strong> ${dataHoje}</p>`;
 
     if (tipoRelatorio === 'geral') {
-        html += montarHtmlFrequenciaGeral(participantesTodosCurso || participantes, disciplinas, frequencias, paroquiasMap, curso);
+        html += montarHtmlFrequenciaGeral(participantesRelatorio, disciplinas, frequencias, paroquiasMap, curso, mostrarTodos);
         dispararImpressao('Relatório de Frequência Geral', html, { orientacao: 'paisagem' });
         return;
     }
 
-    html += montarHtmlFrequenciaPorDisciplina(idDisciplina, participantesTodosCurso || participantes, disciplinas, frequencias);
+    html += montarHtmlFrequenciaPorDisciplina(idDisciplina, participantesRelatorio, disciplinas, frequencias, mostrarTodos);
     const disciplina = disciplinas.find(item => String(item.id) === String(idDisciplina));
     dispararImpressao(`Relatório de Frequência - ${disciplina?.nome || 'Disciplina'}`, html);
 }
 
-function montarHtmlFrequenciaGeral(participantes, disciplinas, frequencias, paroquiasMap, curso = null) {
+function montarHtmlFrequenciaGeral(participantes, disciplinas, frequencias, paroquiasMap, curso = null, mostrarStatus = false) {
     if (disciplinas.length === 0) return '<p>Nenhuma disciplina cadastrada.</p>';
 
     const disciplinasOrdenadas = [...disciplinas].sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
@@ -271,7 +298,7 @@ function montarHtmlFrequenciaGeral(participantes, disciplinas, frequencias, paro
 
         participantesGrupo.forEach(participante => {
             const totalParticipante = calcularFrequenciaParticipante(participante.id, frequencias);
-            html += `<tr><td><strong>${Utilidades.escaparHtml(participante.nome || '-')}</strong></td>`;
+            html += `<tr><td>${formatarParticipanteDocumento(participante, mostrarStatus)}</td>`;
             disciplinasOrdenadas.forEach(disciplina => {
                 const resumoDisciplina = calcularResumoDisciplinaParticipante(participante.id, disciplina.id, frequencias);
                 html += `<td class="texto-centro">${formatarResumoHorasFrequencia(resumoDisciplina)}</td>`;
@@ -286,7 +313,7 @@ function montarHtmlFrequenciaGeral(participantes, disciplinas, frequencias, paro
     return html;
 }
 
-function montarHtmlFrequenciaPorDisciplina(idDisciplina, participantes, disciplinas, frequencias) {
+function montarHtmlFrequenciaPorDisciplina(idDisciplina, participantes, disciplinas, frequencias, mostrarStatus = false) {
     const disciplina = disciplinas.find(item => String(item.id) === String(idDisciplina));
     const registrosDisciplina = frequencias.filter(item => String(item.id_disciplina) === String(idDisciplina));
 
@@ -297,21 +324,29 @@ function montarHtmlFrequenciaPorDisciplina(idDisciplina, participantes, discipli
         return html + '<p>Nenhuma frequência registrada para esta disciplina.</p>';
     }
 
-    html += '<table><thead><tr><th class="coluna-nome-documento">Participante</th><th class="texto-centro">Horas</th><th class="texto-centro">Situação</th></tr></thead><tbody>';
+    const grupos = participantes.reduce((resultado, participante) => {
+        const resumo = calcularResumoDisciplinaParticipante(participante.id, idDisciplina, frequencias);
+        const chave = resumo.comparecimentos > 0 ? 'compareceram' : 'naoCompareceram';
+        resultado[chave].push({ participante, resumo });
+        return resultado;
+    }, { compareceram: [], naoCompareceram: [] });
 
-    participantes
-        .sort((a, b) => (a.nome || '').localeCompare(b.nome || ''))
-        .forEach(participante => {
-            const resumo = calcularResumoDisciplinaParticipante(participante.id, idDisciplina, frequencias);
-            const compareceu = resumo.comparecimentos > 0;
-            html += `<tr>
-                <td><strong>${Utilidades.escaparHtml(participante.nome || '-')}</strong></td>
+    const montarTabelaGrupo = (titulo, itens, classeSituacao, textoSituacao) => {
+        let tabela = `<h3>${titulo} (${itens.length})</h3>`;
+        tabela += '<table><thead><tr><th class="coluna-nome-documento">Participante</th><th class="texto-centro">Horas</th><th class="texto-centro">Situação</th></tr></thead><tbody>';
+        tabela += itens.length ? itens.map(({ participante, resumo }) => `
+            <tr>
+                <td>${formatarParticipanteDocumento(participante, mostrarStatus)}</td>
                 <td class="texto-centro">${formatarResumoHorasFrequencia(resumo)}</td>
-                <td class="texto-centro ${compareceu ? 'cor-texto-sucesso' : 'cor-texto-erro'}">${compareceu ? 'Compareceu' : 'Faltou'}</td>
-            </tr>`;
-        });
+                <td class="texto-centro ${classeSituacao}">${textoSituacao}</td>
+            </tr>
+        `).join('') : '<tr><td colspan="3" class="texto-centro">Nenhum participante neste grupo.</td></tr>';
+        tabela += '</tbody></table>';
+        return tabela;
+    };
 
-    html += '</tbody></table>';
+    html += montarTabelaGrupo('Compareceram', grupos.compareceram, 'cor-texto-sucesso', 'Compareceu');
+    html += montarTabelaGrupo('Não compareceram', grupos.naoCompareceram, 'cor-texto-erro', 'Não compareceu');
     return html;
 }
 
@@ -369,11 +404,13 @@ async function gerarPDFAtividadesAcademico() {
     const dadosRelatorio = await obterDadosCursoRelatorio();
     if (!dadosRelatorio) return;
 
-    const { curso, disciplinas, participantes, atividades, paroquias } = dadosRelatorio;
-    const atividadesEntregues = filtrarAtividadesEntreguesRelatorio(atividades);
+    const { curso, disciplinas, participantes, participantesTodosCurso, atividades, paroquias } = dadosRelatorio;
+    const participantesRelatorio = Utilidades.ordenarParticipantesPorNome(participantesTodosCurso || participantes);
+    const mostrarTodos = true;
+    const atividadesEntregues = filtrarAtividadesPorParticipantesRelatorio(atividades, participantesRelatorio);
     const disciplinasOrdenadas = [...disciplinas].sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
     const paroquiasMap = criarMapaParoquias(paroquias);
-    const agrupados = agruparParticipantesPorParoquiaECapela(participantes);
+    const agrupados = agruparParticipantesPorParoquiaECapela(participantesRelatorio);
 
     let html = `<h2>RELATÓRIO GERAL DE ATIVIDADES (ENTREGAS)</h2>`;
     html += `<p><strong>Curso:</strong> ${Utilidades.escaparHtml(curso.nome || '-')}</p>`;
@@ -402,7 +439,7 @@ async function gerarPDFAtividadesAcademico() {
         html += '</tr></thead><tbody>';
 
         participantesGrupo.forEach(participante => {
-            html += `<tr><td><strong>${Utilidades.escaparHtml(participante.nome || '-')}</strong></td>`;
+            html += `<tr><td>${formatarParticipanteDocumento(participante, mostrarTodos)}</td>`;
             disciplinasOrdenadas.forEach(disciplina => {
                 const entregou = atividadesEntregues.some(atividade =>
                     String(atividade.id_participante) === String(participante.id)
@@ -417,6 +454,41 @@ async function gerarPDFAtividadesAcademico() {
     });
 
     dispararImpressao('Relatório Geral de Atividades', html);
+}
+
+
+async function gerarPDFStatusParticipantesAcademico() {
+    const dadosRelatorio = await obterDadosCursoRelatorio();
+    if (!dadosRelatorio) return;
+
+    const { curso, participantesTodosCurso, participantes, frequencias, pagamentos, disciplinas, paroquias } = dadosRelatorio;
+    const participantesRelatorio = Utilidades.ordenarParticipantesPorNome(participantesTodosCurso || participantes);
+    const paroquiasMap = criarMapaParoquias(paroquias);
+
+    let html = '<h2>RELATÓRIO CONSOLIDADO DO STATUS DOS PARTICIPANTES</h2>';
+    html += `<p><strong>Curso:</strong> ${Utilidades.escaparHtml(curso.nome || '-')}</p>`;
+    html += `<p><strong>Data de Emissão:</strong> ${Utilidades.formatarData(new Date().toISOString().split('T')[0])}</p>`;
+    html += '<table><thead><tr><th class="coluna-nome-documento">Participante</th><th>Paróquia</th><th class="texto-centro">Status</th><th class="texto-centro">Frequência</th><th class="texto-centro">Financeiro</th><th class="texto-centro">Pendente</th></tr></thead><tbody>';
+
+    html += participantesRelatorio.map(participante => {
+        const frequencia = calcularFrequenciaParticipante(participante.id, frequencias);
+        const obrigacoes = calcularObrigacoesFinanceirasParticipante(participante, curso, disciplinas, frequencias, pagamentos);
+        const resumo = calcularResumoObrigacoes(obrigacoes);
+        const desistente = !Utilidades.participanteEstaAtivo(participante);
+        const classeStatus = desistente ? 'cor-texto-erro' : 'cor-texto-sucesso';
+        const classeFinanceiro = resumo.pendentes > 0 ? 'cor-texto-erro' : 'cor-texto-sucesso';
+        return `<tr>
+            <td><strong>${Utilidades.escaparHtml(participante.nome || '-')}</strong></td>
+            <td>${Utilidades.escaparHtml(paroquiasMap[participante.id_paroquia] || '-')}</td>
+            <td class="texto-centro ${classeStatus}"><strong>${desistente ? 'Desistente' : 'Ativo'}</strong></td>
+            <td class="texto-centro ${obterClassePercentualFrequencia(frequencia.percentual, obterPercentualMinimoCurso(curso))}"><strong>${frequencia.percentual}%</strong></td>
+            <td class="texto-centro ${classeFinanceiro}"><strong>${resumo.pendentes > 0 ? 'Pendente' : 'Em dia'}</strong></td>
+            <td class="texto-centro ${classeFinanceiro}"><strong>${resumo.pendente > 0 ? Utilidades.formatarMoeda(resumo.pendente) : '-'}</strong></td>
+        </tr>`;
+    }).join('');
+
+    html += '</tbody></table>';
+    dispararImpressao('Status dos Participantes', html, { orientacao: 'paisagem' });
 }
 
 function criarMapaParoquias(paroquias = []) {

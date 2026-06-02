@@ -60,13 +60,6 @@ function filtrarAtividadesDoLancamento(atividades = [], idCurso = '', idDiscipli
 }
 
 
-async function obterParticipantesAtivosAtividade(idCurso) {
-    const participantes = await bd.obterTodos('participantes');
-    return participantes
-        .filter(participante => String(participante.id_curso) === String(idCurso))
-        .filter(participante => Utilidades.participanteEstaAtivo(participante))
-        .sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR', { sensitivity: 'base' }));
-}
 
 function calcularResumoLancamentoAtividade(atividade = {}) {
     const registros = obterRegistrosAtividade(atividade);

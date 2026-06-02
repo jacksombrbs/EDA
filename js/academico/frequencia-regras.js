@@ -6,12 +6,27 @@ const ESTADOS_FREQUENCIA = {
     PARCIAL: 'parcial'
 };
 
-async function obterParticipantesDoCurso(idCurso) {
+async function obterParticipantesDoCurso(idCurso, opcoes = {}) {
     const participantes = await bd.obterTodos('participantes');
-    return participantes
-        .filter(participante => String(participante.id_curso) === String(idCurso))
-        .filter(participante => Utilidades.participanteEstaAtivo(participante))
-        .sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+    return Utilidades.filtrarParticipantesDoCurso(participantes, idCurso, opcoes);
+}
+
+function selecionarParticipantesLancamento(participantes = [], mostrarTodos = false, idsObrigatorios = []) {
+    const idsMantidos = new Set((idsObrigatorios || []).map(id => String(id)));
+    return Utilidades.ordenarParticipantesPorNome(participantes.filter(participante =>
+        mostrarTodos
+        || Utilidades.participanteEstaAtivo(participante)
+        || idsMantidos.has(String(participante.id))
+    ));
+}
+
+function criarControleTodosParticipantesLancamento(idCampo, mostrarTodos = false, aoAlterar = '') {
+    return `
+        <label class="flex itens-centro gap-sm texto-sm cor-texto-claro cursor-apontador">
+            <input type="checkbox" id="${idCampo}" class="checkbox-padrao" ${mostrarTodos ? 'checked' : ''} ${aoAlterar ? `onchange="${aoAlterar}(this.checked)"` : ''}>
+            Mostrar todos, incluindo desistentes
+        </label>
+    `;
 }
 
 async function obterDisciplinasDoCurso(idCurso) {

@@ -35,8 +35,10 @@ async function abrirLancamentoAtividades(idLancamento = '') {
 
     if (!validarLancamentoAtividades(dadosBase)) return;
 
-    const participantes = await obterParticipantesAtivosAtividade(dadosBase.id_curso);
-    if (participantes.length === 0) {
+    const todosParticipantes = await bd.obterTodos('participantes');
+    const participantes = Utilidades.filtrarParticipantesDoCurso(todosParticipantes, dadosBase.id_curso, { mostrarTodos: true });
+    const participantesAtivos = selecionarParticipantesLancamento(participantes, false);
+    if (participantesAtivos.length === 0) {
         Utilidades.notificacao('Nenhum participante ativo matriculado neste curso.', 'aviso');
         return;
     }
@@ -82,6 +84,8 @@ function montarEstadoLancamentoAtividades(dadosBase, participantes = [], ativida
         id_disciplina: dadosBase.id_disciplina,
         data_entrega: dadosBase.data_entrega,
         participantes,
+        mostrar_todos_participantes: false,
+        ids_registrados_originais: registrosExistentes.map(registro => String(registro.id_participante)),
         registros
     };
 }
@@ -109,14 +113,25 @@ async function abrirJanelaLancamentoAtividades() {
                 <p class="texto-md cor-texto-escuro"><strong>Data:</strong> ${Utilidades.formatarData(AppEstado.atividadeAtual.data_entrega)}</p>
             </div>
         </div>
+        <div class="mb-md">
+            ${criarControleTodosParticipantesLancamento('atividade-mostrar-todos', AppEstado.atividadeAtual.mostrar_todos_participantes === true, 'alternarParticipantesAtividade')}
+        </div>
     `;
 
-    const linhas = AppEstado.atividadeAtual.participantes.map((participante, indice) => criarLinhaLancamentoAtividade(participante, indice)).join('');
+    const participantesVisiveis = selecionarParticipantesLancamento(AppEstado.atividadeAtual.participantes, AppEstado.atividadeAtual.mostrar_todos_participantes === true);
+    const linhas = participantesVisiveis.map((participante, indice) => criarLinhaLancamentoAtividade(participante, indice)).join('');
     html += criarContainerTabela(['Nome', 'Status', 'Observações'], linhas, '', '', 'lista-rolagem-modal mb-md');
     html += criarRodapeFormulario('salvarLancamentoAtividades()', 'Salvar Atividades');
 
     document.getElementById('conteudo-formulario').innerHTML = html;
     Interface.abrirJanela('janela-formulario');
+}
+
+
+function alternarParticipantesAtividade(mostrarTodos = false) {
+    if (!AppEstado.atividadeAtual) return;
+    AppEstado.atividadeAtual.mostrar_todos_participantes = mostrarTodos === true;
+    abrirJanelaLancamentoAtividades();
 }
 
 function criarLinhaLancamentoAtividade(participante, indice) {
@@ -128,7 +143,7 @@ function criarLinhaLancamentoAtividade(participante, indice) {
 
     return `
         <tr class="${classeFundo} transicao hover-fundo-superficie-3">
-            <td class="p-md texto-esquerda texto-md peso-medium cor-texto-escuro">${Utilidades.escaparHtml(participante.nome || '-')}</td>
+            <td class="p-md texto-esquerda texto-md peso-medium cor-texto-escuro">${Utilidades.montarNomeParticipanteComStatus(participante, AppEstado.atividadeAtual.mostrar_todos_participantes === true)}</td>
             <td class="p-md texto-esquerda">
                 ${criarBotao(texto, `alternarEstadoAtividadeParticipante('${participante.id}')`, 'neutro', `botao-pequeno w-total ${classes}`, 'button', `id="botao-atividade-${participante.id}"`)}
             </td>
@@ -161,7 +176,13 @@ async function salvarLancamentoAtividades() {
     if (!lancamento) return Utilidades.notificacao('Nenhum lançamento de atividades aberto.', 'erro');
     if (!validarLancamentoAtividades(lancamento)) return;
 
-    const registros = lancamento.participantes.map(participante => {
+    const participantesParaSalvar = selecionarParticipantesLancamento(
+        lancamento.participantes,
+        lancamento.mostrar_todos_participantes === true,
+        lancamento.ids_registrados_originais || []
+    );
+
+    const registros = participantesParaSalvar.map(participante => {
         const registro = lancamento.registros[participante.id] || {};
         const observacoes = document.getElementById(`observacoes-atividade-${participante.id}`)?.value.trim() || '';
         return montarRegistroAtividade(participante.id, registro.estado, observacoes);

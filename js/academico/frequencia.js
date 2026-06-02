@@ -36,12 +36,15 @@ async function abrirChamada() {
     if (!idDisciplina) return Utilidades.notificacao('Selecione uma disciplina.', 'erro');
     if (!data) return Utilidades.notificacao('Informe a data da aula.', 'erro');
 
-    const [disciplina, participantes] = await Promise.all([
+    const [disciplina, todosParticipantes] = await Promise.all([
         bd.obter('disciplinas', idDisciplina),
-        obterParticipantesDoCurso(idCurso)
+        bd.obterTodos('participantes')
     ]);
     if (!disciplina) return Utilidades.notificacao('Disciplina não encontrada.', 'erro');
-    if (participantes.length === 0) return Utilidades.notificacao('Nenhum participante ativo matriculado neste curso.', 'aviso');
+
+    const participantes = Utilidades.filtrarParticipantesDoCurso(todosParticipantes, idCurso, { mostrarTodos: true });
+    const participantesAtivos = selecionarParticipantesLancamento(participantes, false);
+    if (participantesAtivos.length === 0) return Utilidades.notificacao('Nenhum participante ativo matriculado neste curso.', 'aviso');
 
     const cargaHoraria = obterCargaHorariaDisciplina(disciplina);
 
@@ -52,6 +55,8 @@ async function abrirChamada() {
         data,
         carga_horaria: cargaHoraria,
         participantes,
+        mostrar_todos_participantes: false,
+        ids_registrados_originais: [],
         presencas: Object.fromEntries(participantes.map(participante => [participante.id, montarEstadoPresenca(ESTADOS_FREQUENCIA.COMPARECEU, cargaHoraria, cargaHoraria)]))
     };
 
@@ -64,14 +69,9 @@ async function editarFrequencia(id) {
 
     const disciplina = await bd.obter('disciplinas', registro.id_disciplina);
     const cargaHoraria = obterCargaHorariaFrequencia(registro, disciplina);
-    const idsRegistrados = new Set((registro.presencas || []).map(item => String(item.id_participante)));
+    const idsRegistrados = (registro.presencas || []).map(item => String(item.id_participante));
     const todosParticipantes = await bd.obterTodos('participantes');
-    const participantes = todosParticipantes
-        .filter(participante =>
-            String(participante.id_curso) === String(registro.id_curso)
-            && (Utilidades.participanteEstaAtivo(participante) || idsRegistrados.has(String(participante.id)))
-        )
-        .sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+    const participantes = Utilidades.filtrarParticipantesDoCurso(todosParticipantes, registro.id_curso, { mostrarTodos: true });
     const presencas = Object.fromEntries(participantes.map(participante => [participante.id, montarEstadoPresenca(ESTADOS_FREQUENCIA.FALTOU, 0, cargaHoraria)]));
 
     (registro.presencas || []).forEach(item => {
@@ -85,6 +85,8 @@ async function editarFrequencia(id) {
         data: registro.data,
         carga_horaria: cargaHoraria,
         participantes,
+        mostrar_todos_participantes: false,
+        ids_registrados_originais: idsRegistrados,
         presencas
     };
 
@@ -98,7 +100,13 @@ async function salvarFrequencia() {
 
     const cargaHoraria = normalizarCargaHoraria(AppEstado.frequenciaAtual.carga_horaria, CARGA_HORARIA_PADRAO);
 
-    for (const participante of AppEstado.frequenciaAtual.participantes) {
+    const participantesParaSalvar = selecionarParticipantesLancamento(
+        AppEstado.frequenciaAtual.participantes,
+        AppEstado.frequenciaAtual.mostrar_todos_participantes === true,
+        AppEstado.frequenciaAtual.ids_registrados_originais || []
+    );
+
+    for (const participante of participantesParaSalvar) {
         const presenca = AppEstado.frequenciaAtual.presencas[participante.id];
         if (presenca?.estado !== ESTADOS_FREQUENCIA.PARCIAL) continue;
 
@@ -111,7 +119,7 @@ async function salvarFrequencia() {
         AppEstado.frequenciaAtual.id_curso,
         AppEstado.frequenciaAtual.id_disciplina,
         AppEstado.frequenciaAtual.data,
-        AppEstado.frequenciaAtual.participantes,
+        participantesParaSalvar,
         AppEstado.frequenciaAtual.presencas,
         cargaHoraria,
         AppEstado.frequenciaAtual.id
@@ -159,15 +167,19 @@ async function abrirJanelaFrequencia() {
                 <div class="flex itens-centro gap-sm justifica-fim md-justifica-inicio"><label for="carga-horaria-chamada" class="texto-sm cor-texto-claro">Carga horária do encontro</label><input type="number" min="0.5" step="0.5" id="carga-horaria-chamada" class="campo-padrao botao-pequeno" value="${cargaHoraria}" onchange="atualizarCargaHorariaChamada(this.value)" oninput="atualizarCargaHorariaChamada(this.value)"></div>
             </div>
         </div>
+        <div class="mb-md">
+            ${criarControleTodosParticipantesLancamento('frequencia-mostrar-todos', AppEstado.frequenciaAtual.mostrar_todos_participantes === true, 'alternarParticipantesFrequencia')}
+        </div>
     `;
 
-    const linhas = AppEstado.frequenciaAtual.participantes.map((participante, indice) => {
+    const participantesVisiveis = selecionarParticipantesLancamento(AppEstado.frequenciaAtual.participantes, AppEstado.frequenciaAtual.mostrar_todos_participantes === true);
+    const linhas = participantesVisiveis.map((participante, indice) => {
         const presenca = AppEstado.frequenciaAtual.presencas[participante.id] || montarEstadoPresenca(ESTADOS_FREQUENCIA.COMPARECEU, cargaHoraria, cargaHoraria);
         const classeFundo = indice % 2 === 0 ? 'fundo-branco' : 'fundo-superficie-2';
 
         return `
             <tr class="${classeFundo} transicao hover-fundo-superficie-3">
-                <td class="p-md texto-esquerda texto-md peso-medium cor-texto-escuro">${Utilidades.escaparHtml(participante.nome)}</td>
+                <td class="p-md texto-esquerda texto-md peso-medium cor-texto-escuro">${Utilidades.montarNomeParticipanteComStatus(participante, AppEstado.frequenciaAtual.mostrar_todos_participantes === true)}</td>
                 <td class="p-md texto-direita">
                     <div class="flex gap-sm itens-centro justifica-fim">
                         ${criarBotao(obterTextoEstadoFrequencia(presenca.estado), `alternarFrequenciaParticipante('${participante.id}')`, 'neutro', `botao-pequeno ${obterClasseEstadoFrequencia(presenca.estado)}`, 'button', `id="botao-frequencia-${participante.id}"`)}
@@ -185,6 +197,13 @@ async function abrirJanelaFrequencia() {
     Interface.abrirJanela('janela-formulario');
 }
 
+
+
+function alternarParticipantesFrequencia(mostrarTodos = false) {
+    if (!AppEstado.frequenciaAtual) return;
+    AppEstado.frequenciaAtual.mostrar_todos_participantes = mostrarTodos === true;
+    abrirJanelaFrequencia();
+}
 
 function atualizarCargaHorariaChamada(valor) {
     if (!AppEstado.frequenciaAtual) return;

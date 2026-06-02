@@ -25,3 +25,7 @@ async function gerarPDFPagamentos() {
 async function gerarPDFInadimplentes() {
     return gerarPDFInadimplentesFinanceiro();
 }
+
+async function gerarPDFStatusParticipantes() {
+    return gerarPDFStatusParticipantesAcademico();
+}
