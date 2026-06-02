@@ -169,7 +169,7 @@ async function gerarPDFMensalidadesFinanceiro() {
     html += `<p><strong>Tipo de Cobrança:</strong> ${Utilidades.escaparHtml(obterTipoCobrancaCurso(curso))}</p>`;
     html += `<p><strong>Data de Emissão:</strong> ${Utilidades.formatarData(new Date().toISOString().split('T')[0])}</p>`;
     if (cursoCobraPorEncontro(curso)) {
-        html += '<p><strong>Legenda:</strong> data = pagamento registrado; <span class="cor-texto-erro peso-bold">Faltou</span> = falta registrada sem pagamento; <span class="cor-texto-sucesso peso-bold">Compareceu</span> = presença registrada, sem cobrança.</p>';
+        html += '<p><strong>Legenda:</strong> data = pagamento registrado; Compareceu = presença registrada sem pagamento, portanto cobrança pendente; Faltou = ausência registrada, sem cobrança.</p>';
     }
 
     Object.values(agrupados).sort((a, b) => {
@@ -254,10 +254,6 @@ function formatarPagamentoObrigacaoRelatorio(obrigacao) {
 }
 
 function obterClassePagamentoObrigacaoRelatorio(obrigacao) {
-    if (!obrigacao) return '';
-    if (obrigacao.pago) return 'cor-texto-sucesso';
-    if (obrigacao.tipo === 'Encontro' && obrigacao.situacao_encontro === 'faltou') return 'cor-texto-erro';
-    if (obrigacao.tipo === 'Encontro' && obrigacao.situacao_encontro === 'compareceu') return 'cor-texto-sucesso';
     return '';
 }
 

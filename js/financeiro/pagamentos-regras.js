@@ -224,7 +224,7 @@ function calcularObrigacoesFinanceirasParticipante(participante, curso, discipli
                         valor,
                         ordem,
                         situacao_encontro: situacaoEncontro,
-                        cobranca_pendente: situacaoEncontro === 'faltou'
+                        cobranca_pendente: situacaoEncontro === 'compareceu'
                     }, pagamentos, contexto));
                     ordem++;
                 }
@@ -269,7 +269,7 @@ function calcularResumoObrigacoes(obrigacoes = []) {
 
 function obrigacaoPodeSerPaga(obrigacao = {}) {
     if (obrigacao.pago) return false;
-    return !(obrigacao.tipo === 'Encontro' && obrigacao.situacao_encontro === 'compareceu');
+    return !(obrigacao.tipo === 'Encontro' && obrigacao.situacao_encontro === 'faltou');
 }
 
 function obterObrigacoesAbertasParticipante(participante, curso, disciplinas = [], frequencias = [], pagamentos = [], contexto = {}) {

@@ -47,10 +47,25 @@ function renderizarCardsResumo(contexto = {}) {
     const academico = calcularEstatisticasAcademicas(contexto.participantes || [], contexto.frequencias || [], contexto.atividades || []);
     const financeiro = calcularEstatisticasFinanceiras(contexto.participantesTodosCurso || contexto.participantes || [], contexto.pagamentos || [], contexto.financas || [], contexto.cursos || [], contexto.disciplinas || [], contexto.frequencias || []);
 
+    const cardAtividadesStatus = `
+        <div class="cartao-metrica primario">
+            <div class="flex gap-md md-flex-coluna">
+                <div class="metrica-relatorio flex-1">
+                    <span>Atividades</span>
+                    <strong>${Utilidades.escaparHtml(academico.entregasTotal)}</strong>
+                </div>
+                <div class="metrica-relatorio flex-1">
+                    <span>Status</span>
+                    <strong>${Utilidades.escaparHtml(`${academico.totalParticipantes} ativos`)}</strong>
+                </div>
+            </div>
+        </div>
+    `;
+
     return criarGradeMetricas([
         { titulo: 'Participantes', valor: academico.totalParticipantes, classe: 'primario' },
         { titulo: 'Frequência Média', valor: `${academico.frequenciaMedia}%`, classe: 'primario' },
-        { titulo: 'Entregas', valor: academico.entregasTotal, classe: 'primario' },
+        cardAtividadesStatus,
         { titulo: 'Entradas', valor: Utilidades.formatarMoeda(financeiro.totalEntradas), classe: 'sucesso' },
         { titulo: 'Saldo', valor: Utilidades.formatarMoeda(financeiro.saldo), classe: financeiro.saldo >= 0 ? 'sucesso' : 'erro' },
         { titulo: 'Previsão', valor: Utilidades.formatarMoeda(financeiro.previsaoArrecadacao), classe: 'primario' }
