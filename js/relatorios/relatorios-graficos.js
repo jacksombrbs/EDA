@@ -126,7 +126,8 @@ function montarGraficoPagamentos(participantes = [], pagamentos = [], cursos = [
             backgroundColor: [
                 'rgba(16, 185, 129, 0.78)',
                 'rgba(245, 158, 11, 0.78)',
-                'rgba(239, 68, 68, 0.78)'
+                'rgba(239, 68, 68, 0.78)',
+                'rgba(107, 114, 128, 0.78)'
             ],
             borderWidth: 0,
             hoverBorderWidth: 0
