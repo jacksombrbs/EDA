@@ -131,7 +131,6 @@ async function abrirJanelaLancamentoAtividades() {
     Interface.abrirJanela('janela-formulario');
 }
 
-
 function alternarParticipantesAtividade(mostrarTodos = false) {
     if (!AppEstado.atividadeAtual) return;
     AppEstado.atividadeAtual.mostrar_todos_participantes = mostrarTodos === true;

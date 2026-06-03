@@ -67,7 +67,6 @@
     white-space: nowrap;
 }
 
-
 .seletor-opcoes {
     top: 100%;
     max-height: 200px;
@@ -91,7 +90,6 @@
 .opcao-customizada:hover {
     background-color: color-mix(in srgb, var(--cor-superficie-3) 76%, transparent);
 }
-
 
 /* Listas de formulario */
 
@@ -121,7 +119,6 @@
     max-height: 50vh;
     overflow-y: auto;
 }
-
 
 .checkbox-padrao {
     width: 18px;

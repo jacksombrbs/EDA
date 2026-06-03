@@ -141,7 +141,6 @@
     flex: 1;
 }
 
-
 .cabecalho-relatorio {
     display: flex;
     align-items: center;
@@ -189,4 +188,3 @@
 .ficha-participante-pdf:last-child {
     page-break-after: auto;
 }
-

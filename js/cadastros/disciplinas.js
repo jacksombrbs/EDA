@@ -237,7 +237,6 @@ function renderizarTabelaDisciplinas(disciplinas, cursos, palestrantes, idCorpo 
     );
 }
 
-
 function obterCursoFormularioDisciplina() {
     const idCurso = document.getElementById('id_curso')?.value || '';
     return (AppEstado.cursosFormularioDisciplina || []).find(curso => String(curso.id) === String(idCurso)) || null;

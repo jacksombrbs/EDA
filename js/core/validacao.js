@@ -42,7 +42,6 @@ const Validacao = {
             && calcularDigito(10) === parseInt(numerico.charAt(10), 10);
     },
 
-
     cnpj(cnpj) {
         if (!cnpj) return true;
 

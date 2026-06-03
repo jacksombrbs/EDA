@@ -59,8 +59,6 @@ function filtrarAtividadesDoLancamento(atividades = [], idCurso = '', idDiscipli
     );
 }
 
-
-
 function calcularResumoLancamentoAtividade(atividade = {}) {
     const registros = obterRegistrosAtividade(atividade);
     const entregues = registros.filter(atividadeEstaEntregue).length;

@@ -1,11 +1,11 @@
 function renderizarPainelFinanceiro(participantes = [], pagamentos = [], financas = [], cursos = [], disciplinas = [], frequencias = []) {
     const estatisticas = calcularEstatisticasFinanceiras(participantes, pagamentos, financas, cursos, disciplinas, frequencias);
-    const tituloCobrancas = 'Cobranças em aberto';
+    const tituloCobrancas = 'A receber';
 
     let painel = criarGradeMetricas([
-        { titulo: 'Taxa de Inadimplência', valor: `${estatisticas.taxaInadimplencia}%`, classe: estatisticas.taxaInadimplencia > 20 ? 'erro' : (estatisticas.taxaInadimplencia > 10 ? 'aviso' : 'sucesso'), icone: 'pagamentos', acao: "filtrarTabelaFinanceira('inadimplente')" },
+        { titulo: 'Taxa de Atraso', valor: `${estatisticas.taxaInadimplencia}%`, classe: estatisticas.taxaInadimplencia > 20 ? 'erro' : (estatisticas.taxaInadimplencia > 10 ? 'aviso' : 'sucesso'), icone: 'pagamentos', acao: "filtrarTabelaFinanceira('atraso')" },
         { titulo: 'Saldo', valor: Utilidades.formatarMoeda(estatisticas.saldo), classe: estatisticas.saldo >= 0 ? 'sucesso' : 'erro', icone: 'financas' },
-        { titulo: tituloCobrancas, valor: Utilidades.formatarMoeda(estatisticas.valorPendente), classe: 'primario', icone: 'pagamentos', acao: "filtrarTabelaFinanceira('pendente')" }
+        { titulo: tituloCobrancas, valor: Utilidades.formatarMoeda(estatisticas.valorAPagar), classe: 'primario', icone: 'pagamentos', acao: "filtrarTabelaFinanceira('pendente')" }
     ], 3);
 
     const htmlGraficoPagamentos = criarGradeGraficos([montarGraficoPagamentos(participantes, pagamentos, cursos, disciplinas, frequencias)]);
@@ -15,13 +15,13 @@ function renderizarPainelFinanceiro(participantes = [], pagamentos = [], financa
         <div class="lista-relatorios-painel">
             <div class="cartao-geracao-relatorio">
                 <div class="cabecalho-relatorio">
-                    <h3 class="texto-md peso-bold cor-texto-primario m-zero">Relatório Financeiro do Curso</h3>
+                    <h3 class="texto-md peso-bold cor-texto-primario m-zero">Cobranças</h3>
                     ${criarBotao('Gerar Relatório', 'gerarPDFMensalidades()', 'contorno', 'botao-pequeno')}
                 </div>
                 ${criarMetricasRelatorio([
                     { rotulo: 'Participantes', valor: estatisticas.participantes },
-                    { rotulo: 'Inadimplentes', valor: estatisticas.inadimplentes },
-                    { rotulo: 'A receber', valor: Utilidades.formatarMoeda(estatisticas.valorPendente) }
+                    { rotulo: 'Em atraso', valor: estatisticas.inadimplentes },
+                    { rotulo: 'A receber', valor: Utilidades.formatarMoeda(estatisticas.valorAPagar) }
                 ])}
             </div>
             <div class="cartao-geracao-relatorio">
@@ -65,10 +65,10 @@ function filtrarTabelaFinanceira(termo = '') {
 function renderizarTabelaResumoFinanceiro(participantes = [], pagamentos = [], cursos = [], disciplinas = [], frequencias = []) {
     const linhas = participantes.length
         ? participantes.map((participante, indice) => montarLinhaResumoFinanceiro(participante, pagamentos, cursos, disciplinas, frequencias, indice)).join('')
-        : '<tr><td colspan="6" class="p-md texto-centro cor-texto-claro">Nenhum participante cadastrado.</td></tr>';
+        : '<tr><td colspan="7" class="p-md texto-centro cor-texto-claro">Nenhum participante cadastrado.</td></tr>';
 
     return criarContainerTabela(
-        ['Participante', 'Status', 'Tipo do Curso', 'Cobranças', 'Pago', 'Pendente'],
+        ['Participante', 'Status', 'Tipo do Curso', 'Cobranças', 'Pago', 'A pagar', 'Atraso'],
         linhas,
         '',
         'corpo-tabela-fin'
@@ -81,11 +81,12 @@ function montarLinhaResumoFinanceiro(participante, pagamentos, cursos, disciplin
     const frequenciasCurso = frequencias.filter(frequencia => String(frequencia.id_curso || '') === String(curso?.id));
     const obrigacoes = calcularObrigacoesFinanceirasParticipante(participante, curso, disciplinasCurso, frequenciasCurso, pagamentos);
     const resumo = calcularResumoObrigacoes(obrigacoes);
-    const pendente = resumo.pendentes > 0;
+    const emAtraso = resumo.atrasos > 0;
+    const aPagar = resumo.obrigacoesAPagar > 0;
     const desistente = !Utilidades.participanteEstaAtivo(participante);
     const classeFundo = indice % 2 === 0 ? 'fundo-branco' : 'fundo-superficie-2';
-    const statusFinanceiro = pendente ? 'Pendente' : 'Em dia';
-    const busca = `${participante.nome || ''} ${desistente ? 'desistente' : 'ativo'} ${pendente ? 'inadimplente pendente' : 'em dia'} ${obrigacoes.filter(o => !o.pago).map(o => o.descricao).join(' ')}`;
+    const statusFinanceiro = emAtraso ? 'Atraso' : (aPagar ? 'Pendente' : 'Em dia');
+    const busca = `${participante.nome || ''} ${desistente ? 'desistente' : 'ativo'} ${emAtraso ? 'atraso inadimplente' : (aPagar ? 'pendente' : 'em dia')} ${obrigacoes.filter(o => !o.pago).map(o => o.descricao).join(' ')}`;
 
     return `<tr class="${classeFundo} transicao hover-fundo-superficie-3" data-busca="${Utilidades.escaparHtml(busca.toLowerCase())}">
         <td class="p-md texto-esquerda peso-bold cor-texto-escuro">${Utilidades.escaparHtml(participante.nome || '-')}</td>
@@ -93,7 +94,8 @@ function montarLinhaResumoFinanceiro(participante, pagamentos, cursos, disciplin
         <td class="p-md texto-centro">${Utilidades.escaparHtml(obterTipoCobrancaCurso(curso))}</td>
         <td class="p-md texto-centro">${obrigacoes.filter(item => item.pago).length}/${obrigacoes.length}</td>
         <td class="p-md texto-centro cor-texto-sucesso peso-bold">${Utilidades.formatarMoeda(resumo.pago)}</td>
-        <td class="p-md texto-centro ${pendente ? 'cor-texto-erro' : 'cor-texto-sucesso'} peso-bold">${Utilidades.formatarMoeda(resumo.pendente)}</td>
+        <td class="p-md texto-centro ${aPagar ? 'cor-texto-primario' : 'cor-texto-sucesso'} peso-bold">${resumo.aPagar > 0 ? Utilidades.formatarMoeda(resumo.aPagar) : '-'}</td>
+        <td class="p-md texto-centro ${emAtraso ? 'cor-texto-erro' : 'cor-texto-sucesso'} peso-bold">${resumo.atrasado > 0 ? Utilidades.formatarMoeda(resumo.atrasado) : '-'}</td>
     </tr>`;
 }
 
@@ -110,14 +112,16 @@ function calcularEstatisticasFinanceiras(participantes = [], pagamentos = [], fi
     const totalEntradas = pagamentos.reduce((total, pagamento) => total + Utilidades.normalizarValorMonetario(pagamento.valor), 0)
         + financas.filter(item => item.tipo === 'Entrada').reduce((total, item) => total + Utilidades.normalizarValorMonetario(item.valor), 0);
     const totalSaidas = financas.filter(item => item.tipo === 'Saída').reduce((total, item) => total + Utilidades.normalizarValorMonetario(item.valor), 0);
-    const inadimplentes = resumos.filter(resumo => resumo.pendentes > 0).length;
-    const valorPendente = resumos.reduce((total, resumo) => total + resumo.pendente, 0);
+    const inadimplentes = resumos.filter(resumo => resumo.atrasos > 0).length;
+    const valorPendente = resumos.reduce((total, resumo) => total + resumo.atrasado, 0);
+    const valorAPagar = resumos.reduce((total, resumo) => total + resumo.aPagar, 0);
 
     return {
         participantes: participantesConsiderados.length,
         inadimplentes,
         valorPendente,
-        previsaoArrecadacao: valorPendente,
+        valorAPagar,
+        previsaoArrecadacao: valorAPagar,
         totalEntradas,
         totalSaidas,
         saldo: totalEntradas - totalSaidas,
@@ -130,25 +134,25 @@ function calcularInadimplencia(participantes = [], pagamentos = [], cursos = [],
         const curso = cursos.find(item => String(item.id) === String(participante.id_curso));
         const disciplinasCurso = disciplinas.filter(disciplina => String(disciplina.id_curso) === String(curso?.id));
         const frequenciasCurso = frequencias.filter(frequencia => String(frequencia.id_curso || '') === String(curso?.id));
-        return calcularResumoObrigacoes(calcularObrigacoesFinanceirasParticipante(participante, curso, disciplinasCurso, frequenciasCurso, pagamentos)).pendentes > 0;
+        return calcularResumoObrigacoes(calcularObrigacoesFinanceirasParticipante(participante, curso, disciplinasCurso, frequenciasCurso, pagamentos)).atrasos > 0;
     });
 }
 
 function calcularPrevisaoArrecadacao(participantes = [], pagamentos = [], cursos = [], disciplinas = [], frequencias = []) {
-    return calcularEstatisticasFinanceiras(participantes, pagamentos, [], cursos, disciplinas, frequencias).valorPendente;
+    return calcularEstatisticasFinanceiras(participantes, pagamentos, [], cursos, disciplinas, frequencias).valorAPagar;
 }
 
 function agruparPagamentosPorStatus(participantes = [], pagamentos = [], cursos = [], disciplinas = [], frequencias = []) {
-    const status = { 'Em Dia': 0, 'Parcial': 0, 'Pendente': 0 };
+    const status = { 'Em Dia': 0, 'Pendente': 0, 'Atraso': 0 };
     participantes.forEach(participante => {
         const curso = cursos.find(item => String(item.id) === String(participante.id_curso));
         const disciplinasCurso = disciplinas.filter(disciplina => String(disciplina.id_curso) === String(curso?.id));
         const frequenciasCurso = frequencias.filter(frequencia => String(frequencia.id_curso || '') === String(curso?.id));
         const obrigacoes = calcularObrigacoesFinanceirasParticipante(participante, curso, disciplinasCurso, frequenciasCurso, pagamentos);
         const resumo = calcularResumoObrigacoes(obrigacoes);
-        if (resumo.pendentes === 0) status['Em Dia']++;
-        else if (resumo.pago > 0) status.Parcial++;
-        else status.Pendente++;
+        if (resumo.atrasos > 0) status.Atraso++;
+        else if (resumo.obrigacoesAPagar > 0) status.Pendente++;
+        else status['Em Dia']++;
     });
     return status;
 }
@@ -164,12 +168,12 @@ async function gerarPDFMensalidadesFinanceiro() {
     const agrupados = agruparParticipantesMensalidades(baseParticipantes);
     const obrigacoesCurso = montarObrigacoesModeloCurso(curso, disciplinas, frequencias);
 
-    let html = '<h2>RELATÓRIO FINANCEIRO DO CURSO</h2>';
+    let html = '<h2>COBRANÇAS</h2>';
     html += `<p><strong>Curso:</strong> ${Utilidades.escaparHtml(curso.nome || '-')}</p>`;
     html += `<p><strong>Tipo de Cobrança:</strong> ${Utilidades.escaparHtml(obterTipoCobrancaCurso(curso))}</p>`;
     html += `<p><strong>Data de Emissão:</strong> ${Utilidades.formatarData(new Date().toISOString().split('T')[0])}</p>`;
     if (cursoCobraPorEncontro(curso)) {
-        html += '<p><strong>Legenda:</strong> data = pagamento registrado; Compareceu = presença registrada sem pagamento, portanto cobrança pendente; Faltou = ausência registrada, sem cobrança.</p>';
+        html += '<p><strong>Legenda:</strong> data = pagamento registrado; Compareceu = presença registrada sem pagamento, portanto valor em atraso; Faltou = ausência registrada, sem cobrança.</p>';
     }
 
     Object.values(agrupados).sort((a, b) => {
@@ -185,27 +189,30 @@ async function gerarPDFMensalidadesFinanceiro() {
         html += `<div${quebra}><h3>Paróquia: ${Utilidades.escaparHtml(nomeParoquia)} / Capela: ${Utilidades.escaparHtml(grupo.capela)}</h3>`;
         html += '<table><thead><tr><th class="coluna-nome-documento">Nome do Participante</th><th class="texto-centro">Status</th>';
         obrigacoesCurso.forEach(obrigacao => { html += `<th class="texto-centro">${Utilidades.escaparHtml(obrigacao.rotulo)}</th>`; });
-        html += '<th class="texto-centro">Pendente</th></tr></thead><tbody>';
+        html += '<th class="texto-centro">A pagar</th><th class="texto-centro">Atraso</th></tr></thead><tbody>';
 
         grupo.participantes.sort((a, b) => (a.nome || '').localeCompare(b.nome || '')).forEach(participante => {
             const obrigacoes = calcularObrigacoesFinanceirasParticipante(participante, curso, disciplinas, frequencias, pagamentos);
             const resumo = calcularResumoObrigacoes(obrigacoes);
             const desistente = !Utilidades.participanteEstaAtivo(participante);
             html += `<tr><td><strong>${Utilidades.escaparHtml(participante.nome || '-')}</strong></td>`;
-            html += `<td class="texto-centro ${desistente ? 'cor-texto-erro' : (resumo.pendentes > 0 ? 'cor-texto-erro' : 'cor-texto-sucesso')}"><strong>${desistente ? 'Desistente' : (resumo.pendentes > 0 ? 'Pendente' : 'Em dia')}</strong></td>`;
+            const emAtraso = resumo.atrasos > 0;
+            const aPagar = resumo.obrigacoesAPagar > 0;
+            html += `<td class="texto-centro ${desistente ? 'cor-texto-erro' : (emAtraso ? 'cor-texto-erro' : (aPagar ? 'cor-texto-primario' : 'cor-texto-sucesso'))}"><strong>${desistente ? 'Desistente' : (emAtraso ? 'Atraso' : (aPagar ? 'Pendente' : 'Em dia'))}</strong></td>`;
             obrigacoesCurso.forEach(modelo => {
                 const chaveModelo = obterChaveCobrancaFinanceira(modelo.tipo, modelo.referencia_id, modelo.referencia_indice);
                 const obrigacao = obrigacoes.find(item => obterChaveObrigacaoFinanceira(item) === chaveModelo);
                 html += `<td class="texto-centro ${obterClassePagamentoObrigacaoRelatorio(obrigacao)}"><strong>${formatarPagamentoObrigacaoRelatorio(obrigacao)}</strong></td>`;
             });
-            html += `<td class="texto-centro ${resumo.pendente > 0 ? 'cor-texto-erro' : 'cor-texto-sucesso'}"><strong>${resumo.pendente > 0 ? Utilidades.formatarMoeda(resumo.pendente) : '-'}</strong></td>`;
+            html += `<td class="texto-centro ${resumo.aPagar > 0 ? 'cor-texto-primario' : 'cor-texto-sucesso'}"><strong>${resumo.aPagar > 0 ? Utilidades.formatarMoeda(resumo.aPagar) : '-'}</strong></td>`;
+            html += `<td class="texto-centro ${resumo.atrasado > 0 ? 'cor-texto-erro' : 'cor-texto-sucesso'}"><strong>${resumo.atrasado > 0 ? Utilidades.formatarMoeda(resumo.atrasado) : '-'}</strong></td>`;
             html += '</tr>';
         });
 
         html += '</tbody></table></div>';
     });
 
-    dispararImpressao('Relatório Financeiro do Curso', html, { orientacao: 'paisagem' });
+    dispararImpressao('Cobranças', html, { orientacao: 'paisagem' });
 }
 
 function montarObrigacoesModeloCurso(curso, disciplinas = [], frequencias = []) {
@@ -272,12 +279,12 @@ async function gerarPDFInadimplentesFinanceiro() {
         const disciplinasCurso = disciplinas.filter(disciplina => String(disciplina.id_curso) === String(curso?.id));
         const frequenciasCurso = frequencias.filter(frequencia => String(frequencia.id_curso || '') === String(curso?.id));
         const resumo = calcularResumoObrigacoes(calcularObrigacoesFinanceirasParticipante(participante, curso, disciplinasCurso, frequenciasCurso, pagamentos));
-        return `<tr><td>${Utilidades.escaparHtml(participante.nome || '-')}</td><td>${Utilidades.escaparHtml(obterTipoCobrancaCurso(curso))}</td><td>${Utilidades.formatarMoeda(resumo.pendente)}</td></tr>`;
+        return `<tr><td>${Utilidades.escaparHtml(participante.nome || '-')}</td><td>${Utilidades.escaparHtml(obterTipoCobrancaCurso(curso))}</td><td>${Utilidades.formatarMoeda(resumo.atrasado)}</td></tr>`;
     }).join('');
 
-    dispararImpressao('Relatório de Inadimplentes', montarHtmlPDF('RELATÓRIO DE INADIMPLENTES', `
+    dispararImpressao('Atrasos', montarHtmlPDF('ATRASOS', `
         <p><strong>Curso:</strong> ${Utilidades.escaparHtml(dadosRelatorio.curso?.nome || '-')}</p>
-        <table><thead><tr><th>Participante</th><th>Tipo de cobrança</th><th>Pendente</th></tr></thead><tbody>${linhas}</tbody></table>
+        <table><thead><tr><th>Participante</th><th>Tipo de cobrança</th><th>Atraso</th></tr></thead><tbody>${linhas}</tbody></table>
     `));
 }
 

@@ -73,7 +73,6 @@ async function editarPagamento(id) {
     await abrirFormularioPagamento(id);
 }
 
-
 function obterOrdemTipoCobrancaPagamento(tipo = '') {
     const ordem = ['Inscrição', 'Mensalidade', 'Disciplina', 'Encontro', 'Outros'];
     const indice = ordem.indexOf(tipo);
@@ -294,7 +293,6 @@ function montarDescricaoPagamento(cobrancas = []) {
 
     return partes.join('; ');
 }
-
 
 async function salvarPagamento(eventoOuOpcoes = {}) {
     const opcoes = eventoOuOpcoes && typeof eventoOuOpcoes.preventDefault === 'function' ? {} : eventoOuOpcoes;

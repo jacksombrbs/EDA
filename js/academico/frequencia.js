@@ -200,8 +200,6 @@ async function abrirJanelaFrequencia() {
     Interface.abrirJanela('janela-formulario');
 }
 
-
-
 function alternarParticipantesFrequencia(mostrarTodos = false) {
     if (!AppEstado.frequenciaAtual) return;
     AppEstado.frequenciaAtual.mostrar_todos_participantes = mostrarTodos === true;

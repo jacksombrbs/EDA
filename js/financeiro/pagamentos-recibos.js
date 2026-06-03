@@ -1,4 +1,3 @@
-
 function normalizarReferenciaRecibo(descricao = '') {
     let texto = String(descricao || 'Pagamento').trim();
     texto = texto

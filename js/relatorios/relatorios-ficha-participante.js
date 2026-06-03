@@ -345,8 +345,10 @@ function calcularResumoFinanceiroParticipante(participante, curso, disciplinas =
         obrigacoes,
         obrigacoesPagas: pagos,
         obrigacoesTotal: obrigacoes.length,
-        obrigacoesPendentes: resumo.pendentes,
-        valorPendente: resumo.pendente,
+        obrigacoesPendentes: resumo.obrigacoesAPagar,
+        obrigacoesAtrasadas: resumo.atrasos,
+        valorPendente: resumo.aPagar,
+        valorAtrasado: resumo.atrasado,
         totalObrigacoes: resumo.total,
         totalPagoObrigacoes: resumo.pago,
         outrasEntradas: pagamentosOutros,
@@ -422,7 +424,7 @@ function montarHtmlConsultaFichaParticipante(dadosFicha) {
 
         <div class="grade-metricas-painel grade-4-colunas">
             ${criarCardMetrica('Inscrição', financeiro.inscricaoTexto, financeiro.inscricaoPaga ? 'sucesso' : 'aviso')}
-            ${criarCardMetrica('Cobranças', `${financeiro.obrigacoesPagas}/${financeiro.obrigacoesTotal}`, financeiro.obrigacoesPendentes > 0 ? 'aviso' : 'sucesso')}
+            ${criarCardMetrica('A pagar', Utilidades.formatarMoeda(financeiro.valorPendente), financeiro.valorAtrasado > 0 ? 'erro' : (financeiro.valorPendente > 0 ? 'aviso' : 'sucesso'))}
             ${criarCardMetrica('Frequência', frequencia.percentualTexto, frequencia.situacao === 'Atenção' ? 'aviso' : 'sucesso')}
             ${criarCardMetrica('Atividades', atividades.total, 'primario')}
         </div>
@@ -438,9 +440,10 @@ function montarHtmlConsultaFichaParticipante(dadosFicha) {
             ${montarCartaoConsultaFicha('Financeiro', [
                 ['Inscrição', financeiro.inscricaoTexto],
                 ['Valor da inscrição', Utilidades.formatarMoeda(financeiro.valorInscricao)],
-                ['Cobranças pendentes', financeiro.obrigacoesPendentes],
+                ['Cobranças a pagar', financeiro.obrigacoesPendentes],
                 ['Total pago', Utilidades.formatarMoeda(financeiro.totalGeral)],
-                ['Valor a pagar', Utilidades.formatarMoeda(financeiro.valorPendente)]
+                ['Valor a pagar', Utilidades.formatarMoeda(financeiro.valorPendente)],
+                ['Valor em atraso', Utilidades.formatarMoeda(financeiro.valorAtrasado)]
             ])}
             ${montarCartaoConsultaFicha('Frequência', [
                 ['Aulas registradas', frequencia.total],
@@ -529,11 +532,13 @@ function montarHtmlFichaParticipante(dadosFicha) {
                 ${montarBlocoFichaPDF('Inscrição e pagamentos', [
                     ['Inscrição', financeiro.inscricaoTexto],
                     ['Valor da inscrição', Utilidades.formatarMoeda(financeiro.valorInscricao)],
-                    ['Cobranças pendentes', financeiro.obrigacoesPendentes],
+                    ['Cobranças a pagar', financeiro.obrigacoesPendentes],
+                    ['Cobranças em atraso', financeiro.obrigacoesAtrasadas],
                     ['Total em cobranças', Utilidades.formatarMoeda(financeiro.totalObrigacoes)],
                     ['Outras entradas', Utilidades.formatarMoeda(financeiro.totalOutros)],
                     ['Total pago', Utilidades.formatarMoeda(financeiro.totalGeral)],
-                    ['Valor a pagar', Utilidades.formatarMoeda(financeiro.valorPendente)]
+                    ['Valor a pagar', Utilidades.formatarMoeda(financeiro.valorPendente)],
+                    ['Valor em atraso', Utilidades.formatarMoeda(financeiro.valorAtrasado)]
                 ])}
 
                 ${montarBlocoFichaPDF('Frequência', [
@@ -553,7 +558,7 @@ function montarHtmlFichaParticipante(dadosFicha) {
             </div>
 
             <div class="resumo-final-ficha">
-                <p><strong>Resumo:</strong> inscrição ${financeiro.inscricaoTexto.toLowerCase()}; cobranças ${financeiro.obrigacoesPagas} pagas e ${financeiro.obrigacoesPendentes} pendentes; total pago ${Utilidades.formatarMoeda(financeiro.totalGeral)}; valor a pagar ${Utilidades.formatarMoeda(financeiro.valorPendente)}; frequência ${frequencia.percentualTexto} (${frequencia.situacao}); ${atividades.total} atividade(s) registrada(s).</p>
+                <p><strong>Resumo:</strong> inscrição ${financeiro.inscricaoTexto.toLowerCase()}; cobranças ${financeiro.obrigacoesPagas} pagas e ${financeiro.obrigacoesPendentes} a pagar; total pago ${Utilidades.formatarMoeda(financeiro.totalGeral)}; valor a pagar ${Utilidades.formatarMoeda(financeiro.valorPendente)}; valor em atraso ${Utilidades.formatarMoeda(financeiro.valorAtrasado)}; frequência ${frequencia.percentualTexto} (${frequencia.situacao}); ${atividades.total} atividade(s) registrada(s).</p>
             </div>
         </section>
     `;

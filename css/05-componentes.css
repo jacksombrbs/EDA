@@ -36,7 +36,6 @@
 .icone-inline[data-icone="enviar"] { --icone-imagem: url("../icones/enviar.svg"); }
 .icone-inline[data-icone="validar-planilha"] { --icone-imagem: url("../icones/validar-planilha.svg"); }
 
-
 /* Utilitário Sidebar Ativa (Substitui .item-menu::before) */
 .indicador-lateral-ativo::before {
     content: "";
@@ -65,7 +64,6 @@
     margin-bottom: var(--espaco-md);
     object-fit: contain;
 }
-
 
 /* Cartoes e janelas */
 
@@ -241,7 +239,6 @@
     height: 18px;
 }
 
-
 /* Avisos e etiquetas */
 
 .aviso-flutuante {
@@ -273,7 +270,6 @@
     border-left-width: 4px;
     border-color: var(--cor-sucesso);
 }
-
 
 /* Busca com botão de limpar padronizado */
 .campo-busca-wrapper {
