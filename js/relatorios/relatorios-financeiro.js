@@ -24,16 +24,6 @@ function renderizarPainelFinanceiro(participantes = [], pagamentos = [], financa
                     { rotulo: 'A receber', valor: Utilidades.formatarMoeda(estatisticas.valorAPagar) }
                 ])}
             </div>
-            <div class="cartao-geracao-relatorio">
-                <div class="cabecalho-relatorio">
-                    <h3 class="texto-md peso-bold cor-texto-primario m-zero">Livro Caixa</h3>
-                    ${criarBotao('Gerar Livro', 'gerarPDFLivroCaixa()', 'contorno', 'botao-pequeno')}
-                </div>
-                <div class="flex gap-md md-flex-coluna w-total mt-sm">
-                    <div class="flex-1">${criarCampoFormulario('Data Início', 'date', 'filtro-data-inicio', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0])}</div>
-                    <div class="flex-1">${criarCampoFormulario('Data Fim', 'date', 'filtro-data-fim', new Date().toISOString().split('T')[0])}</div>
-                </div>
-            </div>
         </div>
     `;
 
@@ -111,13 +101,17 @@ function calcularEstatisticasFinanceiras(participantes = [], pagamentos = [], fi
         + financas.filter(item => item.tipo === 'Entrada').reduce((total, item) => total + Utilidades.normalizarValorMonetario(item.valor), 0);
     const totalSaidas = financas.filter(item => item.tipo === 'Saída').reduce((total, item) => total + Utilidades.normalizarValorMonetario(item.valor), 0);
     const inadimplentes = resumos.filter(resumo => resumo.atrasos > 0).length;
-    const valorPendente = resumos.reduce((total, resumo) => total + resumo.atrasado, 0);
-    const valorAPagar = resumos.reduce((total, resumo) => total + resumo.aPagar, 0);
+    const totalRecebido = resumos.reduce((total, resumo) => total + resumo.pago, 0);
+    const valorEmAtraso = resumos.reduce((total, resumo) => total + resumo.atrasado, 0);
+    const valorPendente = resumos.reduce((total, resumo) => total + resumo.pendente, 0);
+    const valorAPagar = valorEmAtraso + valorPendente;
 
     return {
         participantes: participantesConsiderados.length,
         inadimplentes,
+        totalRecebido,
         valorPendente,
+        valorEmAtraso,
         valorAPagar,
         previsaoArrecadacao: valorAPagar,
         totalEntradas,

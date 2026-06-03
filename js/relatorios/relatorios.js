@@ -1,10 +1,13 @@
 async function renderizarRelatorios(conteudo) {
     const contexto = await carregarContextoRelatorios();
     const { cursos, curso, participantes, participantesTodosCurso, disciplinas, frequencias, atividades, pagamentos, financas } = contexto;
-    const titulo = curso ? `Painéis e Relatórios - ${curso.nome || 'Curso sem nome'}` : 'Painéis e Relatórios';
+    const titulo = curso ? `Painéis e Relatórios - ${curso.nome || 'Curso sem nome'}` : 'Painel de Cursos';
+    const botoesCabecalho = curso
+        ? criarBotao('Painel de Cursos', 'limparCursoRelatorio()', 'secundario')
+        : '';
 
     let codigo = '<div class="pagina-conteudo pagina-relatorios">';
-    codigo += criarCabecalhoSecao(titulo, criarBotao('Selecionar Curso', 'abrirJanelaSelecaoCursoRelatorio()', 'secundario'));
+    codigo += criarCabecalhoSecao(titulo, botoesCabecalho);
 
     if (cursos.length === 0) {
         codigo += '<p class="p-md texto-centro cor-texto-claro fundo-superficie-2 raio-sm">Cadastre um curso antes de gerar relatórios.</p>';
@@ -14,10 +17,9 @@ async function renderizarRelatorios(conteudo) {
     }
 
     if (!curso) {
-        codigo += '<p class="p-md texto-centro cor-texto-claro fundo-superficie-2 raio-sm">Selecione um curso para carregar os relatórios acadêmicos e financeiros.</p>';
+        codigo += renderizarPainelCursosRelatorio(contexto);
         codigo += '</div>';
         conteudo.innerHTML = codigo;
-        setTimeout(() => abrirJanelaSelecaoCursoRelatorio(), 100);
         return;
     }
 
@@ -43,42 +45,56 @@ async function renderizarRelatorios(conteudo) {
     conteudo.innerHTML = codigo;
 }
 
-async function abrirJanelaSelecaoCursoRelatorio() {
-    const cursos = await bd.obterTodos('cursos');
-    cursos.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+function renderizarPainelCursosRelatorio(contexto = {}) {
+    const cursosOrdenados = [...(contexto.cursos || [])].sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
 
-    document.getElementById('titulo-janela').textContent = 'Selecionar Curso';
+    let html = '<div class="flex flex-coluna gap-md">';
+    html += '<div class="cartao-suave"><h3 class="texto-md peso-bold cor-texto-primario m-zero">Relatórios por Curso</h3><p class="texto-md cor-texto-claro m-zero">Clique em um curso para abrir os relatórios já filtrados.</p></div>';
+    html += '<div class="grade-metricas-painel grade-2-colunas">';
+    html += cursosOrdenados.map(curso => montarCardCursoRelatorio(curso, contexto)).join('');
+    html += '</div></div>';
 
-    let codigo = '<div class="flex flex-coluna gap-sm">';
-    codigo += criarSeletor(
-        'Curso',
-        'relatorio-curso-selecionado',
-        cursos.map(curso => ({ id: curso.id, nome: `${curso.nome || 'Curso'}${curso.ano ? ' - ' + curso.ano : ''}` })),
-        AppEstado.cursoSelecionado || '',
-        true
-    );
-    codigo += criarRodapeFormulario('confirmarCursoRelatorio()', 'Confirmar');
-    codigo += '</div>';
-
-    document.getElementById('conteudo-formulario').innerHTML = codigo;
-    Interface.abrirJanela('janela-formulario');
+    return html;
 }
 
-function confirmarCursoRelatorio() {
-    const seletorCurso = document.getElementById('relatorio-curso-selecionado');
-    const idCurso = seletorCurso ? seletorCurso.value : '';
+function montarCardCursoRelatorio(curso, contexto = {}) {
+    const contextoCurso = montarContextoCursoRelatorio({ ...contexto, curso }, curso);
+    const participantesCurso = contextoCurso.participantesTodosCurso || [];
+    const participantesAtivos = contextoCurso.participantes || [];
+    const desistentes = participantesCurso.length - participantesAtivos.length;
+    const percentualMinimo = obterPercentualMinimoCurso(curso);
+    const academico = calcularEstatisticasAcademicas(participantesAtivos, contextoCurso.frequencias, contextoCurso.atividades, percentualMinimo);
+    const financeiro = calcularEstatisticasFinanceiras(participantesCurso, contextoCurso.pagamentos, contextoCurso.financas, contexto.cursos, contextoCurso.disciplinas, contextoCurso.frequencias);
+    const subtitulo = [curso.ano, obterTipoCobrancaCurso(curso)].filter(Boolean).join(' · ');
 
-    if (!idCurso) {
-        Utilidades.notificacao('Selecione um curso para gerar os relatórios.', 'aviso');
-        return;
-    }
+    return `
+        <div class="cartao-geracao-relatorio cursor-apontador" role="button" tabindex="0" onclick="selecionarCursoRelatorio('${Utilidades.escaparHtml(curso.id)}')" onkeydown="if(event.key==='Enter'){selecionarCursoRelatorio('${Utilidades.escaparHtml(curso.id)}')}">
+            <div class="flex itens-centro justifica-espaco gap-sm mb-sm">
+                <div>
+                    <h3 class="texto-md peso-bold cor-texto-primario m-zero">${Utilidades.escaparHtml(curso.nome || 'Curso sem nome')}</h3>
+                    <p class="texto-sm cor-texto-claro m-zero">${Utilidades.escaparHtml(subtitulo || 'Curso')}</p>
+                </div>
+                <span class="texto-sm cor-texto-claro">Abrir relatórios</span>
+            </div>
+            ${criarMetricasRelatorio([
+                { rotulo: 'Ativos', valor: participantesAtivos.length },
+                { rotulo: 'Desistentes', valor: desistentes },
+                { rotulo: 'Frequência', valor: `${academico.frequenciaMedia}%` },
+                { rotulo: 'Recebido', valor: Utilidades.formatarMoeda(financeiro.totalRecebido) },
+                { rotulo: 'Pendente', valor: Utilidades.formatarMoeda(financeiro.valorPendente) },
+                { rotulo: 'Atraso', valor: Utilidades.formatarMoeda(financeiro.valorEmAtraso) }
+            ])}
+        </div>
+    `;
+}
 
-    selecionarCursoRelatorio(idCurso);
+async function limparCursoRelatorio() {
+    AppEstado.cursoSelecionado = '';
+    await renderizarAbaAtual();
 }
 
 async function selecionarCursoRelatorio(idCurso = '') {
     AppEstado.cursoSelecionado = idCurso;
-    Interface.fecharJanela('janela-formulario');
     await renderizarAbaAtual();
 }
 
@@ -105,8 +121,11 @@ async function carregarContextoRelatorios() {
 
 function filtrarDadosPorCurso(contexto) {
     if (!contexto.curso) return contexto;
+    return montarContextoCursoRelatorio(contexto, contexto.curso);
+}
 
-    const idCurso = contexto.curso.id;
+function montarContextoCursoRelatorio(contexto, curso) {
+    const idCurso = curso?.id;
     const disciplinas = contexto.disciplinas.filter(item => String(item.id_curso) === String(idCurso));
     const participantesCurso = contexto.participantes.filter(item => String(item.id_curso) === String(idCurso));
     const participantes = participantesCurso.filter(participante => Utilidades.participanteEstaAtivo(participante));
@@ -134,6 +153,7 @@ function filtrarDadosPorCurso(contexto) {
 
     return {
         ...contexto,
+        curso,
         disciplinas,
         participantes,
         participantesTodosCurso,

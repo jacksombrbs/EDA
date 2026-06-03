@@ -5,6 +5,7 @@ async function renderizarFinancas(conteudo) {
     let codigo = '<div class="pagina-conteudo">';
     codigo += criarCabecalhoSecao('Livro Caixa', criarBotao('+ Nova Transação', 'abrirFormularioFinanca()'));
     codigo += renderizarResumoLivroCaixa(resumo);
+    codigo += renderizarCardRelatorioLivroCaixa();
     codigo += Busca.criarCampoBusca('busca-livro-caixa', 'Filtrar extrato...');
     codigo += transacoes.length
         ? renderizarTabelaLivroCaixa(transacoes)
@@ -13,6 +14,28 @@ async function renderizarFinancas(conteudo) {
 
     conteudo.innerHTML = codigo;
     Busca.vincularFiltro('busca-livro-caixa', 'corpo-tabela-livro-caixa');
+}
+
+function renderizarCardRelatorioLivroCaixa() {
+    const hoje = new Date();
+    const primeiroDiaMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().split('T')[0];
+    const dataAtual = hoje.toISOString().split('T')[0];
+
+    return `
+        <section class="cartao-suave mb-md">
+            <div class="flex itens-centro justifica-espaco gap-md md-flex-coluna md-itens-esquerda">
+                <div>
+                    <h3 class="texto-md peso-bold cor-texto-primario m-zero">Relatório do Livro Caixa</h3>
+                    <p class="texto-sm cor-texto-claro m-zero">Gere o PDF do livro caixa por período.</p>
+                </div>
+                ${criarBotao('Gerar Relatório', 'gerarPDFLivroCaixa()', 'contorno', 'md-w-total')}
+            </div>
+            <div class="flex gap-md md-flex-coluna w-total mt-sm">
+                <div class="flex-1">${criarCampoFormulario('Data Início', 'date', 'filtro-data-inicio', primeiroDiaMes)}</div>
+                <div class="flex-1">${criarCampoFormulario('Data Fim', 'date', 'filtro-data-fim', dataAtual)}</div>
+            </div>
+        </section>
+    `;
 }
 
 async function abrirFormularioFinanca(id = null) {

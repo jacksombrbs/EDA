@@ -13,8 +13,9 @@ async function renderizarDados(conteudo) {
             <div class="resumo-backup-dados">
                 <p class="texto-sm cor-texto-escuro m-zero">Use este arquivo para guardar uma cópia de segurança.</p>
             </div>
-            <div class="rodape-painel-dados">
-                ${criarBotao('Exportar Backup', 'exportarBackupCompleto()', 'primario')}
+            <div class="rodape-painel-dados flex gap-sm md-flex-coluna">
+                ${criarBotao('Exportar Backup', 'exportarBackupCompleto()', 'primario', 'md-w-total')}
+                ${criarBotao('Exportar Excel', 'exportarDadosExcel()', 'contorno', 'md-w-total')}
             </div>
         </section>
 
@@ -54,16 +55,82 @@ async function renderizarDados(conteudo) {
     conteudo.innerHTML = codigo;
 }
 
-async function exportarBackupCompleto() {
+async function exportarDadosExcel() {
     const dados = await bd.exportarDados();
-    const json = JSON.stringify(dados, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
+    const data = new Date().toISOString().split('T')[0];
+    const secoes = TABELAS_BANCO_DADOS
+        .filter(tabela => tabela.nome !== 'configuracoes')
+        .map(tabela => montarTabelaExcelDados(tabela, dados[tabela.nome] || []))
+        .join('<br>');
+    const conteudo = `
+        <html>
+            <head>
+                <meta charset="UTF-8">
+                <style>
+                    table { border-collapse: collapse; margin-bottom: 18px; }
+                    th, td { border: 1px solid #999; padding: 6px; vertical-align: top; }
+                    th { background: #eee; font-weight: bold; }
+                    h2 { font-family: Arial, sans-serif; }
+                </style>
+            </head>
+            <body>${secoes}</body>
+        </html>
+    `;
+    baixarArquivoDados(conteudo, `dados_comissao_biblico_catequetica_${data}.xls`, 'application/vnd.ms-excel;charset=utf-8');
+    Utilidades.notificacao('Planilha exportada com sucesso!');
+}
+
+function montarTabelaExcelDados(tabela, registros = []) {
+    const colunas = obterColunasExcelDados(registros);
+    const cabecalho = colunas.length
+        ? `<tr>${colunas.map(coluna => `<th>${escaparExcelDados(coluna)}</th>`).join('')}</tr>`
+        : '<tr><th>Registros</th></tr>';
+    const linhas = registros.length
+        ? registros.map(registro => `<tr>${colunas.map(coluna => `<td>${escaparExcelDados(formatarValorExcelDados(registro[coluna]))}</td>`).join('')}</tr>`).join('')
+        : '<tr><td>Nenhum registro</td></tr>';
+
+    return `<h2>${escaparExcelDados(tabela.rotulo)}</h2><table>${cabecalho}${linhas}</table>`;
+}
+
+function obterColunasExcelDados(registros = []) {
+    const colunas = [];
+    registros.forEach(registro => {
+        Object.keys(registro || {}).forEach(chave => {
+            if (!colunas.includes(chave)) colunas.push(chave);
+        });
+    });
+    return colunas;
+}
+
+function formatarValorExcelDados(valor) {
+    if (valor === null || valor === undefined) return '';
+    if (Array.isArray(valor)) return valor.join(', ');
+    if (typeof valor === 'object') return JSON.stringify(valor);
+    return String(valor);
+}
+
+function escaparExcelDados(valor) {
+    return String(valor || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+function baixarArquivoDados(conteudo, nomeArquivo, tipo) {
+    const blob = new Blob([conteudo], { type: tipo });
     const endereco = URL.createObjectURL(blob);
     const ligacao = document.createElement('a');
     ligacao.href = endereco;
-    ligacao.download = `backup_comissao_biblico_catequetica_${new Date().toISOString().split('T')[0]}.json`;
+    ligacao.download = nomeArquivo;
     ligacao.click();
     URL.revokeObjectURL(endereco);
+}
+
+async function exportarBackupCompleto() {
+    const dados = await bd.exportarDados();
+    const json = JSON.stringify(dados, null, 2);
+    baixarArquivoDados(json, `backup_comissao_biblico_catequetica_${new Date().toISOString().split('T')[0]}.json`, 'application/json');
     Utilidades.notificacao('Backup exportado com sucesso!');
 }
 
