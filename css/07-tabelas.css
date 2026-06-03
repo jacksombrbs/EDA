@@ -72,3 +72,15 @@
 .tabela-lancamento .campo-padrao {
     min-width: 0;
 }
+
+.nome-lancamento {
+    display: flex;
+    align-items: center;
+    gap: var(--espaco-xs);
+    white-space: nowrap;
+}
+
+.nome-lancamento span:first-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
