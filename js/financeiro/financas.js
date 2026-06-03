@@ -22,7 +22,7 @@ function renderizarCardRelatorioLivroCaixa() {
     const dataAtual = hoje.toISOString().split('T')[0];
 
     return `
-        <section class="cartao-suave mb-md">
+        <section class="cartao-geracao-relatorio mb-md">
             <div class="flex itens-centro justifica-espaco gap-md md-flex-coluna md-itens-esquerda">
                 <div>
                     <h3 class="texto-md peso-bold cor-texto-primario m-zero">Livro Caixa</h3>
