@@ -330,7 +330,7 @@ function filtrarFrequenciasFichaParticipante(participante, frequencias = [], dis
 
 function calcularResumoFinanceiroParticipante(participante, curso, disciplinas = [], frequencias = [], pagamentos = []) {
     const obrigacoes = calcularObrigacoesFinanceirasParticipante(participante, curso, disciplinas, frequencias, pagamentos);
-    const resumo = calcularResumoObrigacoes(obrigacoes);
+    const resumo = ajustarResumoObrigacoesPorStatusParticipante(participante, calcularResumoObrigacoes(obrigacoes));
     const inscricao = obrigacoes.find(item => item.tipo === 'Inscrição');
     const pagamentosOutros = pagamentos.filter(pagamento => pagamento.tipo === 'Outros');
     const totalOutros = pagamentosOutros.reduce((total, pagamento) => total + Utilidades.normalizarValorMonetario(pagamento.valor), 0);

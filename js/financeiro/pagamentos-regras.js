@@ -286,6 +286,20 @@ function calcularResumoObrigacoes(obrigacoes = []) {
     }, { total: 0, pago: 0, aPagar: 0, obrigacoesAPagar: 0, atrasado: 0, atrasos: 0, pendente: 0, pendentes: 0 });
 }
 
+function ajustarResumoObrigacoesPorStatusParticipante(participante, resumo = {}) {
+    if (Utilidades.participanteEstaAtivo(participante)) return resumo;
+
+    return {
+        ...resumo,
+        aPagar: 0,
+        obrigacoesAPagar: 0,
+        pendente: 0,
+        pendentes: 0,
+        atrasado: resumo.aPagar,
+        atrasos: resumo.obrigacoesAPagar
+    };
+}
+
 function obrigacaoPodeSerPaga(obrigacao = {}) {
     return obrigacaoContaAReceber(obrigacao);
 }

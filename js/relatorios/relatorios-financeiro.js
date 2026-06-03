@@ -80,7 +80,7 @@ function montarLinhaResumoFinanceiro(participante, pagamentos, cursos, disciplin
     const disciplinasCurso = disciplinas.filter(disciplina => String(disciplina.id_curso) === String(curso?.id));
     const frequenciasCurso = frequencias.filter(frequencia => String(frequencia.id_curso || '') === String(curso?.id));
     const obrigacoes = calcularObrigacoesFinanceirasParticipante(participante, curso, disciplinasCurso, frequenciasCurso, pagamentos);
-    const resumo = calcularResumoObrigacoes(obrigacoes);
+    const resumo = ajustarResumoObrigacoesPorStatusParticipante(participante, calcularResumoObrigacoes(obrigacoes));
     const emAtraso = resumo.atrasos > 0;
     const aPagar = resumo.obrigacoesAPagar > 0;
     const desistente = !Utilidades.participanteEstaAtivo(participante);
@@ -104,7 +104,7 @@ function calcularEstatisticasFinanceiras(participantes = [], pagamentos = [], fi
         const disciplinasCurso = disciplinas.filter(disciplina => String(disciplina.id_curso) === String(curso?.id));
         const frequenciasCurso = frequencias.filter(frequencia => String(frequencia.id_curso || '') === String(curso?.id));
         const obrigacoes = calcularObrigacoesFinanceirasParticipante(participante, curso, disciplinasCurso, frequenciasCurso, pagamentos);
-        return calcularResumoObrigacoes(obrigacoes);
+        return ajustarResumoObrigacoesPorStatusParticipante(participante, calcularResumoObrigacoes(obrigacoes));
     });
 
     const totalEntradas = pagamentos.reduce((total, pagamento) => total + Utilidades.normalizarValorMonetario(pagamento.valor), 0)
@@ -132,7 +132,7 @@ function calcularInadimplencia(participantes = [], pagamentos = [], cursos = [],
         const curso = cursos.find(item => String(item.id) === String(participante.id_curso));
         const disciplinasCurso = disciplinas.filter(disciplina => String(disciplina.id_curso) === String(curso?.id));
         const frequenciasCurso = frequencias.filter(frequencia => String(frequencia.id_curso || '') === String(curso?.id));
-        return calcularResumoObrigacoes(calcularObrigacoesFinanceirasParticipante(participante, curso, disciplinasCurso, frequenciasCurso, pagamentos)).atrasos > 0;
+        return ajustarResumoObrigacoesPorStatusParticipante(participante, calcularResumoObrigacoes(calcularObrigacoesFinanceirasParticipante(participante, curso, disciplinasCurso, frequenciasCurso, pagamentos))).atrasos > 0;
     });
 }
 
@@ -147,7 +147,7 @@ function agruparPagamentosPorStatus(participantes = [], pagamentos = [], cursos 
         const disciplinasCurso = disciplinas.filter(disciplina => String(disciplina.id_curso) === String(curso?.id));
         const frequenciasCurso = frequencias.filter(frequencia => String(frequencia.id_curso || '') === String(curso?.id));
         const obrigacoes = calcularObrigacoesFinanceirasParticipante(participante, curso, disciplinasCurso, frequenciasCurso, pagamentos);
-        const resumo = calcularResumoObrigacoes(obrigacoes);
+        const resumo = ajustarResumoObrigacoesPorStatusParticipante(participante, calcularResumoObrigacoes(obrigacoes));
         if (resumo.atrasos > 0) status.Atraso++;
         else if (resumo.obrigacoesAPagar > 0) status.Pendente++;
         else status['Em Dia']++;
@@ -191,8 +191,8 @@ async function gerarPDFMensalidadesFinanceiro() {
 
         grupo.participantes.sort((a, b) => (a.nome || '').localeCompare(b.nome || '')).forEach(participante => {
             const obrigacoes = calcularObrigacoesFinanceirasParticipante(participante, curso, disciplinas, frequencias, pagamentos);
-            const resumo = calcularResumoObrigacoes(obrigacoes);
             const desistente = !Utilidades.participanteEstaAtivo(participante);
+            const resumo = ajustarResumoObrigacoesPorStatusParticipante(participante, calcularResumoObrigacoes(obrigacoes));
             const emAtraso = resumo.atrasos > 0;
             const aPagar = resumo.obrigacoesAPagar > 0;
             html += `<tr><td><strong>${Utilidades.escaparHtml(participante.nome || '-')}</strong>${desistente ? ' <span class="cor-texto-erro">(Desistente)</span>' : ''}</td>`;
@@ -278,7 +278,7 @@ async function gerarPDFInadimplentesFinanceiro() {
         const curso = cursos.find(item => String(item.id) === String(participante.id_curso));
         const disciplinasCurso = disciplinas.filter(disciplina => String(disciplina.id_curso) === String(curso?.id));
         const frequenciasCurso = frequencias.filter(frequencia => String(frequencia.id_curso || '') === String(curso?.id));
-        const resumo = calcularResumoObrigacoes(calcularObrigacoesFinanceirasParticipante(participante, curso, disciplinasCurso, frequenciasCurso, pagamentos));
+        const resumo = ajustarResumoObrigacoesPorStatusParticipante(participante, calcularResumoObrigacoes(calcularObrigacoesFinanceirasParticipante(participante, curso, disciplinasCurso, frequenciasCurso, pagamentos)));
         return `<tr><td>${Utilidades.escaparHtml(participante.nome || '-')}</td><td>${Utilidades.escaparHtml(obterTipoCobrancaCurso(curso))}</td><td>${Utilidades.formatarMoeda(resumo.atrasado)}</td></tr>`;
     }).join('');
 

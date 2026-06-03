@@ -38,6 +38,7 @@ function gerarReciboLoteTemplate(nomeParoquia, nomesParticipantes, valorTotal, d
     const conteudo = `
         <p>Recebemos de <strong>${Utilidades.escaparHtml(nomeParoquia)}</strong>${textoCnpj} a importância de <strong>${Utilidades.formatarMoeda(valorTotal)}</strong>.</p>
         <p>${montarLinhaReferenciaRecibo(descricao || 'Pagamento em lote')}</p>
+        <p><strong>Participantes:</strong></p>
         <ul class="lista-participantes">${lista}</ul>
     `;
 

@@ -99,7 +99,7 @@ function filtrarAtividadesPorParticipantesRelatorio(atividades = [], participant
 function formatarParticipanteDocumento(participante, mostrarStatus = false) {
     const nome = `<strong>${Utilidades.escaparHtml(participante.nome || '-')}</strong>`;
     if (!mostrarStatus || Utilidades.participanteEstaAtivo(participante)) return nome;
-    return `${nome}<br><span class="cor-texto-erro peso-bold">Desistente</span>`;
+    return `${nome} <span class="cor-texto-erro peso-bold">(Desistente)</span>`;
 }
 
 function renderizarTabelaResumoAcademico(participantes, frequencias, atividades, disciplinas, percentualMinimo = PERCENTUAL_MINIMO_FREQUENCIA_PADRAO) {
@@ -275,15 +275,21 @@ function montarHtmlFrequenciaGeral(participantes, disciplinas, frequencias, paro
     if (disciplinas.length === 0) return '<p>Nenhuma disciplina cadastrada.</p>';
 
     const disciplinasOrdenadas = [...disciplinas].sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
-    const agrupados = agruparParticipantesPorParoquia(participantes);
+    const agrupados = agruparParticipantesPorParoquiaECapela(participantes);
     let html = '';
 
-    Object.keys(agrupados).sort((a, b) => (paroquiasMap[a] || 'Sem Vínculo').localeCompare(paroquiasMap[b] || 'Sem Vínculo')).forEach((idParoquia, indice) => {
-        const participantesGrupo = agrupados[idParoquia].sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
-        const nomeParoquia = paroquiasMap[idParoquia] || 'Participantes Sem Vínculo Paroquial';
+    Object.values(agrupados).sort((a, b) => {
+        const nomeA = paroquiasMap[a.idParoquia] || 'Sem Vínculo';
+        const nomeB = paroquiasMap[b.idParoquia] || 'Sem Vínculo';
+        const comparacaoParoquia = nomeA.localeCompare(nomeB);
+        if (comparacaoParoquia !== 0) return comparacaoParoquia;
+        return a.capela.localeCompare(b.capela);
+    }).forEach((grupo, indice) => {
+        const participantesGrupo = grupo.participantes.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+        const nomeParoquia = paroquiasMap[grupo.idParoquia] || 'Participantes Sem Vínculo Paroquial';
         const quebra = indice > 0 ? ' class="quebra-pagina-antes"' : '';
 
-        html += `<div${quebra}><h3>Paróquia: ${Utilidades.escaparHtml(nomeParoquia)}</h3>`;
+        html += `<div${quebra}><h3>Paróquia: ${Utilidades.escaparHtml(nomeParoquia)} / Capela: ${Utilidades.escaparHtml(grupo.capela)}</h3>`;
         html += '<table><thead><tr><th class="coluna-nome-documento">Participante</th>';
         disciplinasOrdenadas.forEach(disciplina => { html += `<th class="texto-centro">${Utilidades.escaparHtml(disciplina.nome)}</th>`; });
         html += '<th class="texto-centro">Total</th></tr></thead><tbody>';
@@ -473,19 +479,17 @@ async function gerarPDFStatusParticipantesAcademico() {
         const quebra = indice > 0 ? ' class="quebra-pagina-antes"' : '';
 
         html += `<div${quebra}><h3>Paróquia: ${Utilidades.escaparHtml(nomeParoquia)} / Capela: ${Utilidades.escaparHtml(grupo.capela)}</h3>`;
-        html += '<table><thead><tr><th class="coluna-nome-documento">Participante</th><th class="texto-centro">Status</th><th class="texto-centro">Frequência</th><th class="texto-centro">Financeiro</th><th class="texto-centro">A pagar</th><th class="texto-centro">Atraso</th></tr></thead><tbody>';
+        html += '<table><thead><tr><th class="coluna-nome-documento">Participante</th><th class="texto-centro">Status</th><th class="texto-centro">Frequência</th><th class="texto-centro">A pagar</th><th class="texto-centro">Atraso</th></tr></thead><tbody>';
         html += participantesGrupo.map(participante => {
             const frequencia = calcularFrequenciaParticipante(participante.id, frequencias);
             const obrigacoes = calcularObrigacoesFinanceirasParticipante(participante, curso, disciplinas, frequencias, pagamentos);
-            const resumo = calcularResumoObrigacoes(obrigacoes);
+            const resumo = ajustarResumoObrigacoesPorStatusParticipante(participante, calcularResumoObrigacoes(obrigacoes));
             const desistente = !Utilidades.participanteEstaAtivo(participante);
             const classeStatus = desistente ? 'cor-texto-erro' : 'cor-texto-sucesso';
-            const classeFinanceiro = resumo.atrasos > 0 ? 'cor-texto-erro' : (resumo.obrigacoesAPagar > 0 ? 'cor-texto-primario' : 'cor-texto-sucesso');
             return `<tr>
                 <td><strong>${Utilidades.escaparHtml(participante.nome || '-')}</strong></td>
                 <td class="texto-centro ${classeStatus}"><strong>${desistente ? 'Desistente' : 'Ativo'}</strong></td>
                 <td class="texto-centro ${obterClassePercentualFrequencia(frequencia.percentual, obterPercentualMinimoCurso(curso))}"><strong>${frequencia.percentual}%</strong></td>
-                <td class="texto-centro ${classeFinanceiro}"><strong>${resumo.atrasos > 0 ? 'Atraso' : (resumo.obrigacoesAPagar > 0 ? 'Pendente' : 'Em dia')}</strong></td>
                 <td class="texto-centro ${resumo.aPagar > 0 ? 'cor-texto-primario' : 'cor-texto-sucesso'}"><strong>${resumo.aPagar > 0 ? Utilidades.formatarMoeda(resumo.aPagar) : '-'}</strong></td>
                 <td class="texto-centro ${resumo.atrasado > 0 ? 'cor-texto-erro' : 'cor-texto-sucesso'}"><strong>${resumo.atrasado > 0 ? Utilidades.formatarMoeda(resumo.atrasado) : '-'}</strong></td>
             </tr>`;
@@ -493,22 +497,13 @@ async function gerarPDFStatusParticipantesAcademico() {
         html += '</tbody></table></div>';
     });
 
-    dispararImpressao('Status dos Participantes', html, { orientacao: 'paisagem' });
+    dispararImpressao('Status dos Participantes', html);
 }
 
 function criarMapaParoquias(paroquias = []) {
     const mapa = {};
     paroquias.forEach(paroquia => { mapa[paroquia.id] = paroquia.nome; });
     return mapa;
-}
-
-function agruparParticipantesPorParoquia(participantes = []) {
-    return participantes.reduce((grupos, participante) => {
-        const idParoquia = participante.id_paroquia || 'sem_paroquia';
-        if (!grupos[idParoquia]) grupos[idParoquia] = [];
-        grupos[idParoquia].push(participante);
-        return grupos;
-    }, {});
 }
 
 function agruparParticipantesPorParoquiaECapela(participantes = []) {

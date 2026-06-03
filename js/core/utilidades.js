@@ -81,7 +81,7 @@ const Utilidades = {
     montarNomeParticipanteComStatus(participante = {}, mostrarStatus = false) {
         const nome = this.escaparHtml(participante.nome || '-');
         const status = mostrarStatus && !this.participanteEstaAtivo(participante)
-            ? '<span class="texto-xs cor-texto-erro peso-bold">Desistente</span>'
+            ? '<span class="texto-xs cor-texto-erro peso-bold">desistente</span>'
             : '';
 
         return `<span class="nome-lancamento"><span>${nome}</span>${status}</span>`;
