@@ -140,27 +140,22 @@ function calcularPrevisaoArrecadacao(participantes = [], pagamentos = [], cursos
     return calcularEstatisticasFinanceiras(participantes, pagamentos, [], cursos, disciplinas, frequencias).valorAPagar;
 }
 
-function agruparPagamentosPorStatus(participantes = [], pagamentos = [], cursos = [], disciplinas = [], frequencias = []) {
-    const status = { 'Em Dia': 0, 'Pendente': 0, 'Atraso': 0, 'Desistente': 0 };
+function agruparValoresFinanceiros(participantes = [], pagamentos = [], cursos = [], disciplinas = [], frequencias = []) {
+    const valores = { 'Recebido': 0, 'Atraso': 0, 'Pendente': 0 };
 
     participantes.forEach(participante => {
-        if (!Utilidades.participanteEstaAtivo(participante)) {
-            status.Desistente++;
-            return;
-        }
-
         const curso = cursos.find(item => String(item.id) === String(participante.id_curso));
         const disciplinasCurso = disciplinas.filter(disciplina => String(disciplina.id_curso) === String(curso?.id));
         const frequenciasCurso = frequencias.filter(frequencia => String(frequencia.id_curso || '') === String(curso?.id));
         const obrigacoes = calcularObrigacoesFinanceirasParticipante(participante, curso, disciplinasCurso, frequenciasCurso, pagamentos);
-        const resumo = calcularResumoObrigacoes(obrigacoes);
+        const resumo = ajustarResumoObrigacoesPorStatusParticipante(participante, calcularResumoObrigacoes(obrigacoes));
 
-        if (resumo.atrasos > 0) status.Atraso++;
-        else if (resumo.obrigacoesAPagar > 0) status.Pendente++;
-        else status['Em Dia']++;
+        valores.Recebido += resumo.pago;
+        valores.Atraso += resumo.atrasado;
+        valores.Pendente += resumo.pendente;
     });
 
-    return status;
+    return valores;
 }
 
 async function gerarPDFMensalidadesFinanceiro() {

@@ -113,28 +113,38 @@ function montarGraficoFrequencia(participantes = [], frequencias = [], percentua
 }
 
 function montarGraficoPagamentos(participantes = [], pagamentos = [], cursos = [], disciplinas = [], frequencias = []) {
-    const status = agruparPagamentosPorStatus(participantes, pagamentos, cursos, disciplinas, frequencias);
+    const valores = agruparValoresFinanceiros(participantes, pagamentos, cursos, disciplinas, frequencias);
 
     return {
         id: 'grafico-pagamentos-financeiro',
-        titulo: 'Status de Pagamentos',
+        titulo: 'Resumo Financeiro',
         tipo: 'pie',
-        labels: Object.keys(status),
+        labels: Object.keys(valores),
         datasets: [{
-            label: 'Status de Pagamentos',
-            data: Object.values(status),
+            label: 'Resumo Financeiro',
+            data: Object.values(valores),
             backgroundColor: [
                 'rgba(16, 185, 129, 0.78)',
-                'rgba(245, 158, 11, 0.78)',
                 'rgba(239, 68, 68, 0.78)',
-                'rgba(107, 114, 128, 0.78)'
+                'rgba(245, 158, 11, 0.78)'
             ],
             borderWidth: 0,
             hoverBorderWidth: 0
         }],
         opcoes: {
             maintainAspectRatio: false,
-            plugins: { legend: { position: 'bottom' } }
+            plugins: {
+                legend: { position: 'bottom' },
+                tooltip: {
+                    callbacks: {
+                        label(contexto) {
+                            const rotulo = contexto.label || '';
+                            const valor = contexto.parsed || 0;
+                            return `${rotulo}: ${Utilidades.formatarMoeda(valor)}`;
+                        }
+                    }
+                }
+            }
         }
     };
 }
