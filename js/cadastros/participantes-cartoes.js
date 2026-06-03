@@ -110,7 +110,6 @@ function criarEstilosCartoesAcesso(individual = false) {
         .status-inativo-cartao {
             color: #b91c1c;
             font-weight: 900;
-            text-transform: uppercase;
         }
         .codigo-cartao-acesso {
             margin-top: 2mm;
