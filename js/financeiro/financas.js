@@ -25,8 +25,7 @@ function renderizarCardRelatorioLivroCaixa() {
         <section class="cartao-suave mb-md">
             <div class="flex itens-centro justifica-espaco gap-md md-flex-coluna md-itens-esquerda">
                 <div>
-                    <h3 class="texto-md peso-bold cor-texto-primario m-zero">Relatório do Livro Caixa</h3>
-                    <p class="texto-sm cor-texto-claro m-zero">Gere o PDF do livro caixa por período.</p>
+                    <h3 class="texto-md peso-bold cor-texto-primario m-zero">Livro Caixa</h3>
                 </div>
                 ${criarBotao('Gerar Relatório', 'gerarPDFLivroCaixa()', 'contorno', 'md-w-total')}
             </div>

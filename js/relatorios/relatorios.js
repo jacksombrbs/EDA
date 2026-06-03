@@ -49,7 +49,6 @@ function renderizarPainelCursosRelatorio(contexto = {}) {
     const cursosOrdenados = [...(contexto.cursos || [])].sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
 
     let html = '<div class="flex flex-coluna gap-md">';
-    html += '<div class="cartao-suave"><h3 class="texto-md peso-bold cor-texto-primario m-zero">Relatórios por Curso</h3><p class="texto-md cor-texto-claro m-zero">Clique em um curso para abrir os relatórios já filtrados.</p></div>';
     html += '<div class="grade-metricas-painel grade-2-colunas">';
     html += cursosOrdenados.map(curso => montarCardCursoRelatorio(curso, contexto)).join('');
     html += '</div></div>';
