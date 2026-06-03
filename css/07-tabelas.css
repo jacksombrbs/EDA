@@ -50,3 +50,25 @@
     gap: var(--espaco-sm);
 }
 
+
+.tabela-lancamento .tabela-padrao {
+    table-layout: fixed;
+}
+
+.coluna-nome-lancamento {
+    width: 45%;
+}
+
+.coluna-controle-lancamento,
+.coluna-status-lancamento {
+    width: 180px;
+}
+
+.coluna-observacoes-lancamento {
+    width: auto;
+}
+
+.tabela-lancamento .botao-padrao,
+.tabela-lancamento .campo-padrao {
+    min-width: 0;
+}

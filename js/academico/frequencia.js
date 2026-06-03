@@ -179,8 +179,8 @@ async function abrirJanelaFrequencia() {
 
         return `
             <tr class="${classeFundo} transicao hover-fundo-superficie-3">
-                <td class="p-md texto-esquerda texto-md peso-medium cor-texto-escuro">${Utilidades.montarNomeParticipanteComStatus(participante, AppEstado.frequenciaAtual.mostrar_todos_participantes === true)}</td>
-                <td class="p-md texto-direita">
+                <td class="p-md texto-esquerda texto-md peso-medium cor-texto-escuro coluna-nome-lancamento">${Utilidades.montarNomeParticipanteComStatus(participante, AppEstado.frequenciaAtual.mostrar_todos_participantes === true)}</td>
+                <td class="p-md texto-direita coluna-controle-lancamento">
                     <div class="flex gap-sm itens-centro justifica-fim">
                         ${criarBotao(obterTextoEstadoFrequencia(presenca.estado), `alternarFrequenciaParticipante('${participante.id}')`, 'neutro', `botao-pequeno ${obterClasseEstadoFrequencia(presenca.estado)}`, 'button', `id="botao-frequencia-${participante.id}"`)}
                         <input type="number" min="0.5" max="${cargaHoraria - 0.5}" step="0.5" id="horas-frequencia-${participante.id}" class="campo-padrao botao-pequeno ${presenca.estado === ESTADOS_FREQUENCIA.PARCIAL ? '' : 'oculto'}" value="${presenca.estado === ESTADOS_FREQUENCIA.PARCIAL ? Utilidades.escaparHtml(presenca.horas || '') : ''}" placeholder="Horas" onchange="atualizarHorasFrequenciaParticipante('${participante.id}', this.value)" oninput="atualizarHorasFrequenciaParticipante('${participante.id}', this.value)" aria-label="Horas parciais">
@@ -190,7 +190,10 @@ async function abrirJanelaFrequencia() {
         `;
     }).join('');
 
-    html += criarContainerTabela(['Nome do Participante', 'Presença'], linhas, '', '', 'lista-rolagem-modal mb-md');
+    html += criarContainerTabela([
+        { rotulo: 'Nome do Participante', classes: 'coluna-nome-lancamento' },
+        { rotulo: 'Presença', classes: 'coluna-controle-lancamento texto-direita' }
+    ], linhas, '', '', 'lista-rolagem-modal tabela-lancamento mb-md');
     html += criarRodapeFormulario('salvarFrequencia()', AppEstado.frequenciaAtual.id ? 'Atualizar Frequência' : 'Salvar Frequência');
 
     document.getElementById('conteudo-formulario').innerHTML = html;

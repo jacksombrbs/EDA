@@ -120,7 +120,11 @@ async function abrirJanelaLancamentoAtividades() {
 
     const participantesVisiveis = selecionarParticipantesLancamento(AppEstado.atividadeAtual.participantes, AppEstado.atividadeAtual.mostrar_todos_participantes === true);
     const linhas = participantesVisiveis.map((participante, indice) => criarLinhaLancamentoAtividade(participante, indice)).join('');
-    html += criarContainerTabela(['Nome', 'Status', 'Observações'], linhas, '', '', 'lista-rolagem-modal mb-md');
+    html += criarContainerTabela([
+        { rotulo: 'Nome', classes: 'coluna-nome-lancamento' },
+        { rotulo: 'Status', classes: 'coluna-status-lancamento texto-centro' },
+        { rotulo: 'Observações', classes: 'coluna-observacoes-lancamento' }
+    ], linhas, '', '', 'lista-rolagem-modal tabela-lancamento mb-md');
     html += criarRodapeFormulario('salvarLancamentoAtividades()', 'Salvar Atividades');
 
     document.getElementById('conteudo-formulario').innerHTML = html;
@@ -143,11 +147,11 @@ function criarLinhaLancamentoAtividade(participante, indice) {
 
     return `
         <tr class="${classeFundo} transicao hover-fundo-superficie-3">
-            <td class="p-md texto-esquerda texto-md peso-medium cor-texto-escuro">${Utilidades.montarNomeParticipanteComStatus(participante, AppEstado.atividadeAtual.mostrar_todos_participantes === true)}</td>
-            <td class="p-md texto-esquerda">
+            <td class="p-md texto-esquerda texto-md peso-medium cor-texto-escuro coluna-nome-lancamento">${Utilidades.montarNomeParticipanteComStatus(participante, AppEstado.atividadeAtual.mostrar_todos_participantes === true)}</td>
+            <td class="p-md texto-centro coluna-status-lancamento">
                 ${criarBotao(texto, `alternarEstadoAtividadeParticipante('${participante.id}')`, 'neutro', `botao-pequeno w-total ${classes}`, 'button', `id="botao-atividade-${participante.id}"`)}
             </td>
-            <td class="p-md texto-esquerda">
+            <td class="p-md texto-esquerda coluna-observacoes-lancamento">
                 <textarea id="observacoes-atividade-${participante.id}" class="campo-padrao" rows="2" placeholder="Observações...">${Utilidades.escaparHtml(registro.observacoes || '')}</textarea>
             </td>
         </tr>

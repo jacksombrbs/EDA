@@ -48,16 +48,14 @@ function renderizarCardsResumo(contexto = {}) {
     const financeiro = calcularEstatisticasFinanceiras(contexto.participantesTodosCurso || contexto.participantes || [], contexto.pagamentos || [], contexto.financas || [], contexto.cursos || [], contexto.disciplinas || [], contexto.frequencias || []);
 
     const cardAtividadesStatus = `
-        <div class="cartao-metrica primario">
-            <div class="flex gap-md md-flex-coluna">
-                <div class="metrica-relatorio flex-1">
-                    <span>Atividades</span>
-                    <strong>${Utilidades.escaparHtml(academico.entregasTotal)}</strong>
-                </div>
-                <div class="metrica-relatorio flex-1">
-                    <span>Status</span>
-                    <strong>${Utilidades.escaparHtml(`${academico.totalParticipantes} ativos`)}</strong>
-                </div>
+        <div class="mini-cards-painel">
+            <div class="cartao-metrica primario mini-card-painel">
+                <span>Atividades</span>
+                <strong>${Utilidades.escaparHtml(academico.entregasTotal)}</strong>
+            </div>
+            <div class="cartao-metrica primario mini-card-painel">
+                <span>Status</span>
+                <strong>${Utilidades.escaparHtml(`${academico.totalParticipantes} ativos`)}</strong>
             </div>
         </div>
     `;
