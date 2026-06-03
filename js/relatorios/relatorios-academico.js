@@ -36,26 +36,22 @@ function renderizarPainelAcademico(participantes = [], frequencias = [], ativida
                 </div>
             </div>
 
-            <div class="cartao-geracao-relatorio">
-                <div class="cabecalho-relatorio">
-                    <h3 class="texto-md peso-bold cor-texto-primario m-zero">Relatório de Atividades</h3>
-                    ${criarBotao('Gerar Relatório', 'gerarPDFAtividades()', 'contorno', 'botao-pequeno')}
+            <div class="grade-metricas-painel grade-2-colunas">
+                <div class="cartao-geracao-relatorio">
+                    <div class="cabecalho-relatorio">
+                        <h3 class="texto-md peso-bold cor-texto-primario m-zero">Atividades</h3>
+                        ${criarBotao('Gerar Relatório', 'gerarPDFAtividades()', 'contorno', 'botao-pequeno')}
+                    </div>
+                    ${criarCardMetrica('Entregas', atividadesEntregues.length, 'primario', 'atividades')}
                 </div>
-                ${criarMetricasRelatorio([
-                    { rotulo: 'Disciplinas', valor: disciplinas.length },
-                    { rotulo: 'Entregas', valor: atividadesEntregues.length }
-                ])}
-            </div>
 
-            <div class="cartao-geracao-relatorio">
-                <div class="cabecalho-relatorio">
-                    <h3 class="texto-md peso-bold cor-texto-primario m-zero">Status dos Participantes</h3>
-                    ${criarBotao('Gerar Relatório', 'gerarPDFStatusParticipantes()', 'contorno', 'botao-pequeno')}
+                <div class="cartao-geracao-relatorio">
+                    <div class="cabecalho-relatorio">
+                        <h3 class="texto-md peso-bold cor-texto-primario m-zero">Status</h3>
+                        ${criarBotao('Gerar Relatório', 'gerarPDFStatusParticipantes()', 'contorno', 'botao-pequeno')}
+                    </div>
+                    ${criarCardMetrica('Ativos', participantes.length, 'primario', 'participantes')}
                 </div>
-                ${criarMetricasRelatorio([
-                    { rotulo: 'Ativos', valor: participantes.length },
-                    { rotulo: 'Curso', valor: disciplinas.length ? 'Com disciplinas' : 'Sem disciplinas' }
-                ])}
             </div>
         </div>
     `;
