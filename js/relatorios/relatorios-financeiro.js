@@ -65,10 +65,10 @@ function filtrarTabelaFinanceira(termo = '') {
 function renderizarTabelaResumoFinanceiro(participantes = [], pagamentos = [], cursos = [], disciplinas = [], frequencias = []) {
     const linhas = participantes.length
         ? participantes.map((participante, indice) => montarLinhaResumoFinanceiro(participante, pagamentos, cursos, disciplinas, frequencias, indice)).join('')
-        : '<tr><td colspan="7" class="p-md texto-centro cor-texto-claro">Nenhum participante cadastrado.</td></tr>';
+        : '<tr><td colspan="6" class="p-md texto-centro cor-texto-claro">Nenhum participante cadastrado.</td></tr>';
 
     return criarContainerTabela(
-        ['Participante', 'Status', 'Tipo do Curso', 'Cobranças', 'Pago', 'A pagar', 'Atraso'],
+        ['Participante', 'Tipo do Curso', 'Cobranças', 'Pago', 'A pagar', 'Atraso'],
         linhas,
         '',
         'corpo-tabela-fin'
@@ -85,12 +85,10 @@ function montarLinhaResumoFinanceiro(participante, pagamentos, cursos, disciplin
     const aPagar = resumo.obrigacoesAPagar > 0;
     const desistente = !Utilidades.participanteEstaAtivo(participante);
     const classeFundo = indice % 2 === 0 ? 'fundo-branco' : 'fundo-superficie-2';
-    const statusFinanceiro = emAtraso ? 'Atraso' : (aPagar ? 'Pendente' : 'Em dia');
     const busca = `${participante.nome || ''} ${desistente ? 'desistente' : 'ativo'} ${emAtraso ? 'atraso inadimplente' : (aPagar ? 'pendente' : 'em dia')} ${obrigacoes.filter(o => !o.pago).map(o => o.descricao).join(' ')}`;
 
     return `<tr class="${classeFundo} transicao hover-fundo-superficie-3" data-busca="${Utilidades.escaparHtml(busca.toLowerCase())}">
-        <td class="p-md texto-esquerda peso-bold cor-texto-escuro">${Utilidades.escaparHtml(participante.nome || '-')}</td>
-        <td class="p-md texto-centro"><strong>${desistente ? 'Desistente' : statusFinanceiro}</strong></td>
+        <td class="p-md texto-esquerda peso-bold cor-texto-escuro">${Utilidades.escaparHtml(participante.nome || '-')}${desistente ? ' <span class="cor-texto-erro">(Desistente)</span>' : ''}</td>
         <td class="p-md texto-centro">${Utilidades.escaparHtml(obterTipoCobrancaCurso(curso))}</td>
         <td class="p-md texto-centro">${obrigacoes.filter(item => item.pago).length}/${obrigacoes.length}</td>
         <td class="p-md texto-centro cor-texto-sucesso peso-bold">${Utilidades.formatarMoeda(resumo.pago)}</td>
@@ -173,7 +171,7 @@ async function gerarPDFMensalidadesFinanceiro() {
     html += `<p><strong>Tipo de Cobrança:</strong> ${Utilidades.escaparHtml(obterTipoCobrancaCurso(curso))}</p>`;
     html += `<p><strong>Data de Emissão:</strong> ${Utilidades.formatarData(new Date().toISOString().split('T')[0])}</p>`;
     if (cursoCobraPorEncontro(curso)) {
-        html += '<p><strong>Legenda:</strong> data = pagamento registrado; Compareceu = presença registrada sem pagamento, portanto valor em atraso; Faltou = ausência registrada, sem cobrança.</p>';
+        html += '<p><strong>Legenda:</strong> data = pagamento registrado; C = compareceu sem pagamento, portanto valor em atraso; F = faltou, sem cobrança.</p>';
     }
 
     Object.values(agrupados).sort((a, b) => {
@@ -187,7 +185,7 @@ async function gerarPDFMensalidadesFinanceiro() {
         const quebra = indiceGrupo > 0 ? ' class="quebra-pagina-antes"' : '';
 
         html += `<div${quebra}><h3>Paróquia: ${Utilidades.escaparHtml(nomeParoquia)} / Capela: ${Utilidades.escaparHtml(grupo.capela)}</h3>`;
-        html += '<table><thead><tr><th class="coluna-nome-documento">Nome do Participante</th><th class="texto-centro">Status</th>';
+        html += '<table><thead><tr><th class="coluna-nome-documento">Nome do Participante</th>';
         obrigacoesCurso.forEach(obrigacao => { html += `<th class="texto-centro">${Utilidades.escaparHtml(obrigacao.rotulo)}</th>`; });
         html += '<th class="texto-centro">A pagar</th><th class="texto-centro">Atraso</th></tr></thead><tbody>';
 
@@ -195,10 +193,9 @@ async function gerarPDFMensalidadesFinanceiro() {
             const obrigacoes = calcularObrigacoesFinanceirasParticipante(participante, curso, disciplinas, frequencias, pagamentos);
             const resumo = calcularResumoObrigacoes(obrigacoes);
             const desistente = !Utilidades.participanteEstaAtivo(participante);
-            html += `<tr><td><strong>${Utilidades.escaparHtml(participante.nome || '-')}</strong></td>`;
             const emAtraso = resumo.atrasos > 0;
             const aPagar = resumo.obrigacoesAPagar > 0;
-            html += `<td class="texto-centro ${desistente ? 'cor-texto-erro' : (emAtraso ? 'cor-texto-erro' : (aPagar ? 'cor-texto-primario' : 'cor-texto-sucesso'))}"><strong>${desistente ? 'Desistente' : (emAtraso ? 'Atraso' : (aPagar ? 'Pendente' : 'Em dia'))}</strong></td>`;
+            html += `<tr><td><strong>${Utilidades.escaparHtml(participante.nome || '-')}</strong>${desistente ? ' <span class="cor-texto-erro">(Desistente)</span>' : ''}</td>`;
             obrigacoesCurso.forEach(modelo => {
                 const chaveModelo = obterChaveCobrancaFinanceira(modelo.tipo, modelo.referencia_id, modelo.referencia_indice);
                 const obrigacao = obrigacoes.find(item => obterChaveObrigacaoFinanceira(item) === chaveModelo);
@@ -255,12 +252,15 @@ function montarObrigacoesModeloCurso(curso, disciplinas = [], frequencias = []) 
 function formatarPagamentoObrigacaoRelatorio(obrigacao) {
     if (!obrigacao) return '';
     if (obrigacao.pago) return Utilidades.formatarData(obrigacao.data_pagamento);
-    if (obrigacao.tipo === 'Encontro' && obrigacao.situacao_encontro === 'faltou') return 'Faltou';
-    if (obrigacao.tipo === 'Encontro' && obrigacao.situacao_encontro === 'compareceu') return 'Compareceu';
+    if (obrigacao.tipo === 'Encontro' && obrigacao.situacao_encontro === 'faltou') return 'F';
+    if (obrigacao.tipo === 'Encontro' && obrigacao.situacao_encontro === 'compareceu') return 'C';
     return '';
 }
 
 function obterClassePagamentoObrigacaoRelatorio(obrigacao) {
+    if (!obrigacao || obrigacao.pago || obrigacao.tipo !== 'Encontro') return '';
+    if (obrigacao.situacao_encontro === 'compareceu') return 'cor-texto-sucesso';
+    if (obrigacao.situacao_encontro === 'faltou') return 'cor-texto-erro';
     return '';
 }
 
