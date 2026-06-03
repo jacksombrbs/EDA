@@ -376,6 +376,9 @@ function calcularResumoFrequenciaParticipante(participante, frequencias = [], cu
     });
 
     const percentual = horasPrevistas > 0 ? Math.round((horasPresentes / horasPrevistas) * 100) : null;
+    const situacao = Utilidades.participanteEstaAtivo(participante)
+        ? (percentual === null ? 'Sem registros' : (percentual >= obterPercentualMinimoCurso(curso) ? 'Regular' : 'Atenção'))
+        : (participante.status || 'Inativo');
 
     return {
         total,
@@ -386,7 +389,7 @@ function calcularResumoFrequenciaParticipante(participante, frequencias = [], cu
         horasPresentes,
         percentual,
         percentualTexto: percentual === null ? 'Sem registros' : `${percentual}%`,
-        situacao: percentual === null ? 'Sem registros' : (percentual >= obterPercentualMinimoCurso(curso) ? 'Regular' : 'Atenção')
+        situacao
     };
 }
 
