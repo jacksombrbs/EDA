@@ -291,7 +291,7 @@ function ajustarResumoObrigacoesPorStatusParticipante(participante, resumo = {})
 
     return {
         ...resumo,
-        aPagar: 0,
+        aPagar: resumo.atrasado,
         obrigacoesAPagar: resumo.atrasos,
         pendente: 0,
         pendentes: 0
