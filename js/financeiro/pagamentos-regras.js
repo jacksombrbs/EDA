@@ -292,11 +292,9 @@ function ajustarResumoObrigacoesPorStatusParticipante(participante, resumo = {})
     return {
         ...resumo,
         aPagar: 0,
-        obrigacoesAPagar: 0,
+        obrigacoesAPagar: resumo.atrasos,
         pendente: 0,
-        pendentes: 0,
-        atrasado: resumo.aPagar,
-        atrasos: resumo.obrigacoesAPagar
+        pendentes: 0
     };
 }
 
