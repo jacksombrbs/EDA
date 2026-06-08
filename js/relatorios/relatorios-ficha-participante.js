@@ -335,6 +335,7 @@ function calcularResumoFinanceiroParticipante(participante, curso, disciplinas =
     const pagamentosOutros = pagamentos.filter(pagamento => pagamento.tipo === 'Outros');
     const totalOutros = pagamentosOutros.reduce((total, pagamento) => total + Utilidades.normalizarValorMonetario(pagamento.valor), 0);
     const pagos = obrigacoes.filter(item => item.pago).length;
+    const textoCobrancas = `${pagos}/${obrigacoes.length} · ${obterTextoValorCobrancaFicha(curso, disciplinas)}`;
 
     return {
         inscricaoPaga: Boolean(inscricao?.pago),
@@ -345,6 +346,7 @@ function calcularResumoFinanceiroParticipante(participante, curso, disciplinas =
         obrigacoes,
         obrigacoesPagas: pagos,
         obrigacoesTotal: obrigacoes.length,
+        textoCobrancas,
         obrigacoesPendentes: resumo.obrigacoesAPagar,
         obrigacoesAtrasadas: resumo.atrasos,
         valorPendente: resumo.aPagar,
@@ -354,6 +356,36 @@ function calcularResumoFinanceiroParticipante(participante, curso, disciplinas =
         totalOutros,
         totalGeral: resumo.pago + totalOutros
     };
+}
+
+function obterTextoValorCobrancaFicha(curso, disciplinas = []) {
+    const tipoCobranca = obterTipoCobrancaCurso(curso);
+
+    if (tipoCobranca === TIPOS_COBRANCA_CURSO.GRATUITO) return 'Gratuito';
+
+    if (tipoCobranca === TIPOS_COBRANCA_CURSO.MENSAL) {
+        const valor = Utilidades.normalizarValorMonetario(curso?.valor_mensalidade || 0);
+        return valor > 0 ? `${Utilidades.formatarMoeda(valor)}/mensalidade` : 'Sem valor de mensalidade';
+    }
+
+    if (tipoCobranca === TIPOS_COBRANCA_CURSO.ENCONTRO) {
+        const valor = Utilidades.normalizarValorMonetario(curso?.valor_encontro || 0);
+        return valor > 0 ? `${Utilidades.formatarMoeda(valor)}/encontro` : 'Sem valor de encontro';
+    }
+
+    if (tipoCobranca === TIPOS_COBRANCA_CURSO.DISCIPLINA) {
+        const valores = disciplinas
+            .filter(disciplina => String(disciplina.id_curso) === String(curso?.id || ''))
+            .map(disciplina => Utilidades.normalizarValorMonetario(disciplina.valor_disciplina || 0))
+            .filter(valor => valor > 0)
+            .sort((a, b) => a - b);
+
+        if (valores.length === 0) return 'Disciplinas gratuitas';
+        if (valores[0] === valores[valores.length - 1]) return `${Utilidades.formatarMoeda(valores[0])}/disciplina`;
+        return `${Utilidades.formatarMoeda(valores[0])} a ${Utilidades.formatarMoeda(valores[valores.length - 1])}/disciplina`;
+    }
+
+    return '-';
 }
 
 function calcularResumoFrequenciaParticipante(participante, frequencias = [], curso = null) {
@@ -426,7 +458,7 @@ function montarHtmlConsultaFichaParticipante(dadosFicha) {
 
         <div class="grade-metricas-painel grade-4-colunas">
             ${criarCardMetrica('Inscrição', financeiro.inscricaoTexto, financeiro.inscricaoPaga ? 'sucesso' : 'aviso')}
-            ${criarCardMetrica('Cobranças', `${financeiro.obrigacoesPagas}/${financeiro.obrigacoesTotal}`, financeiro.obrigacoesPagas === financeiro.obrigacoesTotal ? 'sucesso' : (financeiro.obrigacoesAtrasadas > 0 ? 'erro' : 'aviso'))}
+            ${criarCardMetrica('Cobranças', financeiro.textoCobrancas, financeiro.obrigacoesPagas === financeiro.obrigacoesTotal ? 'sucesso' : (financeiro.obrigacoesAtrasadas > 0 ? 'erro' : 'aviso'))}
             ${criarCardMetrica('Frequência', frequencia.percentualTexto, frequencia.situacao === 'Atenção' ? 'aviso' : 'sucesso')}
             ${criarCardMetrica('Atividades', atividades.total, 'primario')}
         </div>
@@ -442,7 +474,7 @@ function montarHtmlConsultaFichaParticipante(dadosFicha) {
             ${montarCartaoConsultaFicha('Financeiro', [
                 ['Inscrição', financeiro.inscricaoTexto],
                 ['Valor da inscrição', Utilidades.formatarMoeda(financeiro.valorInscricao)],
-                ['Cobranças', `${financeiro.obrigacoesPagas}/${financeiro.obrigacoesTotal}`],
+                ['Cobranças', financeiro.textoCobrancas],
                 ['Total pago', Utilidades.formatarMoeda(financeiro.totalGeral)],
                 ['Valor a pagar', Utilidades.formatarMoeda(financeiro.valorPendente)],
                 ['Valor em atraso', Utilidades.formatarMoeda(financeiro.valorAtrasado)]
@@ -517,7 +549,7 @@ function montarHtmlFichaParticipante(dadosFicha) {
 
             <div class="grade-resumo-ficha-pdf">
                 ${criarItemFichaPDF('Inscrição', financeiro.inscricaoTexto)}
-                ${criarItemFichaPDF('Cobranças', `${financeiro.obrigacoesPagas}/${financeiro.obrigacoesTotal}`)}
+                ${criarItemFichaPDF('Cobranças', financeiro.textoCobrancas)}
                 ${criarItemFichaPDF('Frequência', frequencia.percentualTexto)}
                 ${criarItemFichaPDF('Atividades', atividades.total)}
             </div>
@@ -534,7 +566,7 @@ function montarHtmlFichaParticipante(dadosFicha) {
                 ${montarBlocoFichaPDF('Inscrição e pagamentos', [
                     ['Inscrição', financeiro.inscricaoTexto],
                     ['Valor da inscrição', Utilidades.formatarMoeda(financeiro.valorInscricao)],
-                    ['Cobranças', `${financeiro.obrigacoesPagas}/${financeiro.obrigacoesTotal}`],
+                    ['Cobranças', financeiro.textoCobrancas],
                     ['Outras entradas', Utilidades.formatarMoeda(financeiro.totalOutros)],
                     ['Total pago', Utilidades.formatarMoeda(financeiro.totalGeral)],
                     ['Valor a pagar', Utilidades.formatarMoeda(financeiro.valorPendente)],
