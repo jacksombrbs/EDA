@@ -115,27 +115,21 @@ async function montarOpcoesCobrancaParticipante(idParticipante, pagamento = null
     if (!idParticipante) return [{ id: '', nome: 'Selecione o participante para listar as cobranças abertas.', valor: 0, descricao: '' }];
 
     const obrigacoes = await obterObrigacoesAbertasPagamento(idParticipante, { ignorarPagamentoId: AppEstado.registroEmEdicao });
-    if (pagamento && pagamento.tipo !== 'Outros') {
-        obrigacoes.unshift({
-            tipo: pagamento.tipo,
-            referencia_id: pagamento.referencia_id || '',
-            referencia_indice: pagamento.referencia_indice || '',
-            descricao: pagamento.descricao || pagamento.tipo,
-            valor: pagamento.valor,
-            pago: false
+    const opcoesPorChave = new Map();
+
+    obrigacoes.forEach(obrigacao => {
+        const id = codificarCobrancaPagamento(obrigacao);
+        opcoesPorChave.set(id, {
+            id,
+            tipo: obrigacao.tipo,
+            nome: `${obrigacao.descricao} - ${Utilidades.formatarMoeda(obrigacao.valor)}`,
+            descricao: obrigacao.descricao,
+            valor: Utilidades.normalizarValorMonetario(obrigacao.valor)
         });
-    }
+    });
 
-    const opcoes = obrigacoes.map(obrigacao => ({
-        id: codificarCobrancaPagamento(obrigacao),
-        tipo: obrigacao.tipo,
-        nome: `${obrigacao.descricao} - ${Utilidades.formatarMoeda(obrigacao.valor)}`,
-        descricao: obrigacao.descricao,
-        valor: Utilidades.normalizarValorMonetario(obrigacao.valor)
-    }));
-
-    opcoes.push({ id: 'Outros||outros||', tipo: 'Outros', nome: 'Outros - valor manual', descricao: 'Outros', valor: 0 });
-    return ordenarOpcoesCobrancaPagamento(opcoes);
+    opcoesPorChave.set('Outros||||', { id: 'Outros||||', tipo: 'Outros', nome: 'Outros - valor manual', descricao: 'Outros', valor: 0 });
+    return ordenarOpcoesCobrancaPagamento([...opcoesPorChave.values()]);
 }
 
 function montarControleCobrancasPagamento(opcoes = [], marcadas = new Set(), classeMarcador = 'marcador-cobranca-pagamento', idSeletorTipo = 'tipo_cobranca_pagamento', tipoSelecionado = '') {
@@ -411,12 +405,12 @@ async function abrirFormularioPagamentoLote(id = null) {
 }
 
 async function atualizarFormularioPagamentoLote(participantes, lote = null) {
-    await atualizarReferenciasPagamentoLote(lote);
+    await atualizarReferenciasPagamentoLote(lote, participantes);
     renderizarParticipantesLotePagamento(participantes, lote);
     await atualizarValorPagamentoLote();
 }
 
-async function atualizarReferenciasPagamentoLote(lote = null) {
+async function atualizarReferenciasPagamentoLote(lote = null, participantes = []) {
     const idCurso = document.getElementById('id_curso_lote')?.value || '';
     const recipiente = document.getElementById('recipiente-referencia-lote');
     if (!recipiente) return;
