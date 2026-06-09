@@ -231,6 +231,3 @@ async function imprimirCartoesSelecionados() {
     );
 }
 
-async function imprimirCartoesParticipantesEmLote() {
-    await imprimirCartoesSelecionados();
-}

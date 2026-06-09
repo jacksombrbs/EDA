@@ -26,7 +26,7 @@ function renderizarPainelAcademico(participantes = [], frequencias = [], ativida
             <div class="cartao-geracao-relatorio">
                 <div class="cabecalho-relatorio">
                     <h3 class="texto-md peso-bold cor-texto-primario m-zero">Relatório de Frequência</h3>
-                    ${criarBotao('Gerar Relatório', 'gerarPDFFrequencia()', 'contorno', 'botao-pequeno')}
+                    ${criarBotao('Gerar Relatório', 'gerarPDFFrequenciaAcademico()', 'contorno', 'botao-pequeno')}
                 </div>
                 <div class="flex gap-md md-flex-coluna w-total mt-sm">
                     <div class="flex-1 w-total">${criarSeletor('Tipo', 'filtro-tipo-frequencia', [{ id: 'geral', nome: 'Geral (Todos)' }, { id: 'disciplina', nome: 'Por Disciplina' }], 'geral', false)}</div>
@@ -38,7 +38,7 @@ function renderizarPainelAcademico(participantes = [], frequencias = [], ativida
                 <div class="cartao-geracao-relatorio">
                     <div class="cabecalho-relatorio">
                         <h3 class="texto-md peso-bold cor-texto-primario m-zero">Atividades</h3>
-                        ${criarBotao('Gerar Relatório', 'gerarPDFAtividades()', 'contorno', 'botao-pequeno')}
+                        ${criarBotao('Gerar Relatório', 'gerarPDFAtividadesAcademico()', 'contorno', 'botao-pequeno')}
                     </div>
                     ${criarCardMetrica('Entregas', atividadesEntregues.length, 'primario', 'atividades')}
                 </div>
@@ -46,7 +46,7 @@ function renderizarPainelAcademico(participantes = [], frequencias = [], ativida
                 <div class="cartao-geracao-relatorio">
                     <div class="cabecalho-relatorio">
                         <h3 class="texto-md peso-bold cor-texto-primario m-zero">Status</h3>
-                        ${criarBotao('Gerar Relatório', 'gerarPDFStatusParticipantes()', 'contorno', 'botao-pequeno')}
+                        ${criarBotao('Gerar Relatório', 'gerarPDFStatusParticipantesAcademico()', 'contorno', 'botao-pequeno')}
                     </div>
                     ${criarCardMetrica('Ativos', participantes.length, 'primario', 'participantes')}
                 </div>
@@ -230,10 +230,6 @@ function agruparFrequenciasPorFaixa(participantes = [], frequencias = [], percen
     return faixas;
 }
 
-function calcularAtividadesParticipante(idParticipante, atividades = []) {
-    return listarAtividadesEntreguesPorParticipante(idParticipante, atividades).length;
-}
-
 function listarAtividadesPorParticipante(idParticipante, atividades = []) {
     return listarAtividadesEntreguesPorParticipante(idParticipante, atividades);
 }
@@ -253,12 +249,13 @@ async function gerarPDFFrequenciaAcademico() {
     const { curso, disciplinas, participantes, participantesTodosCurso, frequencias, paroquias } = dadosRelatorio;
     const participantesRelatorio = Utilidades.ordenarParticipantesPorNome(participantesTodosCurso || participantes);
     const mostrarTodos = true;
-    const dataHoje = new Date().toLocaleDateString('pt-BR');
+    const dataHoje = Utilidades.formatarData(Utilidades.obterDataAtual());
     const paroquiasMap = criarMapaParoquias(paroquias);
 
-    let html = `<h2>RELATÓRIO DE FREQUÊNCIA</h2>`;
-    html += `<p><strong>Curso:</strong> ${Utilidades.escaparHtml(curso.nome || '-')}</p>`;
-    html += `<p><strong>Data de Emissão:</strong> ${dataHoje}</p>`;
+    let html = montarCabecalhoRelatorioImpresso('RELATÓRIO DE FREQUÊNCIA', [
+        { rotulo: 'Curso', valor: curso.nome || '-' },
+        { rotulo: 'Data de Emissão', valor: dataHoje }
+    ]);
 
     if (tipoRelatorio === 'geral') {
         html += montarHtmlFrequenciaGeral(participantesRelatorio, disciplinas, frequencias, paroquiasMap, curso, mostrarTodos);
@@ -281,9 +278,7 @@ function montarHtmlFrequenciaGeral(participantes, disciplinas, frequencias, paro
 
     gruposParoquia.forEach((grupo, indice) => {
         const nomeParoquia = paroquiasMap[grupo.idParoquia] || 'Participantes Sem Vínculo Paroquial';
-        const quebra = indice > 0 ? ' class="quebra-pagina-antes"' : '';
-
-        html += `<div${quebra}><h3>Paróquia: ${Utilidades.escaparHtml(nomeParoquia)}</h3>`;
+        html += abrirGrupoParoquiaRelatorio(nomeParoquia, indice);
         html += '<table><thead><tr><th class="coluna-nome-documento">Participante</th>';
         disciplinasOrdenadas.forEach(disciplina => { html += `<th class="texto-centro">${Utilidades.escaparHtml(disciplina.nome)}</th>`; });
         html += '<th class="texto-centro">Total</th></tr></thead><tbody>';
@@ -302,7 +297,7 @@ function montarHtmlFrequenciaGeral(participantes, disciplinas, frequencias, paro
             });
         });
 
-        html += '</tbody></table></div>';
+        html += '</tbody></table>' + fecharGrupoParoquiaRelatorio();
     });
 
     return html;
@@ -407,9 +402,10 @@ async function gerarPDFAtividadesAcademico() {
     const paroquiasMap = criarMapaParoquias(paroquias);
     const gruposParoquia = ordenarGruposParoquiaRelatorio(Object.values(agruparParticipantesPorParoquia(participantesRelatorio)), paroquiasMap);
 
-    let html = `<h2>RELATÓRIO GERAL DE ATIVIDADES (ENTREGAS)</h2>`;
-    html += `<p><strong>Curso:</strong> ${Utilidades.escaparHtml(curso.nome || '-')}</p>`;
-    html += `<p><strong>Data de Emissão:</strong> ${Utilidades.formatarData(Utilidades.obterDataAtual())}</p>`;
+    let html = montarCabecalhoRelatorioImpresso('RELATÓRIO GERAL DE ATIVIDADES (ENTREGAS)', [
+        { rotulo: 'Curso', valor: curso.nome || '-' },
+        { rotulo: 'Data de Emissão', valor: Utilidades.formatarData(Utilidades.obterDataAtual()) }
+    ]);
 
     if (disciplinasOrdenadas.length === 0) {
         html += '<p>Nenhuma disciplina cadastrada.</p>';
@@ -420,9 +416,7 @@ async function gerarPDFAtividadesAcademico() {
     const totalColunas = disciplinasOrdenadas.length + 1;
     gruposParoquia.forEach((grupo, indice) => {
         const nomeParoquia = paroquiasMap[grupo.idParoquia] || 'Participantes Sem Vínculo Paroquial';
-        const quebra = indice > 0 ? ' class="quebra-pagina-antes"' : '';
-
-        html += `<div${quebra}><h3>Paróquia: ${Utilidades.escaparHtml(nomeParoquia)}</h3>`;
+        html += abrirGrupoParoquiaRelatorio(nomeParoquia, indice);
         html += '<table><thead><tr><th class="coluna-nome-documento">Nome do Participante</th>';
         disciplinasOrdenadas.forEach(disciplina => { html += `<th class="texto-centro">${Utilidades.escaparHtml(disciplina.nome)}</th>`; });
         html += '</tr></thead><tbody>';
@@ -442,7 +436,7 @@ async function gerarPDFAtividadesAcademico() {
             });
         });
 
-        html += '</tbody></table></div>';
+        html += '</tbody></table>' + fecharGrupoParoquiaRelatorio();
     });
 
     dispararImpressao('Relatório Geral de Atividades', html, { orientacao: 'paisagem' });
@@ -457,15 +451,14 @@ async function gerarPDFStatusParticipantesAcademico() {
     const paroquiasMap = criarMapaParoquias(paroquias);
     const gruposParoquia = ordenarGruposParoquiaRelatorio(Object.values(agruparParticipantesPorParoquia(participantesRelatorio)), paroquiasMap);
 
-    let html = '<h2>RELATÓRIO CONSOLIDADO DO STATUS DOS PARTICIPANTES</h2>';
-    html += `<p><strong>Curso:</strong> ${Utilidades.escaparHtml(curso.nome || '-')}</p>`;
-    html += `<p><strong>Data de Emissão:</strong> ${Utilidades.formatarData(Utilidades.obterDataAtual())}</p>`;
+    let html = montarCabecalhoRelatorioImpresso('RELATÓRIO CONSOLIDADO DO STATUS DOS PARTICIPANTES', [
+        { rotulo: 'Curso', valor: curso.nome || '-' },
+        { rotulo: 'Data de Emissão', valor: Utilidades.formatarData(Utilidades.obterDataAtual()) }
+    ]);
 
     gruposParoquia.forEach((grupo, indice) => {
         const nomeParoquia = paroquiasMap[grupo.idParoquia] || 'Participantes Sem Vínculo Paroquial';
-        const quebra = indice > 0 ? ' class="quebra-pagina-antes"' : '';
-
-        html += `<div${quebra}><h3>Paróquia: ${Utilidades.escaparHtml(nomeParoquia)}</h3>`;
+        html += abrirGrupoParoquiaRelatorio(nomeParoquia, indice);
         html += '<table><thead><tr><th class="coluna-nome-documento">Participante</th><th class="texto-centro">Status</th><th class="texto-centro">Frequência</th><th class="texto-centro">A pagar</th><th class="texto-centro">Atraso</th></tr></thead><tbody>';
 
         agruparParticipantesPorCapelaRelatorio(grupo.participantes).forEach(grupoCapela => {
@@ -486,7 +479,7 @@ async function gerarPDFStatusParticipantesAcademico() {
             });
         });
 
-        html += '</tbody></table></div>';
+        html += '</tbody></table>' + fecharGrupoParoquiaRelatorio();
     });
 
     dispararImpressao('Status dos Participantes', html);

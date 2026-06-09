@@ -135,10 +135,6 @@ function criarAcoesTabela(acoes = []) {
     return `<div class="acoes-tabela">${botoes}</div>`;
 }
 
-function criarCartao(conteudo, classesExtras = '') {
-    return `<div class="cartao-padrao ${classesExtras}">${conteudo}</div>`;
-}
-
 function criarCabecalhoSecao(titulo, botoes = '') {
     return `
         <div class="cabecalho-secao md-flex-coluna md-itens-esquerda">

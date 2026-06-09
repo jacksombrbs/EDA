@@ -1,3 +1,5 @@
+
+
 function renderizarPainelFinanceiro(participantes = [], pagamentos = [], financas = [], cursos = [], disciplinas = [], frequencias = []) {
     const estatisticas = calcularEstatisticasFinanceiras(participantes, pagamentos, financas, cursos, disciplinas, frequencias);
     const tituloCobrancas = 'A receber';
@@ -16,7 +18,7 @@ function renderizarPainelFinanceiro(participantes = [], pagamentos = [], financa
             <div class="cartao-geracao-relatorio">
                 <div class="cabecalho-relatorio">
                     <h3 class="texto-md peso-bold cor-texto-primario m-zero">Cobranças</h3>
-                    ${criarBotao('Gerar Relatório', 'gerarPDFMensalidades()', 'contorno', 'botao-pequeno')}
+                    ${criarBotao('Gerar Relatório', 'gerarPDFMensalidadesFinanceiro()', 'contorno', 'botao-pequeno')}
                 </div>
                 ${criarMetricasRelatorio([
                     { rotulo: 'Participantes', valor: estatisticas.participantes },
@@ -121,19 +123,6 @@ function calcularEstatisticasFinanceiras(participantes = [], pagamentos = [], fi
     };
 }
 
-function calcularInadimplencia(participantes = [], pagamentos = [], cursos = [], disciplinas = [], frequencias = []) {
-    return participantes.filter(participante => {
-        const curso = cursos.find(item => String(item.id) === String(participante.id_curso));
-        const disciplinasCurso = disciplinas.filter(disciplina => String(disciplina.id_curso) === String(curso?.id));
-        const frequenciasCurso = frequencias.filter(frequencia => String(frequencia.id_curso || '') === String(curso?.id));
-        return ajustarResumoObrigacoesPorStatusParticipante(participante, calcularResumoObrigacoes(calcularObrigacoesFinanceirasParticipante(participante, curso, disciplinasCurso, frequenciasCurso, pagamentos))).atrasos > 0;
-    });
-}
-
-function calcularPrevisaoArrecadacao(participantes = [], pagamentos = [], cursos = [], disciplinas = [], frequencias = []) {
-    return calcularEstatisticasFinanceiras(participantes, pagamentos, [], cursos, disciplinas, frequencias).valorAPagar;
-}
-
 function agruparValoresFinanceiros(participantes = [], pagamentos = [], cursos = [], disciplinas = [], frequencias = []) {
     const valores = { 'Recebido': 0, 'Atraso': 0, 'Pendente': 0 };
 
@@ -164,19 +153,18 @@ async function gerarPDFMensalidadesFinanceiro() {
     const obrigacoesCurso = montarObrigacoesModeloCurso(curso, disciplinas, frequencias);
     const totalColunas = obrigacoesCurso.length + 3;
 
-    let html = '<h2>COBRANÇAS</h2>';
-    html += `<p><strong>Curso:</strong> ${Utilidades.escaparHtml(curso.nome || '-')}</p>`;
-    html += `<p><strong>Tipo de Cobrança:</strong> ${Utilidades.escaparHtml(obterTipoCobrancaCurso(curso))}</p>`;
-    html += `<p><strong>Data de Emissão:</strong> ${Utilidades.formatarData(Utilidades.obterDataAtual())}</p>`;
+    let html = montarCabecalhoRelatorioImpresso('COBRANÇAS', [
+        { rotulo: 'Curso', valor: curso.nome || '-' },
+        { rotulo: 'Tipo de Cobrança', valor: obterTipoCobrancaCurso(curso) },
+        { rotulo: 'Data de Emissão', valor: Utilidades.formatarData(Utilidades.obterDataAtual()) }
+    ]);
     if (cursoCobraPorEncontro(curso)) {
         html += '<p><strong>Legenda:</strong> data = pagamento registrado; C = compareceu sem pagamento; F = faltou</p>';
     }
 
     gruposParoquia.forEach((grupo, indiceGrupo) => {
         const nomeParoquia = paroquiasMap[grupo.idParoquia] || 'Participantes Sem Vínculo Paroquial';
-        const quebra = indiceGrupo > 0 ? ' class="quebra-pagina-antes"' : '';
-
-        html += `<div${quebra}><h3>Paróquia: ${Utilidades.escaparHtml(nomeParoquia)}</h3>`;
+        html += abrirGrupoParoquiaRelatorio(nomeParoquia, indiceGrupo);
         html += '<table><thead><tr><th class="coluna-nome-documento">Nome do Participante</th>';
         obrigacoesCurso.forEach(obrigacao => { html += `<th class="texto-centro">${Utilidades.escaparHtml(obrigacao.rotulo)}</th>`; });
         html += '<th class="texto-centro">A pagar</th><th class="texto-centro">Atraso</th></tr></thead><tbody>';
@@ -199,7 +187,7 @@ async function gerarPDFMensalidadesFinanceiro() {
             });
         });
 
-        html += '</tbody></table></div>';
+        html += '</tbody></table>' + fecharGrupoParoquiaRelatorio();
     });
 
     dispararImpressao('Cobranças', html, { orientacao: 'paisagem' });
@@ -257,30 +245,6 @@ function obterClassePagamentoObrigacaoRelatorio(obrigacao) {
     return '';
 }
 
-async function gerarPDFPagamentosFinanceiro() {
-    await gerarPDFMensalidadesFinanceiro();
-}
-
-async function gerarPDFInadimplentesFinanceiro() {
-    const dadosRelatorio = await obterDadosCursoRelatorio();
-    if (!dadosRelatorio) return;
-
-    const { participantesTodosCurso, participantes, pagamentos, cursos, disciplinas, frequencias } = dadosRelatorio;
-    const inadimplentes = calcularInadimplencia(participantesTodosCurso || participantes, pagamentos, cursos, disciplinas, frequencias);
-    const linhas = inadimplentes.map(participante => {
-        const curso = cursos.find(item => String(item.id) === String(participante.id_curso));
-        const disciplinasCurso = disciplinas.filter(disciplina => String(disciplina.id_curso) === String(curso?.id));
-        const frequenciasCurso = frequencias.filter(frequencia => String(frequencia.id_curso || '') === String(curso?.id));
-        const resumo = ajustarResumoObrigacoesPorStatusParticipante(participante, calcularResumoObrigacoes(calcularObrigacoesFinanceirasParticipante(participante, curso, disciplinasCurso, frequenciasCurso, pagamentos)));
-        return `<tr><td>${Utilidades.escaparHtml(participante.nome || '-')}</td><td>${Utilidades.escaparHtml(obterTipoCobrancaCurso(curso))}</td><td>${Utilidades.formatarMoeda(resumo.atrasado)}</td></tr>`;
-    }).join('');
-
-    dispararImpressao('Atrasos', montarHtmlPDF('ATRASOS', `
-        <p><strong>Curso:</strong> ${Utilidades.escaparHtml(dadosRelatorio.curso?.nome || '-')}</p>
-        <table><thead><tr><th>Participante</th><th>Tipo de cobrança</th><th>Atraso</th></tr></thead><tbody>${linhas}</tbody></table>
-    `));
-}
-
 async function gerarPDFLivroCaixaFinanceiro() {
     const dataInicio = document.getElementById('filtro-data-inicio')?.value || '';
     const dataFim = document.getElementById('filtro-data-fim')?.value || '';
@@ -298,9 +262,10 @@ async function gerarPDFLivroCaixaFinanceiro() {
     const totalEntradas = entradas.reduce((total, item) => total + Utilidades.normalizarValorMonetario(item.valor), 0);
     const totalSaidas = saidas.reduce((total, item) => total + Utilidades.normalizarValorMonetario(item.valor), 0);
 
-    let html = '<h2>LIVRO CAIXA</h2>';
-    html += `<p><strong>Data de Emissão:</strong> ${Utilidades.formatarData(Utilidades.obterDataAtual())}</p>`;
-    html += `<p><strong>Período de Referência:</strong> ${Utilidades.formatarData(dataInicio)} - ${Utilidades.formatarData(dataFim)}</p>`;
+    let html = montarCabecalhoRelatorioImpresso('LIVRO CAIXA', [
+        { rotulo: 'Data de Emissão', valor: Utilidades.formatarData(Utilidades.obterDataAtual()) },
+        { rotulo: 'Período de Referência', valor: `${Utilidades.formatarData(dataInicio)} - ${Utilidades.formatarData(dataFim)}` }
+    ]);
     html += '<h3 class="cor-texto-sucesso">ENTRADAS (RECEBIMENTOS)</h3>';
     html += '<table><thead><tr><th>Data</th><th>Descrição</th><th class="alinhado-direita">Valor</th></tr></thead><tbody>';
     html += entradas.length ? entradas.map(item => `<tr><td>${Utilidades.formatarData(item.data)}</td><td>${Utilidades.escaparHtml(item.descricao)}</td><td class="alinhado-direita">${Utilidades.formatarMoeda(item.valor)}</td></tr>`).join('') : '<tr><td colspan="3" class="texto-centro">Nenhum recebimento registrado neste período.</td></tr>';

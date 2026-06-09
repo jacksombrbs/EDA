@@ -29,13 +29,6 @@ function criarControleTodosParticipantesLancamento(idCampo, mostrarTodos = false
     `;
 }
 
-async function obterDisciplinasDoCurso(idCurso) {
-    const disciplinas = await bd.obterTodos('disciplinas');
-    return disciplinas
-        .filter(disciplina => String(disciplina.id_curso) === String(idCurso))
-        .sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
-}
-
 function normalizarCargaHoraria(valor, padrao = 0) {
     const numero = Number(String(valor ?? '').replace(',', '.'));
     return Number.isFinite(numero) && numero > 0 ? numero : padrao;

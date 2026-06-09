@@ -34,3 +34,21 @@ function criarMetricasRelatorio(itens = []) {
         </div>
     `;
 }
+
+function montarCabecalhoRelatorioImpresso(titulo, detalhes = []) {
+    const linhas = detalhes
+        .filter(item => item && item.valor !== undefined && item.valor !== null && item.valor !== '')
+        .map(item => `<p><strong>${Utilidades.escaparHtml(item.rotulo)}:</strong> ${Utilidades.escaparHtml(item.valor)}</p>`)
+        .join('');
+
+    return `<h2>${Utilidades.escaparHtml(titulo)}</h2>${linhas}`;
+}
+
+function abrirGrupoParoquiaRelatorio(nomeParoquia, indice = 0) {
+    const quebra = indice > 0 ? ' class="quebra-pagina-antes"' : '';
+    return `<div${quebra}><h3>Paróquia: ${Utilidades.escaparHtml(nomeParoquia || 'Participantes Sem Vínculo Paroquial')}</h3>`;
+}
+
+function fecharGrupoParoquiaRelatorio() {
+    return '</div>';
+}

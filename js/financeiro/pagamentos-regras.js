@@ -50,18 +50,8 @@ function cursoCobraPorDisciplina(curso = null) {
     return obterTipoCobrancaCurso(curso) === TIPOS_COBRANCA_CURSO.DISCIPLINA;
 }
 
-function cursoEhGratuito(curso = null) {
-    return obterTipoCobrancaCurso(curso) === TIPOS_COBRANCA_CURSO.GRATUITO;
-}
-
 async function obterParticipantePagamento(idParticipante) {
     return idParticipante ? await bd.obter('participantes', idParticipante) : null;
-}
-
-async function obterCursoParticipante(idParticipante) {
-    const participante = await obterParticipantePagamento(idParticipante);
-    if (!participante?.id_curso) return null;
-    return await bd.obter('cursos', participante.id_curso);
 }
 
 function obterValorDisciplina(disciplina = null) {
@@ -135,10 +125,6 @@ function pagamentoPertenceAoParticipante(pagamento, idParticipante, contexto = {
     return String(pagamento.id_participante) === String(idParticipante)
         && (!ignorarPagamentoId || String(pagamento.id) !== ignorarPagamentoId)
         && (!ignorarLoteId || String(pagamento.id_lote || '') !== ignorarLoteId);
-}
-
-function pagamentoQuitaReferencia(pagamento, tipo, referenciaId = '', referenciaIndice = null) {
-    return obterChavePagamentoFinanceiro(pagamento) === obterChaveCobrancaFinanceira(tipo, referenciaId, referenciaIndice);
 }
 
 function obterPagamentoObrigacao(obrigacao, pagamentos = [], contexto = {}) {
@@ -364,38 +350,3 @@ async function validarPagamento(dados, contexto = {}) {
     return { valido: true };
 }
 
-async function validarParticipantesMesmoCurso(idsParticipantes) {
-    const participantes = [];
-
-    for (const idParticipante of idsParticipantes) {
-        const participante = await bd.obter('participantes', idParticipante);
-        if (participante) participantes.push(participante);
-    }
-
-    const cursos = new Set(participantes.map(participante => participante.id_curso).filter(Boolean));
-    if (cursos.size > 1) {
-        return {
-            valido: false,
-            mensagem: 'Não foi possível salvar. Pagamentos em lote precisam ter participantes do mesmo curso.'
-        };
-    }
-
-    return { valido: true, id_curso: participantes[0]?.id_curso || '' };
-}
-
-async function obterValorPagamentoParticipante(idParticipante, tipo, quantidade = 1, valorManual = 0, referencia = {}) {
-    if (tipo === 'Outros') return Utilidades.normalizarValorMonetario(valorManual);
-
-    const abertas = await obterObrigacoesAbertasPagamento(idParticipante, {
-        ignorarPagamentoId: AppEstado.registroEmEdicao,
-        ignorarLoteId: AppEstado.registroEmEdicao
-    });
-
-    const obrigacao = abertas.find(item =>
-        item.tipo === tipo
-        && (!referencia.referencia_id || String(item.referencia_id || '') === String(referencia.referencia_id || ''))
-        && (!referencia.referencia_indice || Number(item.referencia_indice || 0) === Number(referencia.referencia_indice || 0))
-    );
-
-    return obrigacao ? Utilidades.normalizarValorMonetario(obrigacao.valor) : 0;
-}

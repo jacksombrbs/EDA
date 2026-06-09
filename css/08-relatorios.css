@@ -82,7 +82,8 @@
     background-color: color-mix(in srgb, #ef4444 10%, var(--cor-superficie) 90%);
 }
 
-.cartao-metrica span {
+.cartao-metrica span,
+.metrica-relatorio span {
     color: var(--cor-texto-claro);
     font-size: var(--fonte-sm);
 }
@@ -167,10 +168,6 @@
     background-color: var(--cor-superficie-2);
 }
 
-.metrica-relatorio span {
-    color: var(--cor-texto-claro);
-    font-size: var(--fonte-sm);
-}
 
 .metrica-relatorio strong {
     color: var(--cor-texto-escuro);

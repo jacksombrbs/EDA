@@ -287,10 +287,3 @@ function renderizarTabelaFrequencias(frequencias, cursos, disciplinas) {
     return criarContainerTabela(['Data', 'Curso', 'Disciplina', 'Carga Horária', 'Comparecimentos', 'Ações'], linhas);
 }
 
-async function iniciarNovaChamada() {
-    await abrirChamada();
-}
-
-async function salvarDiarioFrequencia() {
-    await salvarFrequencia();
-}

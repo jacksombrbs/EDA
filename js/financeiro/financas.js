@@ -27,7 +27,7 @@ function renderizarCardRelatorioLivroCaixa() {
                 <div>
                     <h3 class="texto-md peso-bold cor-texto-primario m-zero">Livro Caixa</h3>
                 </div>
-                ${criarBotao('Gerar Relatório', 'gerarPDFLivroCaixa()', 'contorno', 'md-w-total')}
+                ${criarBotao('Gerar Relatório', 'gerarPDFLivroCaixaFinanceiro()', 'contorno', 'md-w-total')}
             </div>
             <div class="flex gap-md md-flex-coluna w-total mt-sm">
                 <div class="flex-1">${criarCampoFormulario('Data Início', 'date', 'filtro-data-inicio', primeiroDiaMes)}</div>
