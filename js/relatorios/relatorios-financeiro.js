@@ -160,47 +160,43 @@ async function gerarPDFMensalidadesFinanceiro() {
     const baseParticipantes = participantesTodosCurso || participantes;
     const paroquiasMap = {};
     paroquias.forEach(paroquia => { paroquiasMap[paroquia.id] = paroquia.nome; });
-    const agrupados = agruparParticipantesMensalidades(baseParticipantes);
+    const gruposParoquia = ordenarGruposParoquiaRelatorio(Object.values(agruparParticipantesPorParoquia(baseParticipantes)), paroquiasMap);
     const obrigacoesCurso = montarObrigacoesModeloCurso(curso, disciplinas, frequencias);
+    const totalColunas = obrigacoesCurso.length + 3;
 
     let html = '<h2>COBRANÇAS</h2>';
     html += `<p><strong>Curso:</strong> ${Utilidades.escaparHtml(curso.nome || '-')}</p>`;
     html += `<p><strong>Tipo de Cobrança:</strong> ${Utilidades.escaparHtml(obterTipoCobrancaCurso(curso))}</p>`;
     html += `<p><strong>Data de Emissão:</strong> ${Utilidades.formatarData(Utilidades.obterDataAtual())}</p>`;
     if (cursoCobraPorEncontro(curso)) {
-        html += '<p><strong>Legenda:</strong> data = pagamento registrado; C = compareceu sem pagamento, portanto valor em atraso; F = faltou, sem cobrança.</p>';
+        html += '<p><strong>Legenda:</strong> data = pagamento registrado; C = compareceu sem pagamento; F = faltou</p>';
     }
 
-    Object.values(agrupados).sort((a, b) => {
-        const nomeA = paroquiasMap[a.idParoquia] || 'Sem Vínculo';
-        const nomeB = paroquiasMap[b.idParoquia] || 'Sem Vínculo';
-        const comparacaoParoquia = nomeA.localeCompare(nomeB);
-        if (comparacaoParoquia !== 0) return comparacaoParoquia;
-        return a.capela.localeCompare(b.capela);
-    }).forEach((grupo, indiceGrupo) => {
+    gruposParoquia.forEach((grupo, indiceGrupo) => {
         const nomeParoquia = paroquiasMap[grupo.idParoquia] || 'Participantes Sem Vínculo Paroquial';
         const quebra = indiceGrupo > 0 ? ' class="quebra-pagina-antes"' : '';
 
-        html += `<div${quebra}><h3>Paróquia: ${Utilidades.escaparHtml(nomeParoquia)} / Capela: ${Utilidades.escaparHtml(grupo.capela)}</h3>`;
+        html += `<div${quebra}><h3>Paróquia: ${Utilidades.escaparHtml(nomeParoquia)}</h3>`;
         html += '<table><thead><tr><th class="coluna-nome-documento">Nome do Participante</th>';
         obrigacoesCurso.forEach(obrigacao => { html += `<th class="texto-centro">${Utilidades.escaparHtml(obrigacao.rotulo)}</th>`; });
         html += '<th class="texto-centro">A pagar</th><th class="texto-centro">Atraso</th></tr></thead><tbody>';
 
-        grupo.participantes.sort((a, b) => (a.nome || '').localeCompare(b.nome || '')).forEach(participante => {
-            const obrigacoes = calcularObrigacoesFinanceirasParticipante(participante, curso, disciplinas, frequencias, pagamentos);
-            const desistente = !Utilidades.participanteEstaAtivo(participante);
-            const resumo = ajustarResumoObrigacoesPorStatusParticipante(participante, calcularResumoObrigacoes(obrigacoes));
-            const emAtraso = resumo.atrasos > 0;
-            const aPagar = resumo.obrigacoesAPagar > 0;
-            html += `<tr><td><strong>${Utilidades.escaparHtml(participante.nome || '-')}</strong>${desistente ? ' <span class="cor-texto-erro">(Desistente)</span>' : ''}</td>`;
-            obrigacoesCurso.forEach(modelo => {
-                const chaveModelo = obterChaveCobrancaFinanceira(modelo.tipo, modelo.referencia_id, modelo.referencia_indice);
-                const obrigacao = obrigacoes.find(item => obterChaveObrigacaoFinanceira(item) === chaveModelo);
-                html += `<td class="texto-centro ${obterClassePagamentoObrigacaoRelatorio(obrigacao)}"><strong>${formatarPagamentoObrigacaoRelatorio(obrigacao)}</strong></td>`;
+        agruparParticipantesPorCapelaRelatorio(grupo.participantes).forEach(grupoCapela => {
+            html += montarLinhaCapelaRelatorio(grupoCapela.capela, totalColunas);
+            grupoCapela.participantes.forEach(participante => {
+                const obrigacoes = calcularObrigacoesFinanceirasParticipante(participante, curso, disciplinas, frequencias, pagamentos);
+                const desistente = !Utilidades.participanteEstaAtivo(participante);
+                const resumo = ajustarResumoObrigacoesPorStatusParticipante(participante, calcularResumoObrigacoes(obrigacoes));
+                html += `<tr><td><strong>${Utilidades.escaparHtml(participante.nome || '-')}</strong>${desistente ? ' <span class="cor-texto-erro">(Desistente)</span>' : ''}</td>`;
+                obrigacoesCurso.forEach(modelo => {
+                    const chaveModelo = obterChaveCobrancaFinanceira(modelo.tipo, modelo.referencia_id, modelo.referencia_indice);
+                    const obrigacao = obrigacoes.find(item => obterChaveObrigacaoFinanceira(item) === chaveModelo);
+                    html += `<td class="texto-centro ${obterClassePagamentoObrigacaoRelatorio(obrigacao)}"><strong>${formatarPagamentoObrigacaoRelatorio(obrigacao)}</strong></td>`;
+                });
+                html += `<td class="texto-centro ${resumo.aPagar > 0 ? 'cor-texto-primario' : 'cor-texto-sucesso'}"><strong>${resumo.aPagar > 0 ? Utilidades.formatarMoeda(resumo.aPagar) : '-'}</strong></td>`;
+                html += `<td class="texto-centro ${resumo.atrasado > 0 ? 'cor-texto-erro' : 'cor-texto-sucesso'}"><strong>${resumo.atrasado > 0 ? Utilidades.formatarMoeda(resumo.atrasado) : '-'}</strong></td>`;
+                html += '</tr>';
             });
-            html += `<td class="texto-centro ${resumo.aPagar > 0 ? 'cor-texto-primario' : 'cor-texto-sucesso'}"><strong>${resumo.aPagar > 0 ? Utilidades.formatarMoeda(resumo.aPagar) : '-'}</strong></td>`;
-            html += `<td class="texto-centro ${resumo.atrasado > 0 ? 'cor-texto-erro' : 'cor-texto-sucesso'}"><strong>${resumo.atrasado > 0 ? Utilidades.formatarMoeda(resumo.atrasado) : '-'}</strong></td>`;
-            html += '</tr>';
         });
 
         html += '</tbody></table></div>';
@@ -319,13 +315,3 @@ async function gerarPDFLivroCaixaFinanceiro() {
     dispararImpressao('Livro Caixa', html);
 }
 
-function agruparParticipantesMensalidades(participantes = []) {
-    return participantes.reduce((grupos, participante) => {
-        const idParoquia = participante.id_paroquia || 'sem_paroquia';
-        const capela = participante.capela ? participante.capela.trim() : 'Sem Capela';
-        const chave = `${idParoquia}||${capela}`;
-        if (!grupos[chave]) grupos[chave] = { idParoquia, capela, participantes: [] };
-        grupos[chave].participantes.push(participante);
-        return grupos;
-    }, {});
-}

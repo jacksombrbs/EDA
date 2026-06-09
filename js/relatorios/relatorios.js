@@ -190,3 +190,41 @@ function alternarAbaRelatorio(abaAlvo) {
 function dispararImpressao(titulo, htmlConteudo, opcoes = {}) {
     abrirDocumentoImpressao(titulo, htmlConteudo, opcoes);
 }
+
+
+function agruparParticipantesPorParoquia(participantes = []) {
+    return participantes.reduce((grupos, participante) => {
+        const idParoquia = participante.id_paroquia || 'sem_paroquia';
+        if (!grupos[idParoquia]) grupos[idParoquia] = { idParoquia, participantes: [] };
+        grupos[idParoquia].participantes.push(participante);
+        return grupos;
+    }, {});
+}
+
+function ordenarGruposParoquiaRelatorio(grupos = [], paroquiasMap = {}) {
+    return [...grupos].sort((a, b) => {
+        const nomeA = paroquiasMap[a.idParoquia] || 'Sem Vínculo';
+        const nomeB = paroquiasMap[b.idParoquia] || 'Sem Vínculo';
+        return nomeA.localeCompare(nomeB);
+    });
+}
+
+function agruparParticipantesPorCapelaRelatorio(participantes = []) {
+    const grupos = participantes.reduce((resultado, participante) => {
+        const capela = participante.capela ? participante.capela.trim() : 'Sem Capela';
+        if (!resultado[capela]) resultado[capela] = { capela, participantes: [] };
+        resultado[capela].participantes.push(participante);
+        return resultado;
+    }, {});
+
+    return Object.values(grupos)
+        .sort((a, b) => a.capela.localeCompare(b.capela))
+        .map(grupo => ({
+            ...grupo,
+            participantes: Utilidades.ordenarParticipantesPorNome(grupo.participantes)
+        }));
+}
+
+function montarLinhaCapelaRelatorio(capela = '', colunas = 1) {
+    return `<tr><td colspan="${colunas}" class="peso-bold cor-texto-primario fundo-superficie-2">Capela: ${Utilidades.escaparHtml(capela || 'Sem Capela')}</td></tr>`;
+}
