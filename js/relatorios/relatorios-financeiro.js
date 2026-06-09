@@ -261,12 +261,12 @@ async function gerarPDFLivroCaixaFinanceiro() {
         { rotulo: 'Data de Emissão', valor: Utilidades.formatarData(Utilidades.obterDataAtual()) },
         { rotulo: 'Período de Referência', valor: `${Utilidades.formatarData(dataInicio)} - ${Utilidades.formatarData(dataFim)}` }
     ]);
-    html += '<h3 class="cor-texto-sucesso">ENTRADAS (RECEBIMENTOS)</h3>';
+    html += '<h3 class="cor-texto-sucesso">ENTRADAS</h3>';
     html += '<table><thead><tr><th>Data</th><th>Descrição</th><th class="alinhado-direita">Valor</th></tr></thead><tbody>';
     html += entradas.length ? entradas.map(item => `<tr><td>${Utilidades.formatarData(item.data)}</td><td>${Utilidades.escaparHtml(item.descricao)}</td><td class="alinhado-direita">${Utilidades.formatarMoeda(item.valor)}</td></tr>`).join('') : '<tr><td colspan="3" class="texto-centro">Nenhum recebimento registrado neste período.</td></tr>';
     html += `<tr class="linha-total cor-texto-sucesso"><td colspan="2">Total de Entradas</td><td class="alinhado-direita">${Utilidades.formatarMoeda(totalEntradas)}</td></tr>`;
     html += '</tbody></table>';
-    html += '<h3 class="espaco-topo-grande cor-texto-erro">SAÍDAS (DESPESAS)</h3>';
+    html += '<h3 class="espaco-topo-grande cor-texto-erro">SAÍDAS</h3>';
     html += '<table><thead><tr><th>Data</th><th>Descrição</th><th class="alinhado-direita">Valor</th></tr></thead><tbody>';
     html += saidas.length ? saidas.map(item => `<tr><td>${Utilidades.formatarData(item.data)}</td><td>${Utilidades.escaparHtml(`${item.descricao} [${item.categoria || 'Geral'}]`)}</td><td class="alinhado-direita">${Utilidades.formatarMoeda(item.valor)}</td></tr>`).join('') : '<tr><td colspan="3" class="texto-centro">Nenhuma despesa registrada neste período.</td></tr>';
     html += `<tr class="linha-total cor-texto-erro"><td colspan="2">Total de Saídas</td><td class="alinhado-direita">${Utilidades.formatarMoeda(totalSaidas)}</td></tr>`;

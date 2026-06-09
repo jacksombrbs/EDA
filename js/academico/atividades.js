@@ -142,7 +142,7 @@ function criarLinhaLancamentoAtividade(participante, indice) {
     const entregue = normalizarEstadoAtividade(registro.estado) === ESTADO_ATIVIDADE_ENTREGUE;
     const classeFundo = indice % 2 === 0 ? 'fundo-branco' : 'fundo-superficie-2';
     const texto = entregue ? 'Entregue' : 'Não Ent.';
-    const classes = entregue ? 'fundo-sucesso hover-fundo-sucesso-escuro cor-texto-branco' : 'fundo-erro hover-fundo-erro-escuro cor-texto-branco';
+    const classes = `botao-estado-lancamento ${entregue ? 'estado-sucesso' : 'estado-erro'}`;
 
     return `
         <tr class="${classeFundo} transicao hover-fundo-superficie-3">
@@ -168,10 +168,8 @@ function alternarEstadoAtividadeParticipante(idParticipante) {
     if (!botao) return;
 
     botao.textContent = entregue ? 'Entregue' : 'Não Ent.';
-    botao.classList.toggle('fundo-sucesso', entregue);
-    botao.classList.toggle('hover-fundo-sucesso-escuro', entregue);
-    botao.classList.toggle('fundo-erro', !entregue);
-    botao.classList.toggle('hover-fundo-erro-escuro', !entregue);
+    botao.classList.toggle('estado-sucesso', entregue);
+    botao.classList.toggle('estado-erro', !entregue);
 }
 
 async function salvarLancamentoAtividades() {

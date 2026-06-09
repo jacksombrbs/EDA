@@ -110,9 +110,9 @@ function obterProximoEstadoFrequencia(estado) {
 
 function obterClasseEstadoFrequencia(estado) {
     const estadoNormalizado = normalizarEstadoFrequencia(estado);
-    if (estadoNormalizado === ESTADOS_FREQUENCIA.FALTOU) return 'fundo-erro hover-fundo-erro-escuro cor-texto-branco';
-    if (estadoNormalizado === ESTADOS_FREQUENCIA.PARCIAL) return 'fundo-aviso hover-fundo-aviso-escuro cor-texto-branco';
-    return 'fundo-sucesso hover-fundo-sucesso-escuro cor-texto-branco';
+    if (estadoNormalizado === ESTADOS_FREQUENCIA.FALTOU) return 'botao-estado-lancamento estado-erro';
+    if (estadoNormalizado === ESTADOS_FREQUENCIA.PARCIAL) return 'botao-estado-lancamento estado-aviso';
+    return 'botao-estado-lancamento estado-sucesso';
 }
 
 function montarRegistroFrequencia(idCurso, idDisciplina, data, participantes, presencas, cargaHoraria, id = null) {

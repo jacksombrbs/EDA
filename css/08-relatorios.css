@@ -5,10 +5,10 @@
 }
 
 .cartao-metrica,
-.cartao-geracao-relatorio {
+.cartao-geracao-relatorio,
+.cartao-relatorio-clicavel {
     border: 1px solid var(--cor-borda);
     border-radius: var(--raio-md);
-    background-color: var(--cor-superficie);
     transition: var(--transicao-padrao);
 }
 
@@ -21,13 +21,22 @@
     justify-content: center;
 }
 
+.cartao-metrica-interativo {
+    cursor: pointer;
+}
+
 .cartao-metrica:hover {
     border-color: color-mix(in srgb, var(--cor-marca-700) 36%, var(--cor-borda) 64%);
 }
 
-.cartao-geracao-relatorio h3 {
+.cartao-geracao-relatorio h3,
+.cartao-relatorio-clicavel h3 {
     color: var(--cor-marca-700);
     font-size: var(--fonte-lg);
+}
+
+.cartao-relatorio-clicavel {
+    cursor: pointer;
 }
 
 .area-grafico-relatorio {
@@ -35,7 +44,8 @@
     height: var(--altura-grafico-relatorio);
 }
 
-.cartao-geracao-relatorio {
+.cartao-geracao-relatorio,
+.cartao-relatorio-clicavel {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -44,7 +54,8 @@
     padding: var(--espaco-md);
 }
 
-.cartao-geracao-relatorio .botao-padrao {
+.cartao-geracao-relatorio .botao-padrao,
+.cartao-relatorio-clicavel .botao-padrao {
     align-self: flex-start;
 }
 

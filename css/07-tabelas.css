@@ -83,3 +83,32 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+.botao-estado-lancamento {
+    color: var(--cor-superficie);
+}
+
+.botao-estado-lancamento.estado-sucesso {
+    background-color: var(--cor-sucesso);
+}
+
+.botao-estado-lancamento.estado-sucesso:hover {
+    background-color: var(--cor-sucesso-escuro);
+}
+
+.botao-estado-lancamento.estado-erro {
+    background-color: var(--cor-erro);
+}
+
+.botao-estado-lancamento.estado-erro:hover {
+    background-color: var(--cor-erro-escuro);
+}
+
+.botao-estado-lancamento.estado-aviso {
+    background-color: var(--cor-aviso);
+}
+
+.botao-estado-lancamento.estado-aviso:hover {
+    background-color: color-mix(in srgb, var(--cor-aviso) 85%, var(--cor-texto) 15%);
+}
+

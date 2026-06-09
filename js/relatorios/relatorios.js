@@ -77,7 +77,7 @@ function montarCardCursoRelatorio(curso, contexto = {}) {
     const subtitulo = [curso.ano, obterTipoCobrancaCurso(curso)].filter(Boolean).join(' · ');
 
     return `
-        <div class="cartao-geracao-relatorio cursor-apontador" role="button" tabindex="0" onclick="selecionarCursoRelatorio('${Utilidades.escaparHtml(curso.id)}')" onkeydown="if(event.key==='Enter'){selecionarCursoRelatorio('${Utilidades.escaparHtml(curso.id)}')}">
+        <div class="cartao-relatorio-clicavel" role="button" tabindex="0" onclick="selecionarCursoRelatorio('${Utilidades.escaparHtml(curso.id)}')" onkeydown="if(event.key==='Enter'){selecionarCursoRelatorio('${Utilidades.escaparHtml(curso.id)}')}">
             <div class="flex itens-centro justifica-espaco gap-sm mb-sm">
                 <div>
                     <h3 class="texto-md peso-bold cor-texto-primario m-zero">${Utilidades.escaparHtml(curso.nome || 'Curso sem nome')}</h3>

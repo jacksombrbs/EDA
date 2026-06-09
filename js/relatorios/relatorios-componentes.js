@@ -1,10 +1,10 @@
 function criarCardMetrica(titulo, valor, classe = '', icone = '', acao = '') {
     const iconeHtml = icone ? `<span class="icone-metrica" data-icone="${Utilidades.escaparHtml(icone)}"></span>` : '';
     const atributos = acao ? ` role="button" tabindex="0" onclick="${Utilidades.escaparHtml(acao)}" onkeydown="if(event.key==='Enter'){${Utilidades.escaparHtml(acao)}}"` : '';
-    const classeCursor = acao ? ' cursor-apontador' : '';
+    const classeInterativa = acao ? ' cartao-metrica-interativo' : '';
 
     return `
-        <div class="cartao-metrica ${classe}${classeCursor}"${atributos}>
+        <div class="cartao-metrica ${classe}${classeInterativa}"${atributos}>
             ${iconeHtml}
             <span>${Utilidades.escaparHtml(titulo)}</span>
             <strong>${Utilidades.escaparHtml(valor)}</strong>
