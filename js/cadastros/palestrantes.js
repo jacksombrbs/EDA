@@ -3,7 +3,7 @@ async function renderizarPalestrantes(conteudo) {
     palestrantes.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
 
     let codigo = '<div class="pagina-conteudo">';
-    codigo += criarCabecalhoSecao('Palestrantes Cadastrados', criarBotao('+ Novo Palestrante', 'abrirFormularioPalestrante()'));
+    codigo += criarCabecalhoSecao('Palestrantes Cadastrados', criarBotao('+ Novo Palestrante', 'abrirFormularioPalestrante()', 'primario', '', 'button', ''));
     codigo += Busca.criarCampoBusca('busca-palestrantes', 'Buscar por nome...');
     codigo += palestrantes.length
         ? renderizarTabelaPalestrantes(palestrantes)
@@ -21,7 +21,7 @@ async function abrirFormularioPalestrante(id = null) {
     const palestrante = id ? await bd.obter('palestrantes', id) : {};
     document.getElementById('titulo-janela').textContent = id ? 'Editar Palestrante' : 'Novo Palestrante';
 
-    let formulario = '<form id="formulario-palestrante" class="flex flex-coluna w-total" onsubmit="salvarPalestrante(event)">';
+    let formulario = '<form novalidate id="formulario-palestrante" class="flex flex-coluna w-total" onsubmit="salvarPalestrante(event)">';
     formulario += criarCampoFormulario('Nome do Palestrante', 'text', 'nome', palestrante?.nome || '', 'Ex: João da Silva', true);
     formulario += '<div class="flex gap-md md-flex-coluna">';
     formulario += '<div class="flex-1">' + criarCampoFormulario('Email', 'email', 'email', palestrante?.email || '', 'Ex: joao@email.com') + '</div>';

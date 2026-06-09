@@ -35,6 +35,7 @@ function criarMetricasRelatorio(itens = []) {
     `;
 }
 
+
 function montarCabecalhoRelatorioImpresso(titulo, detalhes = []) {
     const linhas = detalhes
         .filter(item => item && item.valor !== undefined && item.valor !== null && item.valor !== '')

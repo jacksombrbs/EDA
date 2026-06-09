@@ -14,7 +14,7 @@ async function renderizarDados(conteudo) {
                 <p class="texto-sm cor-texto-escuro m-zero">Use este arquivo para guardar uma cópia de segurança.</p>
             </div>
             <div class="rodape-painel-dados flex gap-sm md-flex-coluna">
-                ${criarBotao('Exportar Backup', 'exportarBackupCompleto()', 'primario', 'md-w-total')}
+                ${criarBotao('Exportar Backup', 'exportarBackupCompleto()', 'primario', 'md-w-total', 'button', '')}
             </div>
         </section>
 
@@ -36,16 +36,16 @@ async function renderizarDados(conteudo) {
                     </summary>
                     <div class="corpo-detalhes-dados">
                         <div class="barra-acoes-dados mb-sm">
-                            ${criarBotao('Selecionar Todos', "alternarTabelasRestauracao(true)", 'contorno', 'botao-pequeno')}
-                            ${criarBotao('Limpar', "alternarTabelasRestauracao(false)", 'contorno', 'botao-pequeno')}
+                            ${criarBotao('Selecionar Todos', "alternarTabelasRestauracao(true)", 'contorno', 'botao-pequeno', 'button', '')}
+                            ${criarBotao('Limpar', "alternarTabelasRestauracao(false)", 'contorno', 'botao-pequeno', 'button', '')}
                         </div>
                         <div id="lista-restauracao-backup"></div>
                     </div>
                 </details>
             </div>
             <div class="rodape-painel-dados flex gap-sm md-flex-coluna">
-                ${criarBotao('Restaurar Backup', 'importarBackupCompleto()', 'primario', 'md-w-total')}
-                ${criarBotao('Limpar Dados', 'limparBanco()', 'perigo', 'md-w-total')}
+                ${criarBotao('Restaurar Backup', 'importarBackupCompleto()', 'primario', 'md-w-total', 'button', '')}
+                ${criarBotao('Limpar Dados', 'limparBanco()', 'perigo', 'md-w-total', 'button', '')}
             </div>
         </section>
     `;
@@ -68,7 +68,9 @@ async function exportarBackupCompleto() {
     const dados = await bd.exportarDados();
     const json = JSON.stringify(dados, null, 2);
     baixarArquivoDados(json, `backup_comissao_biblico_catequetica_${Utilidades.obterDataAtual()}.json`, 'application/json');
+    Utilidades.salvarDataUltimoBackup();
     Utilidades.notificacao('Backup exportado com sucesso!');
+    if (AppEstado.abaAtual === 'dados') await renderizarAbaAtual();
 }
 
 function selecionarArquivoBackupCompleto(input) {

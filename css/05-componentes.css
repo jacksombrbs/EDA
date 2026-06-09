@@ -307,3 +307,60 @@
     height: 16px;
     flex-basis: 16px;
 }
+
+/* Tooltip reutilizável */
+.tooltip-app {
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 99999;
+    max-width: min(260px, calc(100vw - 24px));
+    padding: var(--espaco-xs) var(--espaco-sm);
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio-xxs);
+    color: var(--cor-texto);
+    background-color: var(--cor-vidro);
+    box-shadow: var(--sombra-md);
+    backdrop-filter: blur(18px);
+    font-size: var(--fonte-sm);
+    font-weight: var(--peso-regular);
+    line-height: 1.35;
+    text-align: left;
+    white-space: normal;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transform: translate(-50%, -100%);
+    transition: opacity 0.16s ease, visibility 0.16s ease;
+}
+
+.tooltip-app.visivel {
+    opacity: 1;
+    visibility: visible;
+}
+
+.tooltip-app::after {
+    content: '';
+    position: absolute;
+    left: var(--tooltip-seta-x, 50%);
+    bottom: -6px;
+    width: 10px;
+    height: 10px;
+    border-right: 1px solid var(--cor-borda);
+    border-bottom: 1px solid var(--cor-borda);
+    background-color: var(--cor-vidro);
+    transform: translateX(-50%) rotate(45deg);
+}
+
+.tooltip-app.tooltip-abaixo {
+    transform: translate(-50%, 0);
+}
+
+.tooltip-app.tooltip-abaixo::after {
+    top: -6px;
+    bottom: auto;
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 1px solid var(--cor-borda);
+    border-top: 1px solid var(--cor-borda);
+}

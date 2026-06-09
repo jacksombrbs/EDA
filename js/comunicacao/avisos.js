@@ -5,7 +5,7 @@ async function renderizarAvisos(conteudo) {
     ]);
 
     let codigo = '<div class="pagina-conteudo">';
-    codigo += criarCabecalhoSecao('Mural de Avisos', criarBotao('+ Novo Aviso', 'abrirFormularioAviso()'));
+    codigo += criarCabecalhoSecao('Mural de Avisos', criarBotao('+ Novo Aviso', 'abrirFormularioAviso()', 'primario', '', 'button', ''));
     codigo += Busca.criarCampoBusca('busca-avisos', 'Buscar por título ou participante...');
     codigo += avisos.length
         ? renderizarTabelaAvisos(avisos, participantes)
@@ -31,7 +31,7 @@ async function abrirFormularioAviso(id = null) {
     const dados = aviso || { data: Utilidades.obterDataAtual(), id_participante: null };
     const opcoesParticipantes = [{ id: '', nome: 'Aviso geral' }, ...participantes.map(participante => ({ id: participante.id, nome: participante.nome }))];
 
-    let formulario = '<form id="formulario-aviso" class="flex flex-coluna gap-md" onsubmit="salvarAviso(event)">';
+    let formulario = '<form novalidate id="formulario-aviso" class="flex flex-coluna gap-md" onsubmit="salvarAviso(event)">';
     formulario += '<div class="w-total">' + criarSeletor('Destinatário', 'id_participante', opcoesParticipantes, dados.id_participante || '') + '</div>';
     formulario += '<div class="flex flex-linha md-flex-coluna gap-md w-total">';
     formulario += '<div class="flex-1">' + criarCampoFormulario('Título do Aviso', 'text', 'titulo', dados.titulo || '', 'Digite o título...', true) + '</div>';

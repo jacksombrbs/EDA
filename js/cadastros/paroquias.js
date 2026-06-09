@@ -3,8 +3,8 @@ async function renderizarParoquias(conteudo) {
     paroquias.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
 
     const botoesCabecalho = '<div class="flex gap-sm md-flex-coluna md-w-total">'
-        + criarBotao('Importar Dados', 'abrirModalImportacaoParoquias()', 'secundario', 'md-w-total')
-        + criarBotao('+ Nova Paróquia', 'abrirFormularioParoquia()', 'primario', 'md-w-total')
+        + criarBotao('Importar Dados', 'abrirModalImportacaoParoquias()', 'secundario', 'md-w-total', 'button', '')
+        + criarBotao('+ Nova Paróquia', 'abrirFormularioParoquia()', 'primario', 'md-w-total', 'button', '')
         + '</div>';
 
     let codigo = '<div class="pagina-conteudo">';
@@ -28,7 +28,7 @@ async function abrirFormularioParoquia(id = null) {
 
     document.getElementById('titulo-janela').textContent = id ? 'Editar Paróquia' : 'Nova Paróquia';
 
-    let formulario = '<form id="formulario-paroquia" class="flex flex-coluna gap-md w-total" onsubmit="salvarParoquia(event)">';
+    let formulario = '<form novalidate id="formulario-paroquia" class="flex flex-coluna gap-md w-total" onsubmit="salvarParoquia(event)">';
     formulario += '<div class="flex gap-md md-flex-coluna">';
     formulario += '<div class="flex-1 w-total">' + criarCampoFormulario('Nome da Paróquia', 'text', 'nome', paroquia?.nome || '', 'Ex: Paróquia São José', true) + '</div>';
     formulario += '<div class="flex-1 w-total">' + criarCampoFormulario('Setor', 'text', 'setor', paroquia?.setor || '', 'Ex: Setor Portão') + '</div>';
@@ -41,7 +41,7 @@ async function abrirFormularioParoquia(id = null) {
     formulario += '<h3 class="texto-md peso-bold cor-texto-primario mb-sm">Capelas / Comunidades</h3>';
     formulario += '<div class="flex gap-sm mb-md md-flex-coluna">';
     formulario += '<input type="text" id="nova_capela" class="campo-padrao" placeholder="Nome da nova capela">';
-    formulario += criarBotao('Adicionar', 'adicionarCapelaNaInterface()');
+    formulario += criarBotao('Adicionar', 'adicionarCapelaNaInterface()', 'primario', '', 'button', '');
     formulario += '</div>';
     formulario += '<div id="lista-capelas" class="flex flex-coluna gap-xs lista-rolagem-media">';
     formulario += paroquia.capelas.length
@@ -147,7 +147,7 @@ function criarItemCapela(nomeCapela, indice) {
     return `
         <div class="flex justifica-espaco itens-centro p-sm fundo-branco borda-1 borda-solida borda-cor-padrao raio-xxs item-capela" data-index="${indice}">
             <span class="texto-md cor-texto-escuro peso-medium">${Utilidades.escaparHtml(nomeCapela)}</span>
-            ${criarBotao('Remover', `removerCapelaDaInterface(${indice})`, 'perigo', 'botao-pequeno')}
+            ${criarBotao('Remover', `removerCapelaDaInterface(${indice})`, 'perigo', 'botao-pequeno', 'button', '')}
         </div>
     `;
 }

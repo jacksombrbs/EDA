@@ -182,7 +182,7 @@ async function abrirModalCartoesParticipantes() {
 
     document.getElementById('titulo-janela').textContent = 'Imprimir Cartões de Acesso';
 
-    let html = '<form class="flex flex-coluna gap-md w-total" onsubmit="event.preventDefault();">';
+    let html = '<form novalidate class="flex flex-coluna gap-md w-total" onsubmit="event.preventDefault();">';
     html += criarSeletor('Curso', 'id_curso_cartoes', cursos.map(curso => ({ id: curso.id, nome: curso.nome })), '', true);
     html += '<label class="flex itens-centro gap-sm cursor-apontador cartao-suave">';
     html += '<input type="checkbox" id="somente_ativos_cartoes" class="checkbox-padrao" checked>';

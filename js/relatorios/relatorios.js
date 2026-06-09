@@ -3,7 +3,7 @@ async function renderizarRelatorios(conteudo) {
     const { cursos, curso, participantes, participantesTodosCurso, disciplinas, frequencias, atividades, pagamentos, financas } = contexto;
     const titulo = curso ? `Painéis e Relatórios - ${curso.nome || 'Curso sem nome'}` : 'Painel de Cursos';
     const botoesCabecalho = curso
-        ? criarBotao('Painel de Cursos', 'limparCursoRelatorio()', 'secundario')
+        ? criarBotao('Painel de Cursos', 'limparCursoRelatorio()', 'secundario', '', 'button', '')
         : '';
 
     let codigo = '<div class="pagina-conteudo pagina-relatorios">';
@@ -23,23 +23,23 @@ async function renderizarRelatorios(conteudo) {
         return;
     }
 
-    codigo += '<div class="flex gap-sm mb-lg md-flex-coluna pb-sm">';
-    codigo += criarBotao('Módulo Acadêmico', "alternarAbaRelatorio('academico')", 'primario', 'botao-aba-relatorio', 'button', 'id="aba-rel-academico"');
-    codigo += criarBotao('Módulo Financeiro', "alternarAbaRelatorio('financeiro')", 'secundario', 'botao-aba-relatorio', 'button', 'id="aba-rel-financeiro"');
-    codigo += criarBotao('Ficha Individual', "alternarAbaRelatorio('ficha')", 'secundario', 'botao-aba-relatorio', 'button', 'id="aba-rel-ficha"');
-    codigo += '</div>';
+    codigo += renderizarFluxoRelatoriosCurso(contexto);
+    codigo += renderizarNavegacaoModulosRelatorio();
 
-    codigo += '<div id="sub-aba-academico" class="sub-aba-relatorio">';
-    codigo += renderizarPainelAcademico(participantes, frequencias, atividades, disciplinas, curso);
-    codigo += '</div>';
+    codigo += '<section id="sub-aba-academico" class="sub-aba-relatorio mt-lg">';
+    codigo += '<h3 class="texto-md peso-bold cor-texto-primario mb-md mt-zero">Resumo acadêmico</h3>';
+    codigo += renderizarPainelAcademico(participantes, frequencias, atividades, disciplinas, curso, { somenteConsulta: true });
+    codigo += '</section>';
 
-    codigo += '<div id="sub-aba-financeiro" class="sub-aba-relatorio oculto">';
-    codigo += renderizarPainelFinanceiro(participantesTodosCurso || participantes, pagamentos, financas, cursos, disciplinas, frequencias);
-    codigo += '</div>';
+    codigo += '<section id="sub-aba-financeiro" class="sub-aba-relatorio mt-lg oculto">';
+    codigo += '<h3 class="texto-md peso-bold cor-texto-primario mb-md mt-zero">Resumo financeiro</h3>';
+    codigo += renderizarPainelFinanceiro(participantesTodosCurso || participantes, pagamentos, financas, cursos, disciplinas, frequencias, { somenteConsulta: true });
+    codigo += '</section>';
 
-    codigo += '<div id="sub-aba-ficha" class="sub-aba-relatorio oculto">';
+    codigo += '<section id="sub-aba-ficha" class="sub-aba-relatorio mt-lg oculto">';
+    codigo += '<h3 class="texto-md peso-bold cor-texto-primario mb-md mt-zero">Ficha individual</h3>';
     codigo += await renderizarSecaoFichaParticipante(contexto);
-    codigo += '</div>';
+    codigo += '</section>';
 
     codigo += '</div>';
     conteudo.innerHTML = codigo;
@@ -54,6 +54,16 @@ function renderizarPainelCursosRelatorio(contexto = {}) {
     html += '</div></div>';
 
     return html;
+}
+
+function renderizarNavegacaoModulosRelatorio() {
+    return `
+        <div class="abas-relatorio flex flex-linha gap-sm flex-quebra mb-lg">
+            ${criarBotao('Acadêmico', "alternarAbaRelatorio('academico')", 'primario', 'botao-aba-relatorio', 'button', 'id="aba-rel-academico"')}
+            ${criarBotao('Financeiro', "alternarAbaRelatorio('financeiro')", 'secundario', 'botao-aba-relatorio', 'button', 'id="aba-rel-financeiro"')}
+            ${criarBotao('Ficha individual', "alternarAbaRelatorio('ficha')", 'secundario', 'botao-aba-relatorio', 'button', 'id="aba-rel-ficha"')}
+        </div>
+    `;
 }
 
 function montarCardCursoRelatorio(curso, contexto = {}) {
@@ -85,6 +95,85 @@ function montarCardCursoRelatorio(curso, contexto = {}) {
             ])}
         </div>
     `;
+}
+
+function renderizarFluxoRelatoriosCurso(contexto = {}) {
+    const curso = contexto.curso;
+    if (!curso) return '';
+
+    const opcoesRelatorio = [
+        { id: 'frequencia', nome: 'Frequência' },
+        { id: 'atividades', nome: 'Atividades' },
+        { id: 'status', nome: 'Status dos participantes' },
+        { id: 'cobrancas', nome: 'Cobranças' }
+    ];
+
+    setTimeout(inicializarFluxoRelatoriosCurso, 0);
+
+    return `
+        <section class="fluxo-relatorio-curso mb-lg">
+            <div class="flex flex-linha md-flex-coluna gap-md itens-fim">
+                <div class="flex-1 w-total">${criarSeletor('Relatório', 'tipo-relatorio-curso', opcoesRelatorio, 'frequencia', false)}</div>
+                <div class="flex-1 w-total" id="filtros-relatorio-curso"></div>
+                <div class="flex-1 w-total flex mb-md">
+                    ${criarBotao('Gerar Relatório', 'gerarRelatorioSelecionadoCurso()', 'secundario', 'w-total', 'button', '')}
+                </div>
+            </div>
+        </section>
+    `;
+}
+
+function inicializarFluxoRelatoriosCurso() {
+    const tipo = document.getElementById('tipo-relatorio-curso');
+    if (!tipo) return;
+    tipo.addEventListener('change', atualizarFluxoRelatorioCurso);
+    atualizarFluxoRelatorioCurso();
+}
+
+async function atualizarFluxoRelatorioCurso() {
+    const contexto = await carregarContextoRelatorios();
+    if (!contexto.curso) return;
+
+    const tipo = document.getElementById('tipo-relatorio-curso')?.value || 'frequencia';
+    const filtros = document.getElementById('filtros-relatorio-curso');
+    if (!filtros) return;
+
+    filtros.innerHTML = montarFiltrosFluxoRelatorio(contexto, tipo);
+
+    document.getElementById('filtro-tipo-frequencia')?.addEventListener('change', atualizarFluxoRelatorioCurso);
+    document.getElementById('filtro-organizacao-frequencia')?.addEventListener('change', atualizarFluxoRelatorioCurso);
+    document.getElementById('filtro-disciplina-freq')?.addEventListener('change', atualizarFluxoRelatorioCurso);
+}
+
+function montarFiltrosFluxoRelatorio(contexto = {}, tipo = '') {
+    if (tipo !== 'frequencia') return '';
+
+    const tipoFrequencia = document.getElementById('filtro-tipo-frequencia')?.value || 'geral';
+    const disciplinas = (contexto.disciplinas || []).map(disciplina => ({ id: disciplina.id, nome: disciplina.nome }));
+    const filtroComplementar = tipoFrequencia === 'geral'
+        ? criarSeletor('Organização', 'filtro-organizacao-frequencia', [{ id: 'paroquia', nome: 'Por paróquia' }, { id: 'alfabetica', nome: 'Ordem alfabética' }], document.getElementById('filtro-organizacao-frequencia')?.value || 'paroquia', false)
+        : criarSeletor('Disciplina', 'filtro-disciplina-freq', disciplinas, document.getElementById('filtro-disciplina-freq')?.value || '', false);
+
+    return `
+        <div class="flex flex-linha md-flex-coluna gap-md itens-fim w-total">
+            <div class="flex-1 w-total">${criarSeletor('Tipo', 'filtro-tipo-frequencia', [{ id: 'geral', nome: 'Geral' }, { id: 'disciplina', nome: 'Por disciplina' }], tipoFrequencia, false)}</div>
+            <div class="flex-1 w-total">${filtroComplementar}</div>
+        </div>
+    `;
+}
+
+function gerarRelatorioSelecionadoCurso() {
+    const tipo = document.getElementById('tipo-relatorio-curso')?.value || 'frequencia';
+    const acoes = {
+        frequencia: gerarPDFFrequenciaAcademico,
+        atividades: gerarPDFAtividadesAcademico,
+        status: gerarPDFStatusParticipantesAcademico,
+        cobrancas: gerarPDFMensalidadesFinanceiro
+    };
+
+    const acao = acoes[tipo];
+    if (!acao) return Utilidades.notificacao('Selecione um tipo de relatório válido.', 'erro');
+    return acao();
 }
 
 async function limparCursoRelatorio() {
@@ -190,7 +279,6 @@ function alternarAbaRelatorio(abaAlvo) {
 function dispararImpressao(titulo, htmlConteudo, opcoes = {}) {
     abrirDocumentoImpressao(titulo, htmlConteudo, opcoes);
 }
-
 
 function agruparParticipantesPorParoquia(participantes = []) {
     return participantes.reduce((grupos, participante) => {

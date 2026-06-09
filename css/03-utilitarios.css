@@ -69,8 +69,6 @@
 .cor-texto-primario { color: var(--cor-marca-700); }
 .cor-texto-sucesso { color: #064e3b; }
 .cor-texto-erro { color: #991b1b; }
-.cor-texto-aviso { color: #92400e; }
-
 /* 8. FUNDOS E CORES ========= */
 .fundo-branco { background-color: var(--cor-superficie); }
 .fundo-cinza { background-color: var(--cor-fundo-alt); }
@@ -81,8 +79,6 @@
 .fundo-sobreposicao { background: color-mix(in srgb, var(--cor-texto) 50%, transparent); }
 .fundo-toast-sucesso { background: color-mix(in srgb, var(--cor-sucesso) 20%, var(--cor-superficie) 80%); }
 .fundo-toast-erro { background: color-mix(in srgb, var(--cor-erro) 20%, var(--cor-superficie) 80%); }
-.fundo-toast-aviso { background: color-mix(in srgb, var(--cor-aviso) 20%, var(--cor-superficie) 80%); }
-
 /* 9. BORDAS ========= */
 .borda-1 { border-width: 1px; }
 .borda-solida { border-style: solid; }
@@ -93,7 +89,6 @@
 .raio-sm { border-radius: var(--raio-sm); }
 
 /* 10. EFEITOS E INTERAÇÕES ========= */
-.sombra-2 { box-shadow: var(--sombra-2); }
 .cursor-apontador { cursor: pointer; }
 .transicao { transition: var(--transicao-padrao); }
 .sem-selecao { user-select: none; }

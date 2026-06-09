@@ -14,7 +14,7 @@ const Busca = {
         return `
             <div class="campo-busca-wrapper flex mb-md pos-relativa">
                 <input type="text" id="${id}" class="campo-padrao campo-busca" placeholder="${textoExemplo}" autocomplete="off">
-                <button type="button" id="${idBotaoLimpar}" class="botao-limpar-busca oculto" aria-label="Limpar busca" title="Limpar busca" onclick="Busca.limparCampo('${id}')">
+                <button type="button" id="${idBotaoLimpar}" class="botao-limpar-busca oculto" aria-label="Limpar busca" onclick="Busca.limparCampo('${id}')">
                     ${criarIcone('cancelar')}
                 </button>
             </div>
@@ -129,7 +129,9 @@ function criarAcoesTabela(acoes = []) {
     const botoes = acoes.map(acao => {
         const variante = acao.variante || (acao.perigo ? 'perigo' : 'contorno');
         const classesExtras = `botao-pequeno ${acao.classesExtras || ''}`.trim();
-        return criarBotao(acao.rotulo, acao.acao, variante, classesExtras);
+        const dica = acao.tooltip || '';
+        const atributosExtras = acao.atributosExtras || (dica ? `data-tooltip="${Utilidades.escaparHtml(dica)}"` : '');
+        return criarBotao(acao.rotulo, acao.acao, variante, classesExtras, 'button', atributosExtras);
     }).join('');
 
     return `<div class="acoes-tabela">${botoes}</div>`;
@@ -181,6 +183,102 @@ function criarCampoSomenteLeitura(rotulo, id, valor = '', dados = {}) {
         </div>
     `;
 }
+
+
+const TooltipApp = {
+    elemento: null,
+    alvoAtual: null,
+    temporizador: null,
+    atraso: 600,
+
+    iniciar() {
+        if (this.elemento) return;
+
+        this.elemento = document.createElement('div');
+        this.elemento.className = 'tooltip-app';
+        this.elemento.setAttribute('role', 'tooltip');
+        document.body.appendChild(this.elemento);
+
+        document.addEventListener('mouseover', evento => {
+            const alvo = evento.target.closest('[data-tooltip]');
+            if (!alvo || !alvo.dataset.tooltip) return;
+            this.agendar(alvo);
+        });
+
+        document.addEventListener('mouseout', evento => {
+            const alvo = evento.target.closest('[data-tooltip]');
+            if (!alvo) return;
+            const destino = evento.relatedTarget;
+            if (destino && alvo.contains(destino)) return;
+            this.esconder();
+        });
+
+        document.addEventListener('focusin', evento => {
+            const alvo = evento.target.closest('[data-tooltip]');
+            if (!alvo || !alvo.dataset.tooltip) return;
+            this.agendar(alvo);
+        });
+
+        document.addEventListener('focusout', evento => {
+            if (evento.target.closest('[data-tooltip]')) this.esconder();
+        });
+
+        window.addEventListener('scroll', () => this.esconder(), true);
+        window.addEventListener('resize', () => this.esconder());
+    },
+
+    agendar(alvo) {
+        this.esconder(false);
+        this.alvoAtual = alvo;
+        this.temporizador = window.setTimeout(() => this.mostrar(alvo), this.atraso);
+    },
+
+    mostrar(alvo) {
+        if (!this.elemento || !alvo?.isConnected || !alvo.dataset.tooltip) return;
+
+        this.elemento.textContent = alvo.dataset.tooltip;
+        this.elemento.classList.remove('tooltip-abaixo', 'visivel');
+        this.elemento.style.left = '0px';
+        this.elemento.style.top = '0px';
+        this.elemento.style.setProperty('--tooltip-seta-x', '50%');
+
+        requestAnimationFrame(() => {
+            const margem = 12;
+            const espaco = 10;
+            const retanguloAlvo = alvo.getBoundingClientRect();
+            const retanguloTooltip = this.elemento.getBoundingClientRect();
+
+            let esquerda = retanguloAlvo.left + (retanguloAlvo.width / 2);
+            esquerda = Math.max(margem + (retanguloTooltip.width / 2), esquerda);
+            esquerda = Math.min(window.innerWidth - margem - (retanguloTooltip.width / 2), esquerda);
+
+            let topo = retanguloAlvo.top - espaco;
+            let abaixo = false;
+            if (topo - retanguloTooltip.height < margem) {
+                abaixo = true;
+                topo = retanguloAlvo.bottom + espaco;
+            }
+
+            const setaX = retanguloAlvo.left + (retanguloAlvo.width / 2) - (esquerda - (retanguloTooltip.width / 2));
+            this.elemento.style.left = `${esquerda}px`;
+            this.elemento.style.top = `${topo}px`;
+            this.elemento.style.setProperty('--tooltip-seta-x', `${Math.max(12, Math.min(retanguloTooltip.width - 12, setaX))}px`);
+            this.elemento.classList.toggle('tooltip-abaixo', abaixo);
+            this.elemento.classList.add('visivel');
+        });
+    },
+
+    esconder(limparAlvo = true) {
+        if (this.temporizador) {
+            window.clearTimeout(this.temporizador);
+            this.temporizador = null;
+        }
+        if (this.elemento) this.elemento.classList.remove('visivel');
+        if (limparAlvo) this.alvoAtual = null;
+    }
+};
+
+document.addEventListener('DOMContentLoaded', () => TooltipApp.iniciar());
 
 function criarEstilosDocumento() {
     return `
@@ -310,7 +408,7 @@ function gerarReciboPadrao(tituloJanela, opcoes) {
 }
 
 function criarSeletor(rotulo, id, opcoes, selecionado = '', obrigatorio = false) {
-    const obrigatorioHtml = obrigatorio ? 'required aria-required="true"' : '';
+    const obrigatorioHtml = obrigatorio ? 'aria-required="true"' : '';
     const listaOpcoes = Array.isArray(opcoes) ? opcoes : [];
     const codificarArgumento = valor => JSON.stringify(String(valor ?? '')).replace(/"/g, '&quot;');
     const argumentoId = codificarArgumento(id);
@@ -426,7 +524,7 @@ document.addEventListener('click', () => {
 });
 
 function criarCampoFormulario(rotulo, tipo, id, valor = '', textoExemplo = '', obrigatorio = false) {
-    const obrigatorioHtml = obrigatorio ? 'required aria-required="true"' : '';
+    const obrigatorioHtml = obrigatorio ? 'aria-required="true"' : '';
 
     return `
         <div class="flex flex-coluna mb-md">
@@ -437,7 +535,7 @@ function criarCampoFormulario(rotulo, tipo, id, valor = '', textoExemplo = '', o
 }
 
 function criarAreaTexto(rotulo, id, valor = '', linhas = 3, obrigatorio = false) {
-    const obrigatorioHtml = obrigatorio ? 'required aria-required="true"' : '';
+    const obrigatorioHtml = obrigatorio ? 'aria-required="true"' : '';
 
     return `
         <div class="flex flex-coluna mb-md coluna-total">

@@ -3,7 +3,6 @@ const Utilidades = {
         return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
     },
 
-
     obterDataAtual() {
         const agora = new Date();
         const ano = agora.getFullYear();
@@ -48,11 +47,12 @@ const Utilidades = {
 
     notificacao(mensagem, tipo = 'sucesso') {
         const aviso = document.createElement('div');
-        aviso.className = `aviso-flutuante pos-fixa direita-30 base-30 p-md raio-sm sombra-2 texto-lg peso-bold z-maximo fundo-toast-${tipo} cor-texto-${tipo} animacao-deslize`;
+        aviso.className = `aviso-flutuante pos-fixa direita-30 base-30 p-md raio-sm texto-lg peso-bold z-maximo fundo-toast-${tipo} cor-texto-${tipo} animacao-deslize`;
         aviso.textContent = mensagem;
         document.body.appendChild(aviso);
 
-        setTimeout(() => aviso.remove(), 5000);
+        const duracao = Math.min(12000, Math.max(5000, 2600 + String(mensagem || '').length * 45));
+        setTimeout(() => aviso.remove(), duracao);
     },
 
     copiarParaClipboard(texto) {
@@ -94,6 +94,58 @@ const Utilidades = {
             : '';
 
         return `<span class="nome-lancamento"><span>${nome}</span>${status}</span>`;
+    },
+
+    salvarDataUltimoBackup() {
+        try {
+            localStorage.setItem(CHAVE_ULTIMO_BACKUP, new Date().toISOString());
+        } catch (erro) {
+            console.warn('Não foi possível registrar a data do backup.', erro);
+        }
+    },
+
+    obterDataUltimoBackup() {
+        try {
+            const valor = localStorage.getItem(CHAVE_ULTIMO_BACKUP);
+            return valor ? new Date(valor) : null;
+        } catch (erro) {
+            return null;
+        }
+    },
+
+    calcularDiasDesde(data) {
+        if (!(data instanceof Date) || Number.isNaN(data.getTime())) return null;
+        const agora = new Date();
+        const diferenca = agora.getTime() - data.getTime();
+        return Math.max(0, Math.floor(diferenca / 86400000));
+    },
+
+    formatarDataHora(data) {
+        if (!(data instanceof Date) || Number.isNaN(data.getTime())) return '';
+        return data.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+    },
+
+    obterResumoUltimoBackup() {
+        const data = this.obterDataUltimoBackup();
+        if (!data) {
+            return {
+                existe: false,
+                dias: null,
+                classe: 'erro',
+                titulo: 'Backup ainda não registrado',
+                texto: 'Exporte um backup após concluir lançamentos importantes.'
+            };
+        }
+
+        const dias = this.calcularDiasDesde(data);
+        const atrasado = dias === null || dias >= DIAS_ALERTA_BACKUP;
+        return {
+            existe: true,
+            dias,
+            classe: atrasado ? 'aviso' : 'sucesso',
+            titulo: atrasado ? 'Backup recomendado' : 'Backup em dia',
+            texto: `Último backup: ${this.formatarDataHora(data)}${dias === 0 ? ' (hoje)' : ` (${dias} dia(s))`}.`
+        };
     },
 
     escaparHtml(valor) {

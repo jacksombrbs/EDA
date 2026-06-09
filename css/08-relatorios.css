@@ -58,10 +58,6 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.grade-3-colunas {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
 .grade-4-colunas {
     grid-template-columns: repeat(4, minmax(0, 1fr));
 }
@@ -93,14 +89,6 @@
     font-size: var(--fonte-xl);
 }
 
-.painel-relatorio {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
-    gap: var(--espaco-md);
-    align-items: stretch;
-    margin-bottom: var(--espaco-lg);
-}
-
 .grade-graficos {
     display: grid;
     gap: var(--espaco-md);
@@ -129,19 +117,6 @@
     gap: var(--espaco-md);
 }
 
-.coluna-relatorios-painel {
-    min-height: var(--altura-grafico-relatorio);
-}
-
-.painel-relatorio > .area-grafico-relatorio {
-    display: flex;
-    min-height: var(--altura-grafico-relatorio);
-}
-
-.painel-relatorio > .area-grafico-relatorio .grade-graficos {
-    flex: 1;
-}
-
 .cabecalho-relatorio {
     display: flex;
     align-items: center;
@@ -168,7 +143,6 @@
     background-color: var(--cor-superficie-2);
 }
 
-
 .metrica-relatorio strong {
     color: var(--cor-texto-escuro);
     font-size: var(--fonte-lg);
@@ -184,4 +158,35 @@
 
 .ficha-participante-pdf:last-child {
     page-break-after: auto;
+}
+
+.fluxo-relatorio-curso {
+    padding: 0;
+    background: transparent;
+}
+
+.grade-graficos {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    align-items: stretch;
+}
+
+.painel-financeiro-grafico-metricas {
+    display: grid;
+    grid-template-columns: minmax(360px, 1.25fr) minmax(280px, 0.75fr);
+    gap: var(--espaco-md);
+    align-items: stretch;
+}
+
+.metricas-ao-lado-grafico .grade-metricas-painel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-bottom: 0;
+    height: 100%;
+}
+
+.metricas-ao-lado-grafico .cartao-metrica {
+    min-height: 0;
+}
+
+.abas-relatorio {
+    margin-top: var(--espaco-sm);
 }

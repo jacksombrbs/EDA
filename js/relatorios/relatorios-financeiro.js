@@ -1,40 +1,35 @@
 
-
-function renderizarPainelFinanceiro(participantes = [], pagamentos = [], financas = [], cursos = [], disciplinas = [], frequencias = []) {
+function renderizarPainelFinanceiro(participantes = [], pagamentos = [], financas = [], cursos = [], disciplinas = [], frequencias = [], opcoes = {}) {
     const estatisticas = calcularEstatisticasFinanceiras(participantes, pagamentos, financas, cursos, disciplinas, frequencias);
-    const tituloCobrancas = 'A receber';
-
-    let painel = criarGradeMetricas([
-        { titulo: 'Taxa de Atraso', valor: `${estatisticas.taxaInadimplencia}%`, classe: estatisticas.taxaInadimplencia > 20 ? 'erro' : (estatisticas.taxaInadimplencia > 10 ? 'aviso' : 'sucesso'), icone: 'pagamentos', acao: "filtrarTabelaFinanceira('atraso')" },
+    const htmlMetricasFinanceiras = criarGradeMetricas([
+        { titulo: 'Entradas', valor: Utilidades.formatarMoeda(estatisticas.totalEntradas), classe: 'sucesso', icone: 'financas' },
+        { titulo: 'Saídas', valor: Utilidades.formatarMoeda(estatisticas.totalSaidas), classe: 'erro', icone: 'financas' },
         { titulo: 'Saldo', valor: Utilidades.formatarMoeda(estatisticas.saldo), classe: estatisticas.saldo >= 0 ? 'sucesso' : 'erro', icone: 'financas' },
-        { titulo: tituloCobrancas, valor: Utilidades.formatarMoeda(estatisticas.valorAPagar), classe: 'primario', icone: 'pagamentos', acao: "filtrarTabelaFinanceira('pendente')" }
-    ], 3);
+        { titulo: 'A receber', valor: Utilidades.formatarMoeda(estatisticas.valorAPagar), classe: 'primario', icone: 'pagamentos', acao: "filtrarTabelaFinanceira('pendente')" }
+    ], 2);
+    const htmlGraficoFinanceiro = criarGradeGraficos([
+        montarGraficoPagamentos(participantes, pagamentos, cursos, disciplinas, frequencias)
+    ]);
 
-    const htmlGraficoPagamentos = criarGradeGraficos([montarGraficoPagamentos(participantes, pagamentos, cursos, disciplinas, frequencias)]);
-    const htmlGraficoCaixa = criarGradeGraficos([montarGraficoEntradasSaidas(estatisticas)]);
+    let painel = `
+        <div class="painel-financeiro-grafico-metricas mb-lg">
+            <div class="area-grafico-relatorio">${htmlGraficoFinanceiro}</div>
+            <div class="metricas-ao-lado-grafico">${htmlMetricasFinanceiras}</div>
+        </div>
+    `;
 
-    const htmlRelatorios = `
-        <div class="lista-relatorios-painel">
-            <div class="cartao-geracao-relatorio">
-                <div class="cabecalho-relatorio">
-                    <h3 class="texto-md peso-bold cor-texto-primario m-zero">Cobranças</h3>
-                    ${criarBotao('Gerar Relatório', 'gerarPDFMensalidadesFinanceiro()', 'contorno', 'botao-pequeno')}
+    if (!opcoes.somenteConsulta) {
+        painel += `
+            <div class="lista-relatorios-painel mb-lg">
+                <div class="cartao-geracao-relatorio">
+                    <div class="cabecalho-relatorio">
+                        <h3 class="texto-md peso-bold cor-texto-primario m-zero">Cobranças</h3>
+                        ${criarBotao('Gerar Relatório', 'gerarPDFMensalidadesFinanceiro()', 'secundario', 'botao-pequeno', 'button', '')}
+                    </div>
                 </div>
-                ${criarMetricasRelatorio([
-                    { rotulo: 'Participantes', valor: estatisticas.participantes },
-                    { rotulo: 'Em atraso', valor: estatisticas.inadimplentes },
-                    { rotulo: 'A receber', valor: Utilidades.formatarMoeda(estatisticas.valorAPagar) }
-                ])}
             </div>
-        </div>
-    `;
-
-    painel += `
-        <div class="painel-relatorio">
-            <div class="area-grafico-relatorio">${htmlGraficoPagamentos}${htmlGraficoCaixa}</div>
-            <div class="coluna-relatorios-painel">${htmlRelatorios}</div>
-        </div>
-    `;
+        `;
+    }
 
     painel += '<div class="flex flex-coluna gap-sm mb-md w-total">';
     painel += '<h3 class="texto-md peso-bold cor-texto-primario m-zero">Resumo Financeiro por Participante</h3>';
@@ -72,7 +67,7 @@ function montarLinhaResumoFinanceiro(participante, pagamentos, cursos, disciplin
     const disciplinasCurso = disciplinas.filter(disciplina => String(disciplina.id_curso) === String(curso?.id));
     const frequenciasCurso = frequencias.filter(frequencia => String(frequencia.id_curso || '') === String(curso?.id));
     const obrigacoes = calcularObrigacoesFinanceirasParticipante(participante, curso, disciplinasCurso, frequenciasCurso, pagamentos);
-    const resumo = ajustarResumoObrigacoesPorStatusParticipante(participante, calcularResumoObrigacoes(obrigacoes));
+    const resumo = ajustarResumoObrigacoesPorStatusParticipante(participante, calcularResumoObrigacoes(obrigacoes), curso);
     const emAtraso = resumo.atrasos > 0;
     const aPagar = resumo.obrigacoesAPagar > 0;
     const desistente = !Utilidades.participanteEstaAtivo(participante);
@@ -96,7 +91,7 @@ function calcularEstatisticasFinanceiras(participantes = [], pagamentos = [], fi
         const disciplinasCurso = disciplinas.filter(disciplina => String(disciplina.id_curso) === String(curso?.id));
         const frequenciasCurso = frequencias.filter(frequencia => String(frequencia.id_curso || '') === String(curso?.id));
         const obrigacoes = calcularObrigacoesFinanceirasParticipante(participante, curso, disciplinasCurso, frequenciasCurso, pagamentos);
-        return ajustarResumoObrigacoesPorStatusParticipante(participante, calcularResumoObrigacoes(obrigacoes));
+        return ajustarResumoObrigacoesPorStatusParticipante(participante, calcularResumoObrigacoes(obrigacoes), curso);
     });
 
     const totalEntradas = pagamentos.reduce((total, pagamento) => total + Utilidades.normalizarValorMonetario(pagamento.valor), 0)
@@ -131,7 +126,7 @@ function agruparValoresFinanceiros(participantes = [], pagamentos = [], cursos =
         const disciplinasCurso = disciplinas.filter(disciplina => String(disciplina.id_curso) === String(curso?.id));
         const frequenciasCurso = frequencias.filter(frequencia => String(frequencia.id_curso || '') === String(curso?.id));
         const obrigacoes = calcularObrigacoesFinanceirasParticipante(participante, curso, disciplinasCurso, frequenciasCurso, pagamentos);
-        const resumo = ajustarResumoObrigacoesPorStatusParticipante(participante, calcularResumoObrigacoes(obrigacoes));
+        const resumo = ajustarResumoObrigacoesPorStatusParticipante(participante, calcularResumoObrigacoes(obrigacoes), curso);
 
         valores.Recebido += resumo.pago;
         valores.Atraso += resumo.atrasado;
@@ -174,7 +169,7 @@ async function gerarPDFMensalidadesFinanceiro() {
             grupoCapela.participantes.forEach(participante => {
                 const obrigacoes = calcularObrigacoesFinanceirasParticipante(participante, curso, disciplinas, frequencias, pagamentos);
                 const desistente = !Utilidades.participanteEstaAtivo(participante);
-                const resumo = ajustarResumoObrigacoesPorStatusParticipante(participante, calcularResumoObrigacoes(obrigacoes));
+                const resumo = ajustarResumoObrigacoesPorStatusParticipante(participante, calcularResumoObrigacoes(obrigacoes), curso);
                 html += `<tr><td><strong>${Utilidades.escaparHtml(participante.nome || '-')}</strong>${desistente ? ' <span class="cor-texto-erro">(Desistente)</span>' : ''}</td>`;
                 obrigacoesCurso.forEach(modelo => {
                     const chaveModelo = obterChaveCobrancaFinanceira(modelo.tipo, modelo.referencia_id, modelo.referencia_indice);

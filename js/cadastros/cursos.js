@@ -3,7 +3,7 @@ async function renderizarCursos(conteudo) {
     cursos.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
 
     let codigo = '<div class="pagina-conteudo">';
-    codigo += criarCabecalhoSecao('Cursos Cadastrados', criarBotao('+ Novo Curso', 'abrirFormularioCurso()'));
+    codigo += criarCabecalhoSecao('Cursos Cadastrados', criarBotao('+ Novo Curso', 'abrirFormularioCurso()', 'primario', '', 'button', ''));
     codigo += Busca.criarCampoBusca('busca-cursos', 'Buscar por nome...');
     codigo += cursos.length
         ? renderizarTabelaCursos(cursos)
@@ -20,34 +20,63 @@ async function abrirFormularioCurso(id = null) {
 
     const curso = id
         ? await bd.obter('cursos', id)
-        : { ano: new Date().getFullYear(), tipo_cobranca: TIPOS_COBRANCA_CURSO.MENSAL, quantidade_mensalidades: 12, percentual_minimo_frequencia: PERCENTUAL_MINIMO_FREQUENCIA_PADRAO };
+        : {
+            ano: new Date().getFullYear(),
+            tipo_cobranca: TIPOS_COBRANCA_CURSO.MENSAL,
+            quantidade_mensalidades: 12,
+            percentual_minimo_frequencia: PERCENTUAL_MINIMO_FREQUENCIA_PADRAO,
+            desistencia_automatica: true,
+            cobrar_faltas: false,
+            cobrar_desistentes: true,
+            permitir_pagamento_antecipado: true
+        };
+
+    const selecionarBooleano = valor => valor ? 'sim' : 'nao';
 
     document.getElementById('titulo-janela').textContent = id ? 'Editar Curso' : 'Novo Curso';
 
-    let formulario = '<form id="formulario-curso" class="flex flex-coluna w-total" onsubmit="salvarCurso(event)">';
+    let formulario = '<form novalidate id="formulario-curso" class="formulario-compacto" onsubmit="salvarCurso(event)">';
+
+    formulario += '<section class="grupo-formulario-compacto">';
+    formulario += '<h3 class="titulo-grupo-formulario">Identificação</h3>';
     formulario += criarCampoFormulario('Nome do Curso', 'text', 'nome', curso?.nome || '', 'Ex: Teologia Básica', true);
-
-    formulario += '<div class="flex gap-md md-flex-coluna mb-md">';
-    formulario += '<div class="flex-1">' + criarCampoFormulario('Ano', 'number', 'ano', curso?.ano || '', 'Ex: 2026', true) + '</div>';
-    formulario += '<div class="flex-1">' + criarCampoFormulario('Carga Horária Total', 'number', 'carga_horaria_total', curso?.carga_horaria_total || '', 'Ex: 120', true) + '</div>';
+    formulario += '<div class="grade-formulario-duas-colunas">';
+    formulario += criarCampoFormulario('Ano', 'number', 'ano', curso?.ano || '', 'Ex: 2026', true);
+    formulario += criarCampoFormulario('Valor da Inscrição (R$)', 'number', 'valor_inscricao', curso?.valor_inscricao || '', 'Ex: 50.00');
     formulario += '</div>';
+    formulario += '</section>';
 
-    formulario += '<div class="flex gap-md md-flex-coluna mb-md">';
-    formulario += '<div class="flex-1">' + criarCampoFormulario('Frequência Mínima (%)', 'number', 'percentual_minimo_frequencia', curso?.percentual_minimo_frequencia || PERCENTUAL_MINIMO_FREQUENCIA_PADRAO, 'Ex: 75', true) + '</div>';
-    formulario += '<div class="flex-1">' + criarCampoFormulario('Valor da Inscrição (R$)', 'number', 'valor_inscricao', curso?.valor_inscricao || '', 'Ex: 50.00') + '</div>';
+    formulario += '<section class="grupo-formulario-compacto">';
+    formulario += '<h3 class="titulo-grupo-formulario">Frequência</h3>';
+    formulario += '<div class="grade-formulario-curso">';
+    formulario += criarCampoFormulario('Carga Horária Total', 'number', 'carga_horaria_total', curso?.carga_horaria_total || '', 'Ex: 120', true);
+    formulario += criarCampoFormulario('Frequência Mínima (%)', 'number', 'percentual_minimo_frequencia', curso?.percentual_minimo_frequencia || PERCENTUAL_MINIMO_FREQUENCIA_PADRAO, 'Ex: 75', true);
+    formulario += criarToggleSimNaoCurso('Desistência automática', 'desistencia_automatica', selecionarBooleano(curso?.desistencia_automatica !== false), 'Marca desistência conforme a regra de frequência mínima do curso.');
     formulario += '</div>';
+    formulario += '</section>';
 
-    formulario += '<div class="mb-md">' + criarSeletor('Tipo de Cobrança', 'tipo_cobranca', Object.values(TIPOS_COBRANCA_CURSO), curso?.tipo_cobranca || TIPOS_COBRANCA_CURSO.MENSAL, true) + '</div>';
-
-    formulario += '<div id="campos-cobranca-mensal" class="flex gap-md md-flex-coluna mb-md">';
-    formulario += '<div class="flex-1">' + criarCampoFormulario('Valor da Mensalidade (R$)', 'number', 'valor_mensalidade', curso?.valor_mensalidade || '', 'Ex: 100.00') + '</div>';
-    formulario += '<div class="flex-1">' + criarCampoFormulario('Quantidade de Mensalidades', 'number', 'quantidade_mensalidades', curso?.quantidade_mensalidades || '', 'Ex: 12') + '</div>';
+    formulario += '<section class="grupo-formulario-compacto">';
+    formulario += '<h3 class="titulo-grupo-formulario">Cobrança</h3>';
+    formulario += '<div class="grade-formulario-curso grade-cobranca-curso">';
+    formulario += criarSeletor('Tipo de Cobrança', 'tipo_cobranca', Object.values(TIPOS_COBRANCA_CURSO), curso?.tipo_cobranca || TIPOS_COBRANCA_CURSO.MENSAL, true);
+    formulario += '<div id="campos-cobranca-mensal" class="campos-cobranca-curso">';
+    formulario += criarCampoFormulario('Valor da Mensalidade (R$)', 'number', 'valor_mensalidade', curso?.valor_mensalidade || '', 'Ex: 100.00');
+    formulario += criarCampoFormulario('Quantidade de Mensalidades', 'number', 'quantidade_mensalidades', curso?.quantidade_mensalidades || '', 'Ex: 12');
     formulario += '</div>';
-
-    formulario += '<div id="campos-cobranca-encontro" class="mb-md">';
+    formulario += '<div id="campos-cobranca-encontro" class="campos-cobranca-curso">';
     formulario += criarCampoFormulario('Valor por Encontro (R$)', 'number', 'valor_encontro', curso?.valor_encontro || '', 'Ex: 25.00');
-    formulario += '<p class="texto-sm cor-texto-claro m-zero mt-xs">Os encontros disponíveis para pagamento são definidos pela quantidade de encontros cadastrada em cada disciplina.</p>';
     formulario += '</div>';
+    formulario += '</div>';
+    formulario += '</section>';
+
+    formulario += '<section class="grupo-formulario-compacto">';
+    formulario += '<h3 class="titulo-grupo-formulario">Financeiro</h3>';
+    formulario += '<div class="grade-formulario-curso">';
+    formulario += criarToggleSimNaoCurso('Cobrar faltas', 'cobrar_faltas', selecionarBooleano(curso?.cobrar_faltas === true), 'Quando ligado, faltas podem gerar cobrança conforme o tipo de cobrança do curso.');
+    formulario += criarToggleSimNaoCurso('Cobrar desistentes', 'cobrar_desistentes', selecionarBooleano(curso?.cobrar_desistentes !== false), 'Quando ligado, participantes desistentes continuam entrando nas cobranças abertas.');
+    formulario += criarToggleSimNaoCurso('Pagamento antecipado', 'permitir_pagamento_antecipado', selecionarBooleano(curso?.permitir_pagamento_antecipado !== false), 'Permite cobrar encontros previstos antes do lançamento da frequência.');
+    formulario += '</div>';
+    formulario += '</section>';
 
     formulario += criarRodapeFormulario('', id ? 'Atualizar Curso' : 'Salvar Curso', { tipoSalvar: 'submit' });
     formulario += '</form>';
@@ -60,9 +89,41 @@ async function abrirFormularioCurso(id = null) {
     document.getElementById('valor_mensalidade')?.setAttribute('step', '0.01');
     document.getElementById('valor_encontro')?.setAttribute('step', '0.01');
     document.getElementById('tipo_cobranca')?.addEventListener('change', atualizarCamposCobrancaCurso);
+    vincularTogglesCurso();
     atualizarCamposCobrancaCurso();
 
     Interface.abrirJanela('janela-formulario');
+}
+
+function criarToggleSimNaoCurso(rotulo, id, valor = 'nao', ajuda = '') {
+    const ativo = valor === 'sim';
+    const textoAjuda = ajuda ? ` data-tooltip="${Utilidades.escaparHtml(ajuda)}"` : '';
+    return `
+        <div class="grupo-campo grupo-chave-curso">
+            <input type="hidden" id="${id}" value="${ativo ? 'sim' : 'nao'}">
+            <label for="${id}" class="rotulo-chave-curso">${Utilidades.escaparHtml(rotulo)}</label>
+            <button type="button" class="chave-toggle ${ativo ? 'ativo' : ''}" data-alvo="${id}" aria-pressed="${ativo ? 'true' : 'false'}"${textoAjuda}>
+                <span class="trilho-chave"><span class="bolinha-chave"></span></span>
+                <span class="texto-chave">${ativo ? 'Sim' : 'Não'}</span>
+            </button>
+        </div>
+    `;
+}
+
+function vincularTogglesCurso() {
+    document.querySelectorAll('.chave-toggle').forEach(botao => {
+        const alvo = document.getElementById(botao.dataset.alvo || '');
+        if (!alvo) return;
+
+        botao.addEventListener('click', () => {
+            const ativo = alvo.value !== 'sim';
+            alvo.value = ativo ? 'sim' : 'nao';
+            botao.classList.toggle('ativo', ativo);
+            botao.setAttribute('aria-pressed', ativo ? 'true' : 'false');
+            const texto = botao.querySelector('.texto-chave');
+            if (texto) texto.textContent = ativo ? 'Sim' : 'Não';
+        });
+    });
 }
 
 async function editarCurso(id) {
@@ -92,16 +153,22 @@ async function excluirCurso(id) {
 }
 
 function obterDadosFormularioCurso() {
+    const lerBooleano = id => document.getElementById(id)?.value === 'sim';
+
     return {
         nome: document.getElementById('nome')?.value.trim() || '',
         ano: Number(document.getElementById('ano')?.value || new Date().getFullYear()),
         carga_horaria_total: normalizarCargaHoraria(document.getElementById('carga_horaria_total')?.value || 0),
         percentual_minimo_frequencia: Number(document.getElementById('percentual_minimo_frequencia')?.value || 0),
+        desistencia_automatica: lerBooleano('desistencia_automatica'),
         tipo_cobranca: document.getElementById('tipo_cobranca')?.value || TIPOS_COBRANCA_CURSO.MENSAL,
         valor_inscricao: document.getElementById('valor_inscricao')?.value || '0',
         valor_mensalidade: document.getElementById('valor_mensalidade')?.value || '0',
         quantidade_mensalidades: Number(document.getElementById('quantidade_mensalidades')?.value || 0),
-        valor_encontro: document.getElementById('valor_encontro')?.value || '0'
+        valor_encontro: document.getElementById('valor_encontro')?.value || '0',
+        cobrar_faltas: lerBooleano('cobrar_faltas'),
+        cobrar_desistentes: lerBooleano('cobrar_desistentes'),
+        permitir_pagamento_antecipado: lerBooleano('permitir_pagamento_antecipado')
     };
 }
 
@@ -157,7 +224,11 @@ function validarCurso(dados) {
             valor_inscricao: inscricao.valor,
             valor_mensalidade: mensalidade.valor,
             valor_encontro: encontro.valor,
-            quantidade_mensalidades: dados.tipo_cobranca === TIPOS_COBRANCA_CURSO.MENSAL ? dados.quantidade_mensalidades : 0
+            quantidade_mensalidades: dados.tipo_cobranca === TIPOS_COBRANCA_CURSO.MENSAL ? dados.quantidade_mensalidades : 0,
+            desistencia_automatica: dados.desistencia_automatica,
+            cobrar_faltas: dados.cobrar_faltas,
+            cobrar_desistentes: dados.cobrar_desistentes,
+            permitir_pagamento_antecipado: dados.permitir_pagamento_antecipado
         }
     };
 }
@@ -173,7 +244,11 @@ function montarCurso(dados, id = null) {
         valor_inscricao: dados.valor_inscricao,
         valor_mensalidade: dados.valor_mensalidade,
         quantidade_mensalidades: dados.quantidade_mensalidades,
-        valor_encontro: dados.valor_encontro
+        valor_encontro: dados.valor_encontro,
+        desistencia_automatica: dados.desistencia_automatica !== false,
+        cobrar_faltas: dados.cobrar_faltas === true,
+        cobrar_desistentes: dados.cobrar_desistentes !== false,
+        permitir_pagamento_antecipado: dados.permitir_pagamento_antecipado !== false
     };
 }
 

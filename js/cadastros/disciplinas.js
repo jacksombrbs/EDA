@@ -7,7 +7,7 @@ async function renderizarDisciplinas(conteudo) {
     cursos.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
 
     let codigo = '<div class="pagina-conteudo">';
-    codigo += criarCabecalhoSecao('Disciplinas Cadastradas', criarBotao('+ Nova Disciplina', 'abrirFormularioDisciplina()'));
+    codigo += criarCabecalhoSecao('Disciplinas Cadastradas', criarBotao('+ Nova Disciplina', 'abrirFormularioDisciplina()', 'primario', '', 'button', ''));
     codigo += Busca.criarCampoBusca('busca-disciplinas', 'Buscar por curso, disciplina ou palestrante...');
     codigo += disciplinas.length
         ? renderizarDisciplinasPorCurso(disciplinas, cursos, palestrantes)
@@ -36,7 +36,7 @@ async function abrirFormularioDisciplina(id = null) {
 
     document.getElementById('titulo-janela').textContent = id ? 'Editar Disciplina' : 'Nova Disciplina';
 
-    let formulario = '<form id="formulario-disciplina" class="flex flex-coluna gap-md w-total" onsubmit="salvarDisciplina(event)">';
+    let formulario = '<form novalidate id="formulario-disciplina" class="flex flex-coluna gap-md w-total" onsubmit="salvarDisciplina(event)">';
     formulario += '<div class="flex gap-md md-flex-coluna">';
     formulario += '<div class="flex-1 w-total">' + criarCampoFormulario('Nome da Disciplina', 'text', 'nome', disciplina?.nome || '', 'Ex: História da Igreja', true) + '</div>';
     formulario += '<div class="flex-1 w-total">' + criarSeletor('Curso', 'id_curso', opcoesCursos, disciplina?.id_curso || '', true) + '</div>';
@@ -259,10 +259,10 @@ function atualizarCamposCobrancaDisciplina(disciplina = null) {
     if (cursoSelecionadoCobraPorDisciplina()) {
         const valorAtual = document.getElementById('valor_disciplina')?.value || disciplina?.valor_disciplina || '';
         recipiente.innerHTML = `
-            ${criarCampoFormulario('Valor da Disciplina (R$)', 'number', 'valor_disciplina', valorAtual, 'Ex: 80.00', false)}
+            <div data-tooltip="Use 0 quando a disciplina for gratuita ou já estiver coberta pela inscrição.">${criarCampoFormulario('Valor da Disciplina (R$)', 'number', 'valor_disciplina', valorAtual, 'Ex: 80.00', false)}</div>
             <input type="hidden" id="quantidade_encontros" value="1">
             <input type="hidden" id="encontros_gratuitos" value="0">
-            <p class="texto-sm cor-texto-claro m-zero mt-xs">Deixe 0 para disciplina gratuita, como encontros cobertos pela inscrição.</p>
+            
         `;
         document.getElementById('valor_disciplina')?.setAttribute('step', '0.01');
         return;
@@ -274,10 +274,10 @@ function atualizarCamposCobrancaDisciplina(disciplina = null) {
         recipiente.innerHTML = `
             <input type="hidden" id="valor_disciplina" value="0">
             <div class="flex gap-md md-flex-coluna">
-                <div class="flex-1 w-total">${criarCampoFormulario('Quant. de Encontros', 'number', 'quantidade_encontros', quantidadeAtual, 'Ex: 3', true)}</div>
-                <div class="flex-1 w-total">${criarCampoFormulario('Encontros Gratuitos', 'number', 'encontros_gratuitos', gratuitosAtual, 'Ex: 1')}</div>
+                <div class="flex-1 w-total" data-tooltip="Quantidade total de encontros/aulas desta disciplina.">${criarCampoFormulario('Quant. de Encontros', 'number', 'quantidade_encontros', quantidadeAtual, 'Ex: 3', true)}</div>
+                <div class="flex-1 w-total" data-tooltip="Encontros cobertos pela inscrição. Eles não geram cobrança no pagamento.">${criarCampoFormulario('Encontros Gratuitos', 'number', 'encontros_gratuitos', gratuitosAtual, 'Ex: 1')}</div>
             </div>
-            <p class="texto-sm cor-texto-claro m-zero mt-xs">Use encontros gratuitos para itens cobertos pela inscrição. Eles não geram cobrança no pagamento.</p>
+            
         `;
         document.getElementById('quantidade_encontros')?.setAttribute('step', '1');
         document.getElementById('encontros_gratuitos')?.setAttribute('step', '1');
@@ -292,12 +292,12 @@ function formatarEncontrosDisciplina(disciplina = null) {
     const total = Math.max(Number(disciplina?.quantidade_encontros || 1), 1);
     const gratuitos = Math.min(Math.max(Number(disciplina?.encontros_gratuitos || 0), 0), total);
     if (gratuitos <= 0) return `${total} encontro(s)`;
-    return `${total} encontro(s), ${gratuitos} gratuito(s)`;
+    return `${total} encontro(s), <span data-tooltip="Estes encontros não geram cobrança no pagamento.">${gratuitos} gratuito(s)</span>`;
 }
 
 function formatarValorDisciplina(disciplina = null) {
     const valor = Utilidades.normalizarValorMonetario(disciplina?.valor_disciplina || 0);
-    return valor > 0 ? Utilidades.formatarMoeda(valor) : '<span class="cor-texto-claro">Gratuita</span>';
+    return valor > 0 ? Utilidades.formatarMoeda(valor) : '<span class="cor-texto-claro" data-tooltip="Valor zerado ou coberto por outra cobrança do curso.">Gratuita</span>';
 }
 
 function filtrarPalestrantesModal() {

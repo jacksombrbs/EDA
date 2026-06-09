@@ -3,7 +3,7 @@ async function renderizarFinancas(conteudo) {
     const resumo = calcularResumoLivroCaixa(transacoes);
 
     let codigo = '<div class="pagina-conteudo">';
-    codigo += criarCabecalhoSecao('Livro Caixa', criarBotao('+ Nova Transação', 'abrirFormularioFinanca()'));
+    codigo += criarCabecalhoSecao('Livro Caixa', criarBotao('+ Nova Transação', 'abrirFormularioFinanca()', 'primario', '', 'button', ''));
     codigo += renderizarResumoLivroCaixa(resumo);
     codigo += renderizarCardRelatorioLivroCaixa();
     codigo += Busca.criarCampoBusca('busca-livro-caixa', 'Filtrar extrato...');
@@ -27,7 +27,7 @@ function renderizarCardRelatorioLivroCaixa() {
                 <div>
                     <h3 class="texto-md peso-bold cor-texto-primario m-zero">Livro Caixa</h3>
                 </div>
-                ${criarBotao('Gerar Relatório', 'gerarPDFLivroCaixaFinanceiro()', 'contorno', 'md-w-total')}
+                ${criarBotao('Gerar Relatório', 'gerarPDFLivroCaixaFinanceiro()', 'secundario', 'md-w-total', 'button', '')}
             </div>
             <div class="flex gap-md md-flex-coluna w-total mt-sm">
                 <div class="flex-1">${criarCampoFormulario('Data Início', 'date', 'filtro-data-inicio', primeiroDiaMes)}</div>
@@ -80,7 +80,7 @@ async function abrirFormularioFinanca(id = null) {
         : categoriasTipo[0].id;
     const valorSelecionadoPalestrante = montarValorPalestranteDisciplina(dados.id_palestrante, dados.id_disciplina);
 
-    let formulario = '<form id="formulario-financa" class="flex flex-coluna gap-md w-total" onsubmit="salvarFinanca(event)">';
+    let formulario = '<form novalidate id="formulario-financa" class="flex flex-coluna gap-md w-total" onsubmit="salvarFinanca(event)">';
     formulario += `<input type="hidden" id="id_financa" value="${dados.id || ''}">`;
     formulario += '<div class="flex gap-md w-total md-flex-coluna">';
     formulario += '<div class="flex-1">' + criarSeletor('Tipo', 'tipo_financa', ['Saída', 'Entrada'], tipoSelecionado, true) + '</div>';

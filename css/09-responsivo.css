@@ -93,17 +93,31 @@
         grid-template-columns: 1fr;
     }
 
-    .painel-relatorio,
     .grade-metricas-painel {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
 @media (max-width: 640px) {
-    .painel-relatorio,
     .grade-metricas-painel {
         grid-template-columns: 1fr;
         flex-direction: column;
         align-items: stretch;
+    }
+}
+
+
+@media (max-width: 900px) {
+    .grade-formulario-curso,
+    .grade-formulario-duas-colunas,
+    .painel-financeiro-grafico-metricas {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 860px) {
+    .grade-formulario-curso,
+    .grade-formulario-duas-colunas {
+        grid-template-columns: 1fr;
     }
 }

@@ -8,8 +8,8 @@ async function renderizarPagamentos(conteudo) {
     ]);
 
     const botoesCabecalho = '<div class="flex gap-sm md-flex-coluna">'
-        + criarBotao('Pagamento em Lote', 'abrirFormularioPagamentoLote()', 'secundario')
-        + criarBotao('Novo Pagamento Individual', 'abrirFormularioPagamento()')
+        + criarBotao('Pagamento em Lote', 'abrirFormularioPagamentoLote()', 'secundario', '', 'button', '')
+        + criarBotao('Novo Pagamento Individual', 'abrirFormularioPagamento()', 'primario', '', 'button', '')
         + '</div>';
 
     let codigo = '<div class="pagina-conteudo">';

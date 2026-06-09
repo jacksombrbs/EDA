@@ -16,8 +16,8 @@ async function renderizarFrequencia(conteudo) {
     codigo += '<input type="hidden" id="freq-data" value="' + dataAula + '">';
     codigo += '<div class="flex-1">' + criarCampoSomenteLeitura('Data da Aula', 'freq-data-visual', Utilidades.formatarData(dataAula)) + '</div>';
     codigo += '<div class="flex-1 w-total flex gap-sm md-flex-coluna mb-md">';
-    codigo += criarBotao('Iniciar Chamada', 'abrirChamada()', 'primario', 'w-total');
-    codigo += criarBotao('Imprimir Lista Física', 'gerarListaFisicaFrequencia()', 'secundario', 'w-total');
+    codigo += criarBotao('Iniciar Chamada', 'abrirChamada()', 'primario', 'w-total', 'button', '');
+    codigo += criarBotao('Imprimir Lista Física', 'gerarListaFisicaFrequencia()', 'secundario', 'w-total', 'button', '');
     codigo += '</div></div>';
     codigo += '<div class="pt-md"><h3 class="texto-md peso-bold cor-texto-primario mb-sm mt-sm">Histórico de Diários Lançados</h3>';
     codigo += frequencias.length ? renderizarTabelaFrequencias(frequencias, cursos, disciplinas) : criarMensagemVazia('Nenhum diário de classe foi lançado até o momento.');
@@ -129,14 +129,23 @@ async function salvarFrequencia() {
 
     const participantesAtualizados = await atualizarDesistentesPorFalta(AppEstado.frequenciaAtual.id_curso);
     const mensagemBase = AppEstado.frequenciaAtual.id ? 'Frequência atualizada com sucesso!' : 'Diário salvo com sucesso!';
-    const mensagemStatus = participantesAtualizados.length > 0
-        ? ` ${participantesAtualizados.length} participante(s) com status atualizado por frequência.`
-        : '';
 
-    Utilidades.notificacao(`${mensagemBase}${mensagemStatus}`, 'sucesso');
+    Utilidades.notificacao(montarMensagemStatusFrequencia(mensagemBase, participantesAtualizados), 'sucesso');
     AppEstado.frequenciaAtual = null;
     Interface.fecharJanela('janela-formulario');
     await renderizarAbaAtual();
+}
+
+function montarMensagemStatusFrequencia(mensagemBase, participantesAtualizados = []) {
+    if (!participantesAtualizados.length) return mensagemBase;
+
+    const primeiro = participantesAtualizados[0];
+    const nome = primeiro.nome || 'Participante';
+    const status = primeiro.status || 'status atualizado';
+    const detalhe = primeiro.detalhe_status_frequencia || '';
+    const complemento = participantesAtualizados.length > 1 ? ` e mais ${participantesAtualizados.length - 1}` : '';
+
+    return `${mensagemBase} ${nome}${complemento}: ${status}.${detalhe ? ` ${detalhe}` : ''}`;
 }
 
 async function excluirFrequencia(id) {
@@ -182,7 +191,7 @@ async function abrirJanelaFrequencia() {
                 <td class="p-md texto-esquerda texto-md peso-medium cor-texto-escuro coluna-nome-lancamento">${Utilidades.montarNomeParticipanteComStatus(participante, AppEstado.frequenciaAtual.mostrar_todos_participantes === true)}</td>
                 <td class="p-md texto-direita coluna-controle-lancamento">
                     <div class="flex gap-sm itens-centro justifica-fim">
-                        ${criarBotao(obterTextoEstadoFrequencia(presenca.estado), `alternarFrequenciaParticipante('${participante.id}')`, 'neutro', `botao-pequeno ${obterClasseEstadoFrequencia(presenca.estado)}`, 'button', `id="botao-frequencia-${participante.id}"`)}
+                        ${criarBotao(obterTextoEstadoFrequencia(presenca.estado), `alternarFrequenciaParticipante('${participante.id}')`, 'neutro', `botao-pequeno ${obterClasseEstadoFrequencia(presenca.estado)}`, 'button', `id="botao-frequencia-${participante.id}" data-tooltip="Clique para alternar entre Compareceu, Falta e Parcial."`)}
                         <input type="number" min="0.5" max="${cargaHoraria - 0.5}" step="0.5" id="horas-frequencia-${participante.id}" class="campo-padrao botao-pequeno ${presenca.estado === ESTADOS_FREQUENCIA.PARCIAL ? '' : 'oculto'}" value="${presenca.estado === ESTADOS_FREQUENCIA.PARCIAL ? Utilidades.escaparHtml(presenca.horas || '') : ''}" placeholder="Horas" onchange="atualizarHorasFrequenciaParticipante('${participante.id}', this.value)" oninput="atualizarHorasFrequenciaParticipante('${participante.id}', this.value)" aria-label="Horas parciais">
                     </div>
                 </td>
@@ -249,7 +258,7 @@ function atualizarLinhaFrequenciaParticipante(idParticipante) {
     if (!presenca || !botao || !campoHoras) return;
 
     botao.textContent = obterTextoEstadoFrequencia(presenca.estado);
-    botao.className = `botao-padrao botao-neutro botao-pequeno ${obterClasseEstadoFrequencia(presenca.estado)}`;
+    botao.className = `botao-padrao botao-pequeno ${obterClasseEstadoFrequencia(presenca.estado)}`;
 
     const parcial = presenca.estado === ESTADOS_FREQUENCIA.PARCIAL;
     campoHoras.classList.toggle('oculto', !parcial);

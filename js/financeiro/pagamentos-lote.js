@@ -14,7 +14,7 @@ async function abrirFormularioPagamentoLote(id = null) {
     document.getElementById('titulo-janela').textContent = id ? 'Editar Pagamento em Lote' : 'Novo Pagamento em Lote';
 
     const dataLote = lote?.data || Utilidades.obterDataAtual();
-    let formulario = '<form id="formulario-pagamento-lote" class="flex flex-coluna gap-md w-total" onsubmit="salvarPagamentoLote(event)">';
+    let formulario = '<form novalidate id="formulario-pagamento-lote" class="flex flex-coluna gap-md w-total" onsubmit="salvarPagamentoLote(event)">';
     formulario += criarSeletor('Curso', 'id_curso_lote', cursos.map(curso => ({ id: curso.id, nome: curso.nome })), lote?.id_curso || '', true);
     formulario += criarSeletor('Paróquia', 'id_paroquia_lote', paroquias.map(paroquia => ({ id: paroquia.id, nome: paroquia.nome })), lote?.id_paroquia || '', true);
     formulario += '<div id="recipiente-referencia-lote" class="fundo-superficie-2 borda-1 borda-solida borda-cor-padrao raio-sm p-md"></div>';
@@ -28,7 +28,7 @@ async function abrirFormularioPagamentoLote(id = null) {
     formulario += criarCampoSomenteLeitura('Valor Total', 'valor_total_lote', Utilidades.formatarMoeda(lote?.valor_total || 0));
     formulario += criarRodapeFormulario('', id ? 'Atualizar Pagamento em Lote' : 'Salvar Pagamento em Lote', {
         tipoSalvar: 'submit',
-        botoesExtras: criarBotao('Salvar e Gerar Recibo', 'salvarPagamentoLoteEGerarRecibo()', 'secundario', 'md-w-total')
+        botoesExtras: criarBotao('Salvar e Gerar Recibo', 'salvarPagamentoLoteEGerarRecibo()', 'secundario', 'md-w-total', 'button', '')
     });
     formulario += '</form>';
 
@@ -63,13 +63,15 @@ async function atualizarReferenciasPagamentoLote(lote = null, participantes = []
     if (!recipiente) return;
 
     const curso = idCurso ? await bd.obter('cursos', idCurso) : null;
-    const [disciplinas, pagamentos] = await Promise.all([
+    const [disciplinas, frequencias, pagamentos] = await Promise.all([
         bd.obterTodos('disciplinas'),
+        bd.obterTodos('frequencias'),
         bd.obterTodos('pagamentos')
     ]);
     const disciplinasCurso = disciplinas.filter(disciplina => String(disciplina.id_curso) === String(idCurso));
+    const frequenciasCurso = frequencias.filter(frequencia => String(frequencia.id_curso || '') === String(idCurso));
     const participantesBase = obterParticipantesBaseCobrancasLote(participantes);
-    const opcoes = montarOpcoesCobrancaLote(curso, disciplinasCurso, participantesBase, pagamentos, { ignorarLoteId: AppEstado.registroEmEdicao });
+    const opcoes = montarOpcoesCobrancaLote(curso, disciplinasCurso, participantesBase, pagamentos, { ignorarLoteId: AppEstado.registroEmEdicao }, frequenciasCurso);
     const marcadasAtuais = new Set(Array.from(document.querySelectorAll('.marcador-cobranca-lote:checked')).map(campo => campo.value));
     const marcadas = new Set([...(lote?.cobrancas || []).map(codificarCobrancaPagamento), ...marcadasAtuais]);
     if (lote && marcadas.size === 0) marcadas.add(montarValorOpcaoCobranca(lote));
@@ -78,7 +80,7 @@ async function atualizarReferenciasPagamentoLote(lote = null, participantes = []
     atualizarGrupoCobrancasPagamento('tipo_cobranca_lote', 'marcador-cobranca-lote');
 }
 
-function montarOpcoesCobrancaLote(curso = null, disciplinas = [], participantes = [], pagamentos = [], contexto = {}) {
+function montarOpcoesCobrancaLote(curso = null, disciplinas = [], participantes = [], pagamentos = [], contexto = {}, frequencias = []) {
     if (!curso) return [{ id: '', nome: 'Selecione o curso para listar as cobranças disponíveis.', valor: 0, descricao: '' }];
     if (!participantes.length) return [{ id: '', nome: 'Selecione curso e paróquia para listar as cobranças abertas do lote.', valor: 0, descricao: '' }];
 
@@ -86,7 +88,7 @@ function montarOpcoesCobrancaLote(curso = null, disciplinas = [], participantes 
     const participantesConsiderados = participantes.filter(participante => String(participante.id_curso) === String(curso.id));
 
     participantesConsiderados.forEach(participante => {
-        const obrigacoesAbertas = obterObrigacoesAbertasParticipante(participante, curso, disciplinas, [], pagamentos, contexto);
+        const obrigacoesAbertas = obterObrigacoesAbertasParticipante(participante, curso, disciplinas, frequencias, pagamentos, contexto);
         obrigacoesAbertas.forEach(obrigacao => {
             const chave = codificarCobrancaPagamento(obrigacao);
             const registro = mapaOpcoes.get(chave) || { obrigacao, ocorrencias: 0 };

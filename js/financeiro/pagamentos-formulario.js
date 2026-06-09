@@ -14,7 +14,7 @@ async function abrirFormularioPagamento(id = null) {
 
     document.getElementById('titulo-janela').textContent = id ? 'Editar Pagamento Individual' : 'Novo Pagamento Individual';
 
-    let formulario = '<form id="formulario-pagamento" class="flex flex-coluna gap-md w-total" onsubmit="salvarPagamento(event)">';
+    let formulario = '<form novalidate id="formulario-pagamento" class="flex flex-coluna gap-md w-total" onsubmit="salvarPagamento(event)">';
     formulario += '<input type="hidden" id="id_lote_pagamento" value="' + (pagamento?.id_lote || '') + '">';
     formulario += criarSeletor('Participante', 'id_participante', participantesDisponiveis.map(participante => ({ id: participante.id, nome: participante.nome })), pagamento?.id_participante || '', true);
     formulario += '<div id="recipiente-cobrancas-pagamento" class="fundo-superficie-2 borda-1 borda-solida borda-cor-padrao raio-sm p-md"></div>';
@@ -26,7 +26,7 @@ async function abrirFormularioPagamento(id = null) {
     formulario += criarCampoSomenteLeitura('Data do Recebimento', 'data_visual', Utilidades.formatarData(data));
     formulario += criarRodapeFormulario('', id ? 'Atualizar Pagamento' : 'Salvar Pagamento', {
         tipoSalvar: 'submit',
-        botoesExtras: criarBotao('Salvar e Gerar Recibo', 'salvarPagamentoEGerarRecibo()', 'secundario', 'md-w-total')
+        botoesExtras: criarBotao('Salvar e Gerar Recibo', 'salvarPagamentoEGerarRecibo()', 'secundario', 'md-w-total', 'button', '')
     });
     formulario += '</form>';
 

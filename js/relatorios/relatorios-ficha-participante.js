@@ -32,7 +32,7 @@ async function renderizarSecaoFichaParticipante(contexto) {
                     <div class="flex-2">
                         <div class="campo-busca-wrapper pos-relativa">
                             <input type="text" id="busca-ficha-participante" class="campo-padrao campo-busca" value="${Utilidades.escaparHtml(participanteSelecionado?.nome || '')}" placeholder="Buscar por nome, código ou paróquia..." aria-label="Buscar participante" autocomplete="off">
-                            <button type="button" id="busca-ficha-participante-limpar" class="botao-limpar-busca" aria-label="Limpar busca" title="Limpar busca" onclick="limparBuscaFichaParticipante()">
+                            <button type="button" id="busca-ficha-participante-limpar" class="botao-limpar-busca" aria-label="Limpar busca" onclick="limparBuscaFichaParticipante()">
                                 ${criarIcone('cancelar')}
                             </button>
                             <input type="hidden" id="ficha-participante-id" value="${Utilidades.escaparHtml(idSelecionado)}">
@@ -40,8 +40,8 @@ async function renderizarSecaoFichaParticipante(contexto) {
                         </div>
                     </div>
                     <div class="flex gap-sm md-w-total md-flex-coluna">
-                        ${criarBotao('Imprimir Ficha', 'gerarPDFFichaParticipante()', 'contorno', 'md-w-total')}
-                        ${criarBotao('Imprimir Todas', 'gerarPDFFichasTodosParticipantes()', 'contorno', 'md-w-total')}
+                        ${criarBotao('Imprimir Ficha', 'gerarPDFFichaParticipante()', 'secundario', 'md-w-total', 'button', '')}
+                        ${criarBotao('Imprimir Todas', 'gerarPDFFichasTodosParticipantes()', 'secundario', 'md-w-total', 'button', '')}
                     </div>
                 </div>
 
@@ -326,7 +326,7 @@ function filtrarFrequenciasFichaParticipante(participante, frequencias = [], dis
 
 function calcularResumoFinanceiroParticipante(participante, curso, disciplinas = [], frequencias = [], pagamentos = []) {
     const obrigacoes = calcularObrigacoesFinanceirasParticipante(participante, curso, disciplinas, frequencias, pagamentos);
-    const resumo = ajustarResumoObrigacoesPorStatusParticipante(participante, calcularResumoObrigacoes(obrigacoes));
+    const resumo = ajustarResumoObrigacoesPorStatusParticipante(participante, calcularResumoObrigacoes(obrigacoes), curso);
     const inscricao = obrigacoes.find(item => item.tipo === 'Inscrição');
     const pagamentosOutros = pagamentos.filter(pagamento => pagamento.tipo === 'Outros');
     const totalOutros = pagamentosOutros.reduce((total, pagamento) => total + Utilidades.normalizarValorMonetario(pagamento.valor), 0);

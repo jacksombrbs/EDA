@@ -6,6 +6,8 @@ const VERSAO_APLICATIVO = '1.2.0';
 const VERSAO_DADOS_APLICATIVO = 3;
 const BANCO_DADOS_NOME = 'escolaDiscipuloAmado_v2';
 const BANCO_DADOS_VERSAO = 2;
+const CHAVE_ULTIMO_BACKUP = 'eda_ultimo_backup';
+const DIAS_ALERTA_BACKUP = 7;
 
 const TABELAS_BANCO_DADOS = [
     { nome: 'cursos', chave: 'id', rotulo: 'Cursos' },

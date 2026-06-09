@@ -84,34 +84,6 @@ function obterCoresGrafico(indice = 0, borda = false) {
     return `rgba(${cor}, ${borda ? '0.8' : '0.1'})`;
 }
 
-function montarGraficoFrequencia(participantes = [], frequencias = [], percentualMinimo = PERCENTUAL_MINIMO_FREQUENCIA_PADRAO) {
-    const faixas = agruparFrequenciasPorFaixa(participantes, frequencias, percentualMinimo);
-
-    return {
-        id: 'grafico-frequencia-academico',
-        titulo: 'Distribuição de Frequência',
-        tipo: 'doughnut',
-        labels: Object.keys(faixas),
-        datasets: [{
-            label: 'Distribuição de Frequência',
-            data: Object.values(faixas),
-            backgroundColor: [
-                'rgba(239, 68, 68, 0.78)',
-                'rgba(245, 158, 11, 0.78)',
-                'rgba(59, 130, 246, 0.78)',
-                'rgba(16, 185, 129, 0.78)'
-            ],
-            borderWidth: 0,
-            hoverBorderWidth: 0
-        }],
-        opcoes: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { position: 'right' } }
-        }
-    };
-}
-
 function montarGraficoPagamentos(participantes = [], pagamentos = [], cursos = [], disciplinas = [], frequencias = []) {
     const valores = agruparValoresFinanceiros(participantes, pagamentos, cursos, disciplinas, frequencias);
 
@@ -149,41 +121,3 @@ function montarGraficoPagamentos(participantes = [], pagamentos = [], cursos = [
     };
 }
 
-function montarGraficoEntradasSaidas(estatisticas = {}) {
-    return {
-        id: 'grafico-entradas-saidas',
-        titulo: 'Entradas e Saídas',
-        tipo: 'bar',
-        labels: ['Total'],
-        datasets: [
-            {
-                label: 'Entradas',
-                data: [Utilidades.normalizarValorMonetario(estatisticas.totalEntradas) / 1000],
-                backgroundColor: 'rgba(16, 185, 129, 0.78)',
-                borderWidth: 0,
-                hoverBorderWidth: 0
-            },
-            {
-                label: 'Saídas',
-                data: [Utilidades.normalizarValorMonetario(estatisticas.totalSaidas) / 1000],
-                backgroundColor: 'rgba(239, 68, 68, 0.78)',
-                borderWidth: 0,
-                hoverBorderWidth: 0
-            }
-        ],
-        opcoes: {
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    border: { display: false },
-                    grid: { display: false, drawBorder: false },
-                    ticks: { callback: valor => valor.toFixed(1) + 'k' }
-                },
-                x: {
-                    border: { display: false },
-                    grid: { display: false, drawBorder: false }
-                }
-            }
-        }
-    };
-}

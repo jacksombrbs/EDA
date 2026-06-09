@@ -7,9 +7,9 @@ async function renderizarParticipantes(conteudo) {
     participantes.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
 
     const botoesCabecalho = '<div class="flex gap-sm md-flex-coluna md-w-total">'
-        + criarBotao('Importar Dados', 'abrirModalImportacao()', 'secundario', 'md-w-total')
-        + criarBotao('Imprimir Cartões', 'abrirModalCartoesParticipantes()', 'secundario', 'md-w-total')
-        + criarBotao('+ Novo Participante', 'abrirFormularioParticipante()', 'primario', 'md-w-total')
+        + criarBotao('Importar Dados', 'abrirModalImportacao()', 'secundario', 'md-w-total', 'button', '')
+        + criarBotao('Imprimir Cartões', 'abrirModalCartoesParticipantes()', 'secundario', 'md-w-total', 'button', '')
+        + criarBotao('+ Novo Participante', 'abrirFormularioParticipante()', 'primario', 'md-w-total', 'button', '')
         + '</div>';
 
     let codigo = '<div class="pagina-conteudo">';
@@ -41,7 +41,7 @@ async function abrirFormularioParticipante(id = null) {
 
     document.getElementById('titulo-janela').textContent = id ? 'Editar Participante' : 'Novo Participante';
 
-    let formulario = '<form id="formulario-participante" class="flex flex-coluna gap-md w-total" onsubmit="salvarParticipante(event)" novalidate>';
+    let formulario = '<form novalidate id="formulario-participante" class="flex flex-coluna gap-md w-total" onsubmit="salvarParticipante(event)">';
     formulario += '<div class="flex gap-md md-flex-coluna">';
     formulario += '<div class="flex-1">' + criarCampoFormulario('Nome Completo', 'text', 'nome', participante?.nome || '', '', true) + '</div>';
     formulario += '<div class="flex-1">' + criarSeletor('Status', 'status', opcoesStatus, participante?.status || 'Ativo') + '</div>';
@@ -77,7 +77,7 @@ async function abrirFormularioParticipante(id = null) {
 
     formulario += criarRodapeFormulario('', id ? 'Atualizar Participante' : 'Salvar Participante', {
         tipoSalvar: 'submit',
-        botoesExtras: criarBotao('Salvar e Imprimir Cartão', 'salvarEImprimirCartaoParticipante()', 'secundario', 'md-w-total')
+        botoesExtras: criarBotao('Salvar e Imprimir Cartão', 'salvarEImprimirCartaoParticipante()', 'secundario', 'md-w-total', 'button', '')
     });
     formulario += '</form>';
 

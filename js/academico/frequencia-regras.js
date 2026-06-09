@@ -175,6 +175,8 @@ async function atualizarDesistentesPorFalta(idCurso = '') {
         bd.obterTodos('frequencias')
     ]);
 
+    if (curso?.desistencia_automatica === false) return [];
+
     const limiteHorasFalta = calcularLimiteHorasFaltaCurso(curso);
     if (!Number.isFinite(limiteHorasFalta)) return [];
 
@@ -187,9 +189,17 @@ async function atualizarDesistentesPorFalta(idCurso = '') {
         const novoStatus = horasFalta > limiteHorasFalta ? 'Desistente' : 'Ativo';
         if (String(participante.status || 'Ativo') === novoStatus) continue;
 
+        const cargaHorariaTotal = normalizarCargaHoraria(curso?.carga_horaria_total || 0, 0);
+        const percentualMinimo = obterPercentualMinimoCurso(curso);
+        const frequenciaPossivel = cargaHorariaTotal > 0 ? Math.max(0, Math.round(((cargaHorariaTotal - horasFalta) / cargaHorariaTotal) * 100)) : null;
+        const detalheStatus = [
+            `faltas ${formatarHorasCargaHoraria(horasFalta)} de limite ${formatarHorasCargaHoraria(limiteHorasFalta)}`,
+            cargaHorariaTotal > 0 ? `mínimo ${percentualMinimo}%` : '',
+            frequenciaPossivel !== null ? `frequência possível ${frequenciaPossivel}%` : ''
+        ].filter(Boolean).join(' · ');
         const participanteAtualizado = { ...participante, status: novoStatus };
         await bd.salvar('participantes', participanteAtualizado);
-        atualizados.push(participanteAtualizado);
+        atualizados.push({ ...participanteAtualizado, status_anterior: participante.status || 'Ativo', detalhe_status_frequencia: detalheStatus });
     }
 
     return atualizados;

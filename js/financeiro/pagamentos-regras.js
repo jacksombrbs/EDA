@@ -50,6 +50,18 @@ function cursoCobraPorDisciplina(curso = null) {
     return obterTipoCobrancaCurso(curso) === TIPOS_COBRANCA_CURSO.DISCIPLINA;
 }
 
+function cursoCobraFaltas(curso = null) {
+    return curso?.cobrar_faltas === true;
+}
+
+function cursoCobraDesistentes(curso = null) {
+    return curso?.cobrar_desistentes !== false;
+}
+
+function cursoPermitePagamentoAntecipado(curso = null) {
+    return curso?.permitir_pagamento_antecipado !== false;
+}
+
 async function obterParticipantePagamento(idParticipante) {
     return idParticipante ? await bd.obter('participantes', idParticipante) : null;
 }
@@ -198,6 +210,8 @@ function calcularObrigacoesFinanceirasParticipante(participante, curso, discipli
                 for (let indice = 1; indice <= quantidadeEncontros; indice++) {
                     if (encontroDisciplinaEhGratuito(disciplina, indice) || valor <= 0) continue;
                     const situacaoEncontro = obterSituacaoEncontroParticipante(idParticipante, disciplina, indice, frequencias);
+                    const faltaCobravel = situacaoEncontro === 'faltou' && cursoCobraFaltas(curso);
+                    const encontroAntecipado = situacaoEncontro === 'previsto' && cursoPermitePagamentoAntecipado(curso);
                     obrigacoes.push(montarObrigacaoFinanceira({
                         id: `encontro-${idParticipante}-${disciplina.id}-${indice}`,
                         id_participante: idParticipante,
@@ -209,7 +223,8 @@ function calcularObrigacoesFinanceirasParticipante(participante, curso, discipli
                         valor,
                         ordem,
                         situacao_encontro: situacaoEncontro,
-                        cobranca_pendente: situacaoEncontro === 'compareceu'
+                        cobranca_falta: faltaCobravel,
+                        cobranca_pendente: situacaoEncontro === 'compareceu' || faltaCobravel || encontroAntecipado
                     }, pagamentos, contexto));
                     ordem++;
                 }
@@ -241,13 +256,12 @@ function calcularObrigacoesFinanceirasParticipante(participante, curso, discipli
 
 function obrigacaoContaAReceber(obrigacao = {}) {
     if (obrigacao.pago) return false;
-    if (obrigacao.tipo === 'Encontro') return obrigacao.situacao_encontro !== 'faltou';
     return obrigacao.cobranca_pendente !== false;
 }
 
 function obrigacaoEstaAtrasada(obrigacao = {}) {
     if (!obrigacaoContaAReceber(obrigacao)) return false;
-    if (obrigacao.tipo === 'Encontro') return obrigacao.situacao_encontro === 'compareceu';
+    if (obrigacao.tipo === 'Encontro') return obrigacao.situacao_encontro === 'compareceu' || obrigacao.cobranca_falta === true;
     return true;
 }
 
@@ -272,8 +286,20 @@ function calcularResumoObrigacoes(obrigacoes = []) {
     }, { total: 0, pago: 0, aPagar: 0, obrigacoesAPagar: 0, atrasado: 0, atrasos: 0, pendente: 0, pendentes: 0 });
 }
 
-function ajustarResumoObrigacoesPorStatusParticipante(participante, resumo = {}) {
+function ajustarResumoObrigacoesPorStatusParticipante(participante, resumo = {}, curso = null) {
     if (Utilidades.participanteEstaAtivo(participante)) return resumo;
+
+    if (!cursoCobraDesistentes(curso)) {
+        return {
+            ...resumo,
+            aPagar: 0,
+            obrigacoesAPagar: 0,
+            atrasado: 0,
+            atrasos: 0,
+            pendente: 0,
+            pendentes: 0
+        };
+    }
 
     return {
         ...resumo,
@@ -289,8 +315,15 @@ function obrigacaoPodeSerPaga(obrigacao = {}) {
 }
 
 function obterObrigacoesAbertasParticipante(participante, curso, disciplinas = [], frequencias = [], pagamentos = [], contexto = {}) {
-    return calcularObrigacoesFinanceirasParticipante(participante, curso, disciplinas, frequencias, pagamentos, contexto)
-        .filter(obrigacaoPodeSerPaga);
+    const obrigacoes = calcularObrigacoesFinanceirasParticipante(participante, curso, disciplinas, frequencias, pagamentos, contexto);
+
+    if (Utilidades.participanteEstaAtivo(participante)) {
+        return obrigacoes.filter(obrigacaoPodeSerPaga);
+    }
+
+    if (!cursoCobraDesistentes(curso)) return [];
+
+    return obrigacoes.filter(obrigacao => obrigacaoPodeSerPaga(obrigacao) && obrigacaoEstaAtrasada(obrigacao));
 }
 
 async function obterContextoObrigacoesParticipante(idParticipante, contexto = {}) {
@@ -340,6 +373,12 @@ async function validarPagamento(dados, contexto = {}) {
 
     if (!obrigacao) {
         return { valido: false, mensagem: 'Esta cobrança não existe para o participante.' };
+    }
+
+    const obrigacaoAberta = obterObrigacoesAbertasParticipante(participante, curso, disciplinas, frequencias, pagamentos, contexto)
+        .some(item => obterChaveObrigacaoFinanceira(item) === chavePagamento);
+    if (!obrigacaoAberta) {
+        return { valido: false, mensagem: 'Esta cobrança não está aberta para o participante.' };
     }
 
     const pagamentoExistente = obterPagamentoObrigacao(obrigacao, pagamentos, contexto);

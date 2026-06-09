@@ -16,7 +16,7 @@ async function renderizarAtividades(conteudo) {
     codigo += '<input type="hidden" id="atividade-data" value="' + dataEntrega + '">';
     codigo += '<div class="flex-1">' + criarCampoSomenteLeitura('Data de Entrega', 'atividade-data-visual', Utilidades.formatarData(dataEntrega)) + '</div>';
     codigo += '<div class="flex-1 w-total flex gap-sm md-flex-coluna mb-md">';
-    codigo += criarBotao('Lançar Atividades', 'abrirLancamentoAtividades()', 'primario', 'w-total');
+    codigo += criarBotao('Lançar Atividades', 'abrirLancamentoAtividades()', 'primario', 'w-total', 'button', '');
     codigo += '</div></div>';
     codigo += Busca.criarCampoBusca('busca-atividades', 'Buscar por curso ou disciplina...');
     codigo += atividades.length
@@ -148,7 +148,7 @@ function criarLinhaLancamentoAtividade(participante, indice) {
         <tr class="${classeFundo} transicao hover-fundo-superficie-3">
             <td class="p-md texto-esquerda texto-md peso-medium cor-texto-escuro coluna-nome-lancamento">${Utilidades.montarNomeParticipanteComStatus(participante, AppEstado.atividadeAtual.mostrar_todos_participantes === true)}</td>
             <td class="p-md texto-centro coluna-status-lancamento">
-                ${criarBotao(texto, `alternarEstadoAtividadeParticipante('${participante.id}')`, 'neutro', `botao-pequeno w-total ${classes}`, 'button', `id="botao-atividade-${participante.id}"`)}
+                ${criarBotao(texto, `alternarEstadoAtividadeParticipante('${participante.id}')`, 'neutro', `botao-pequeno w-total ${classes}`, 'button', `id="botao-atividade-${participante.id}" data-tooltip="Clique para alternar entre Entregue e Não entregue."`)}
             </td>
             <td class="p-md texto-esquerda coluna-observacoes-lancamento">
                 <textarea id="observacoes-atividade-${participante.id}" class="campo-padrao" rows="2" placeholder="Observações...">${Utilidades.escaparHtml(registro.observacoes || '')}</textarea>

@@ -9,57 +9,44 @@ function filtrarAtividadesEntreguesRelatorio(atividades = []) {
     return lista.filter(registro => atividadeEstaEntregue(registro));
 }
 
-function renderizarPainelAcademico(participantes = [], frequencias = [], atividades = [], disciplinas = [], curso = null) {
+function renderizarPainelAcademico(participantes = [], frequencias = [], atividades = [], disciplinas = [], curso = null, opcoes = {}) {
     const atividadesEntregues = filtrarAtividadesPorParticipantesRelatorio(atividades, participantes);
     const percentualMinimo = obterPercentualMinimoCurso(curso);
     const estatisticas = calcularEstatisticasAcademicas(participantes, frequencias, atividadesEntregues, percentualMinimo);
 
     let painel = criarGradeMetricas([
+        { titulo: 'Participantes Ativos', valor: participantes.length, classe: 'primario', icone: 'participantes' },
         { titulo: 'Frequência Média', valor: `${estatisticas.frequenciaMedia}%`, classe: estatisticas.frequenciaMedia >= percentualMinimo ? 'sucesso' : (estatisticas.frequenciaMedia >= Math.floor(percentualMinimo / 2) ? 'aviso' : 'erro'), icone: 'frequencia' },
-        { titulo: `Em Risco (<${percentualMinimo}%)`, valor: estatisticas.participantesEmRisco, classe: estatisticas.participantesEmRisco > 0 ? 'erro' : 'sucesso', icone: 'frequencia', acao: "filtrarTabelaAcademica('risco')" }
-    ], 2);
+        { titulo: `Em Risco (<${percentualMinimo}%)`, valor: estatisticas.participantesEmRisco, classe: estatisticas.participantesEmRisco > 0 ? 'erro' : 'sucesso', icone: 'frequencia', acao: "filtrarTabelaAcademica('risco')" },
+        { titulo: 'Entregas', valor: atividadesEntregues.length, classe: 'primario', icone: 'atividades' }
+    ], 4);
 
-    const htmlGrafico = criarGradeGraficos([montarGraficoFrequencia(participantes, frequencias, percentualMinimo)]);
-
-    const htmlRelatorios = `
-        <div class="lista-relatorios-painel">
-            <div class="cartao-geracao-relatorio">
-                <div class="cabecalho-relatorio">
-                    <h3 class="texto-md peso-bold cor-texto-primario m-zero">Relatório de Frequência</h3>
-                    ${criarBotao('Gerar Relatório', 'gerarPDFFrequenciaAcademico()', 'contorno', 'botao-pequeno')}
-                </div>
-                <div class="flex gap-md md-flex-coluna w-total mt-sm">
-                    <div class="flex-1 w-total">${criarSeletor('Tipo', 'filtro-tipo-frequencia', [{ id: 'geral', nome: 'Geral (Todos)' }, { id: 'disciplina', nome: 'Por Disciplina' }], 'geral', false)}</div>
-                    <div id="recipiente-filtro-disciplina-frequencia" class="oculto flex-1 w-total">${criarSeletor('Disciplina', 'filtro-disciplina-freq', disciplinas.map(disciplina => ({ id: disciplina.id, nome: disciplina.nome })), '', false)}</div>
-                </div>
-            </div>
-
-            <div class="grade-metricas-painel grade-2-colunas">
+    if (!opcoes.somenteConsulta) {
+        painel += `
+            <div class="lista-relatorios-painel mb-lg">
                 <div class="cartao-geracao-relatorio">
                     <div class="cabecalho-relatorio">
-                        <h3 class="texto-md peso-bold cor-texto-primario m-zero">Atividades</h3>
-                        ${criarBotao('Gerar Relatório', 'gerarPDFAtividadesAcademico()', 'contorno', 'botao-pequeno')}
+                        <h3 class="texto-md peso-bold cor-texto-primario m-zero">Relatório de Frequência</h3>
+                        ${criarBotao('Gerar Relatório', 'gerarPDFFrequenciaAcademico()', 'secundario', 'botao-pequeno', 'button', '')}
                     </div>
-                    ${criarCardMetrica('Entregas', atividadesEntregues.length, 'primario', 'atividades')}
                 </div>
-
-                <div class="cartao-geracao-relatorio">
-                    <div class="cabecalho-relatorio">
-                        <h3 class="texto-md peso-bold cor-texto-primario m-zero">Status</h3>
-                        ${criarBotao('Gerar Relatório', 'gerarPDFStatusParticipantesAcademico()', 'contorno', 'botao-pequeno')}
+                <div class="grade-metricas-painel grade-2-colunas">
+                    <div class="cartao-geracao-relatorio">
+                        <div class="cabecalho-relatorio">
+                            <h3 class="texto-md peso-bold cor-texto-primario m-zero">Atividades</h3>
+                            ${criarBotao('Gerar Relatório', 'gerarPDFAtividadesAcademico()', 'secundario', 'botao-pequeno', 'button', '')}
+                        </div>
                     </div>
-                    ${criarCardMetrica('Ativos', participantes.length, 'primario', 'participantes')}
+                    <div class="cartao-geracao-relatorio">
+                        <div class="cabecalho-relatorio">
+                            <h3 class="texto-md peso-bold cor-texto-primario m-zero">Status</h3>
+                            ${criarBotao('Gerar Relatório', 'gerarPDFStatusParticipantesAcademico()', 'secundario', 'botao-pequeno', 'button', '')}
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-    `;
-
-    painel += `
-        <div class="painel-relatorio">
-            <div class="area-grafico-relatorio">${htmlGrafico}</div>
-            <div class="coluna-relatorios-painel">${htmlRelatorios}</div>
-        </div>
-    `;
+        `;
+    }
 
     painel += '<div class="flex flex-coluna gap-sm mb-md w-total">';
     painel += '<h3 class="texto-md peso-bold cor-texto-primario m-zero">Resumo Geral Acadêmico</h3>';
@@ -67,25 +54,7 @@ function renderizarPainelAcademico(participantes = [], frequencias = [], ativida
     painel += '</div>';
     painel += renderizarTabelaResumoAcademico(participantes, frequencias, atividades, disciplinas, percentualMinimo);
 
-    setTimeout(() => {
-        Busca.vincularFiltro('busca-tabela-acad', 'corpo-tabela-acad');
-
-        const tipoFrequencia = document.getElementById('filtro-tipo-frequencia');
-        if (!tipoFrequencia) return;
-
-        tipoFrequencia.addEventListener('change', evento => {
-            const recipienteFiltro = document.getElementById('recipiente-filtro-disciplina-frequencia');
-            if (!recipienteFiltro) return;
-
-            if (evento.target.value === 'disciplina') {
-                recipienteFiltro.classList.remove('oculto');
-                return;
-            }
-
-            recipienteFiltro.classList.add('oculto');
-            if (window.limparSeletorCustomizado) window.limparSeletorCustomizado('filtro-disciplina-freq');
-        });
-    }, 0);
+    setTimeout(() => Busca.vincularFiltro('busca-tabela-acad', 'corpo-tabela-acad'), 0);
 
     return painel;
 }
@@ -215,27 +184,13 @@ function calcularFrequenciaParticipante(idParticipante, frequencias = []) {
     };
 }
 
-function agruparFrequenciasPorFaixa(participantes = [], frequencias = [], percentualMinimo = PERCENTUAL_MINIMO_FREQUENCIA_PADRAO) {
-    const limiteIntermediario = Math.floor(percentualMinimo / 2);
-    const faixas = { [`0-${limiteIntermediario - 1}%`]: 0, [`${limiteIntermediario}-${percentualMinimo - 1}%`]: 0, [`${percentualMinimo}-100%`]: 0 };
-    const participantesConsiderados = participantes.filter(participante => Utilidades.participanteEstaAtivo(participante));
-
-    participantesConsiderados.forEach(participante => {
-        const frequencia = calcularFrequenciaParticipante(participante.id, frequencias);
-        if (frequencia.percentual < limiteIntermediario) faixas[`0-${limiteIntermediario - 1}%`]++;
-        else if (frequencia.percentual < percentualMinimo) faixas[`${limiteIntermediario}-${percentualMinimo - 1}%`]++;
-        else faixas[`${percentualMinimo}-100%`]++;
-    });
-
-    return faixas;
-}
-
 function listarAtividadesPorParticipante(idParticipante, atividades = []) {
     return listarAtividadesEntreguesPorParticipante(idParticipante, atividades);
 }
 
 async function gerarPDFFrequenciaAcademico() {
     const tipoRelatorio = document.getElementById('filtro-tipo-frequencia')?.value || 'geral';
+    const organizacao = document.getElementById('filtro-organizacao-frequencia')?.value || 'paroquia';
     const idDisciplina = document.getElementById('filtro-disciplina-freq')?.value || '';
 
     if (tipoRelatorio === 'disciplina' && !idDisciplina) {
@@ -258,7 +213,9 @@ async function gerarPDFFrequenciaAcademico() {
     ]);
 
     if (tipoRelatorio === 'geral') {
-        html += montarHtmlFrequenciaGeral(participantesRelatorio, disciplinas, frequencias, paroquiasMap, curso, mostrarTodos);
+        html += organizacao === 'alfabetica'
+            ? montarHtmlFrequenciaGeralAlfabetica(participantesRelatorio, disciplinas, frequencias, curso, mostrarTodos)
+            : montarHtmlFrequenciaGeral(participantesRelatorio, disciplinas, frequencias, paroquiasMap, curso, mostrarTodos);
         dispararImpressao('Relatório de Frequência Geral', html, { orientacao: 'paisagem' });
         return;
     }
@@ -300,6 +257,38 @@ function montarHtmlFrequenciaGeral(participantes, disciplinas, frequencias, paro
         html += '</tbody></table>' + fecharGrupoParoquiaRelatorio();
     });
 
+    return html;
+}
+
+function montarHtmlFrequenciaGeralAlfabetica(participantes, disciplinas, frequencias, curso = null, mostrarStatus = false) {
+    if (disciplinas.length === 0) return '<p>Nenhuma disciplina cadastrada.</p>';
+
+    const disciplinasOrdenadas = [...disciplinas].sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+    const participantesOrdenados = Utilidades.ordenarParticipantesPorNome(participantes);
+    const totalColunas = disciplinasOrdenadas.length + 2;
+    let html = '';
+
+    html += '<div><h3>Ordem alfabética</h3>';
+    html += '<table><thead><tr><th class="coluna-nome-documento">Participante</th>';
+    disciplinasOrdenadas.forEach(disciplina => { html += `<th class="texto-centro">${Utilidades.escaparHtml(disciplina.nome)}</th>`; });
+    html += '<th class="texto-centro">Total</th></tr></thead><tbody>';
+
+    if (!participantesOrdenados.length) {
+        html += `<tr><td colspan="${totalColunas}" class="texto-centro">Nenhum participante encontrado.</td></tr>`;
+    }
+
+    participantesOrdenados.forEach(participante => {
+        const totalParticipante = calcularFrequenciaParticipante(participante.id, frequencias);
+        html += `<tr><td>${formatarParticipanteDocumento(participante, mostrarStatus)}</td>`;
+        disciplinasOrdenadas.forEach(disciplina => {
+            const resumoDisciplina = calcularResumoDisciplinaParticipante(participante.id, disciplina.id, frequencias);
+            html += `<td class="texto-centro">${formatarResumoHorasFrequencia(resumoDisciplina)}</td>`;
+        });
+        html += `<td class="texto-centro peso-bold ${obterClassePercentualFrequencia(totalParticipante.percentual, obterPercentualMinimoCurso(curso))}">${formatarResumoTotalFrequencia(totalParticipante)}</td>`;
+        html += '</tr>';
+    });
+
+    html += '</tbody></table>' + fecharGrupoParoquiaRelatorio();
     return html;
 }
 
@@ -466,7 +455,7 @@ async function gerarPDFStatusParticipantesAcademico() {
             grupoCapela.participantes.forEach(participante => {
                 const frequencia = calcularFrequenciaParticipante(participante.id, frequencias);
                 const obrigacoes = calcularObrigacoesFinanceirasParticipante(participante, curso, disciplinas, frequencias, pagamentos);
-                const resumo = ajustarResumoObrigacoesPorStatusParticipante(participante, calcularResumoObrigacoes(obrigacoes));
+                const resumo = ajustarResumoObrigacoesPorStatusParticipante(participante, calcularResumoObrigacoes(obrigacoes), curso);
                 const desistente = !Utilidades.participanteEstaAtivo(participante);
                 const classeStatus = desistente ? 'cor-texto-erro' : 'cor-texto-sucesso';
                 html += `<tr>
@@ -490,7 +479,6 @@ function criarMapaParoquias(paroquias = []) {
     paroquias.forEach(paroquia => { mapa[paroquia.id] = paroquia.nome; });
     return mapa;
 }
-
 
 function filtrarTabelaAcademica(termo = '') {
     const campo = document.getElementById('busca-tabela-acad');
