@@ -1,7 +1,7 @@
 async function gerarListaFisicaFrequencia() {
     const idCurso = document.getElementById('freq-curso')?.value || '';
     const idDisciplina = document.getElementById('freq-disciplina')?.value || '';
-    const data = document.getElementById('freq-data')?.value || new Date().toISOString().split('T')[0];
+    const data = document.getElementById('freq-data')?.value || Utilidades.obterDataAtual();
 
     if (!idCurso) return Utilidades.notificacao('Selecione um curso para imprimir a lista.', 'erro');
     if (!idDisciplina) return Utilidades.notificacao('Selecione uma disciplina para imprimir a lista.', 'erro');

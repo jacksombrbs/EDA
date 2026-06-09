@@ -412,7 +412,7 @@ async function gerarPDFAtividadesAcademico() {
 
     let html = `<h2>RELATÓRIO GERAL DE ATIVIDADES (ENTREGAS)</h2>`;
     html += `<p><strong>Curso:</strong> ${Utilidades.escaparHtml(curso.nome || '-')}</p>`;
-    html += `<p><strong>Data de Emissão:</strong> ${Utilidades.formatarData(new Date().toISOString().split('T')[0])}</p>`;
+    html += `<p><strong>Data de Emissão:</strong> ${Utilidades.formatarData(Utilidades.obterDataAtual())}</p>`;
 
     if (disciplinasOrdenadas.length === 0) {
         html += '<p>Nenhuma disciplina cadastrada.</p>';
@@ -465,7 +465,7 @@ async function gerarPDFStatusParticipantesAcademico() {
 
     let html = '<h2>RELATÓRIO CONSOLIDADO DO STATUS DOS PARTICIPANTES</h2>';
     html += `<p><strong>Curso:</strong> ${Utilidades.escaparHtml(curso.nome || '-')}</p>`;
-    html += `<p><strong>Data de Emissão:</strong> ${Utilidades.formatarData(new Date().toISOString().split('T')[0])}</p>`;
+    html += `<p><strong>Data de Emissão:</strong> ${Utilidades.formatarData(Utilidades.obterDataAtual())}</p>`;
 
     Object.values(agrupados).sort((a, b) => {
         const nomeA = paroquiasMap[a.idParoquia] || 'Sem Vínculo';

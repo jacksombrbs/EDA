@@ -24,7 +24,7 @@ function montarEntradaPagamentoIndividual(pagamento, participantes = []) {
 
     return {
         id: pagamento.id,
-        data: pagamento.data || new Date().toISOString().split('T')[0],
+        data: pagamento.data || Utilidades.obterDataAtual(),
         descricao: `Recebimento: ${pagamento.tipo || 'Pagamento'} - Participante: ${participante?.nome || 'Participante não identificado'}`,
         tipo: 'Entrada',
         categoria: 'Pagamento individual',
@@ -39,7 +39,7 @@ function montarEntradaPagamentoLote(lote, paroquias = []) {
 
     return {
         id: lote.id,
-        data: lote.data || new Date().toISOString().split('T')[0],
+        data: lote.data || Utilidades.obterDataAtual(),
         descricao: `Recebimento em lote: ${lote.tipo || 'Pagamento'} - ${paroquia?.nome || 'Paróquia não identificada'}`,
         tipo: 'Entrada',
         categoria: 'Pagamento em lote',
@@ -52,7 +52,7 @@ function montarEntradaPagamentoLote(lote, paroquias = []) {
 function montarTransacaoManual(financa) {
     return {
         id: financa.id,
-        data: financa.data || new Date().toISOString().split('T')[0],
+        data: financa.data || Utilidades.obterDataAtual(),
         descricao: financa.descricao || 'Lançamento manual',
         tipo: financa.tipo || 'Saída',
         categoria: financa.categoria || '',

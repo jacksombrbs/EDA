@@ -26,7 +26,7 @@ function gerarReciboGenerico(nomeParticipante, valor, descricao, data, cpf = '')
         rotuloValor: 'Valor recebido',
         valorFormatado: Utilidades.formatarMoeda(valor),
         conteudo,
-        data: Utilidades.formatarData(data || new Date().toISOString().split('T')[0]),
+        data: Utilidades.formatarData(data || Utilidades.obterDataAtual()),
         rotuloAssinatura: 'Responsável',
         nomeAssinatura: NOME_INSTITUCIONAL
     });
@@ -47,7 +47,7 @@ function gerarReciboLoteTemplate(nomeParoquia, nomesParticipantes, valorTotal, d
         rotuloValor: 'Valor recebido',
         valorFormatado: Utilidades.formatarMoeda(valorTotal),
         conteudo,
-        data: Utilidades.formatarData(data || new Date().toISOString().split('T')[0]),
+        data: Utilidades.formatarData(data || Utilidades.obterDataAtual()),
         rotuloAssinatura: 'Responsável',
         nomeAssinatura: NOME_INSTITUCIONAL
     });

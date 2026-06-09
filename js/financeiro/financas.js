@@ -18,8 +18,8 @@ async function renderizarFinancas(conteudo) {
 
 function renderizarCardRelatorioLivroCaixa() {
     const hoje = new Date();
-    const primeiroDiaMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().split('T')[0];
-    const dataAtual = hoje.toISOString().split('T')[0];
+    const primeiroDiaMes = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-01`;
+    const dataAtual = Utilidades.obterDataAtual();
 
     return `
         <section class="cartao-geracao-relatorio mb-md">
@@ -49,7 +49,7 @@ async function abrirFormularioFinanca(id = null) {
         bd.obterTodos('cursos')
     ]);
 
-    const hoje = new Date().toISOString().split('T')[0];
+    const hoje = Utilidades.obterDataAtual();
     const dados = financa || {
         id: '',
         descricao: '',
@@ -244,7 +244,7 @@ function obterDadosFormularioFinanca() {
         categoria,
         descricao: document.getElementById('descricao')?.value.trim() || '',
         valor: document.getElementById('valor')?.value || '0',
-        data: document.getElementById('data')?.value || new Date().toISOString().split('T')[0],
+        data: document.getElementById('data')?.value || Utilidades.obterDataAtual(),
         id_palestrante: categoria === 'Pagamento de Palestrante' ? selecao.idPalestrante : '',
         id_disciplina: categoria === 'Pagamento de Palestrante' ? selecao.idDisciplina : ''
     };

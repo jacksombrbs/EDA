@@ -186,17 +186,15 @@ async function atualizarDesistentesPorFalta(idCurso = '') {
     if (!Number.isFinite(limiteHorasFalta)) return [];
 
     const frequenciasCurso = frequencias.filter(frequencia => String(frequencia.id_curso || '') === String(idCurso));
-    const participantesCursoAtivos = participantes.filter(participante =>
-        String(participante.id_curso || '') === String(idCurso)
-        && Utilidades.participanteEstaAtivo(participante)
-    );
+    const participantesCurso = participantes.filter(participante => String(participante.id_curso || '') === String(idCurso));
     const atualizados = [];
 
-    for (const participante of participantesCursoAtivos) {
+    for (const participante of participantesCurso) {
         const horasFalta = calcularHorasFaltaParticipante(participante.id, frequenciasCurso);
-        if (horasFalta <= limiteHorasFalta) continue;
+        const novoStatus = horasFalta > limiteHorasFalta ? 'Desistente' : 'Ativo';
+        if (String(participante.status || 'Ativo') === novoStatus) continue;
 
-        const participanteAtualizado = { ...participante, status: 'Desistente' };
+        const participanteAtualizado = { ...participante, status: novoStatus };
         await bd.salvar('participantes', participanteAtualizado);
         atualizados.push(participanteAtualizado);
     }

@@ -28,14 +28,14 @@ async function abrirFormularioAviso(id = null) {
     participantes.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
     document.getElementById('titulo-janela').textContent = id ? 'Editar Aviso' : 'Novo Aviso';
 
-    const dados = aviso || { data: new Date().toISOString().split('T')[0], id_participante: null };
+    const dados = aviso || { data: Utilidades.obterDataAtual(), id_participante: null };
     const opcoesParticipantes = [{ id: '', nome: 'Aviso geral' }, ...participantes.map(participante => ({ id: participante.id, nome: participante.nome }))];
 
     let formulario = '<form id="formulario-aviso" class="flex flex-coluna gap-md" onsubmit="salvarAviso(event)">';
     formulario += '<div class="w-total">' + criarSeletor('Destinatário', 'id_participante', opcoesParticipantes, dados.id_participante || '') + '</div>';
     formulario += '<div class="flex flex-linha md-flex-coluna gap-md w-total">';
     formulario += '<div class="flex-1">' + criarCampoFormulario('Título do Aviso', 'text', 'titulo', dados.titulo || '', 'Digite o título...', true) + '</div>';
-    formulario += '<div class="flex-1">' + criarCampoFormulario('Data', 'date', 'data', dados.data || new Date().toISOString().split('T')[0], '', true) + '</div>';
+    formulario += '<div class="flex-1">' + criarCampoFormulario('Data', 'date', 'data', dados.data || Utilidades.obterDataAtual(), '', true) + '</div>';
     formulario += '</div>';
     formulario += criarAreaTexto('Mensagem', 'mensagem', dados.mensagem || '', 4, true);
     formulario += '<label class="flex itens-centro gap-sm mb-sm cursor-apontador">';

@@ -36,7 +36,7 @@ async function abrirFormularioPagamento(id = null) {
     const participantesDisponiveis = participantes
         .filter(participante => Utilidades.participanteEstaAtivo(participante) || String(participante.id) === String(pagamento?.id_participante || ''))
         .sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
-    const data = pagamento?.data || new Date().toISOString().split('T')[0];
+    const data = pagamento?.data || Utilidades.obterDataAtual();
 
     document.getElementById('titulo-janela').textContent = id ? 'Editar Pagamento Individual' : 'Novo Pagamento Individual';
 
@@ -366,7 +366,7 @@ async function abrirFormularioPagamentoLote(id = null) {
     paroquias.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
     document.getElementById('titulo-janela').textContent = id ? 'Editar Pagamento em Lote' : 'Novo Pagamento em Lote';
 
-    const dataLote = lote?.data || new Date().toISOString().split('T')[0];
+    const dataLote = lote?.data || Utilidades.obterDataAtual();
     let formulario = '<form id="formulario-pagamento-lote" class="flex flex-coluna gap-md w-total" onsubmit="salvarPagamentoLote(event)">';
     formulario += criarSeletor('Curso', 'id_curso_lote', cursos.map(curso => ({ id: curso.id, nome: curso.nome })), lote?.id_curso || '', true);
     formulario += criarSeletor('Paróquia', 'id_paroquia_lote', paroquias.map(paroquia => ({ id: paroquia.id, nome: paroquia.nome })), lote?.id_paroquia || '', true);
@@ -730,7 +730,7 @@ async function obterDadosFormularioPagamento() {
         cobrancas,
         descricao: document.getElementById('descricao')?.value.trim() || '',
         valor,
-        data: document.getElementById('data')?.value || new Date().toISOString().split('T')[0],
+        data: document.getElementById('data')?.value || Utilidades.obterDataAtual(),
         id_lote: document.getElementById('id_lote_pagamento')?.value || null
     };
 }
@@ -751,7 +751,7 @@ async function obterDadosFormularioPagamentoLote() {
         descricao: document.getElementById('descricao_lote')?.value.trim() || '',
         valor_unitario: valorUnitario,
         valor_total: valorUnitario * idsParticipantes.length,
-        data: document.getElementById('data_lote')?.value || new Date().toISOString().split('T')[0]
+        data: document.getElementById('data_lote')?.value || Utilidades.obterDataAtual()
     };
 }
 

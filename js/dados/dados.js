@@ -67,7 +67,7 @@ function baixarArquivoDados(conteudo, nomeArquivo, tipo) {
 async function exportarBackupCompleto() {
     const dados = await bd.exportarDados();
     const json = JSON.stringify(dados, null, 2);
-    baixarArquivoDados(json, `backup_comissao_biblico_catequetica_${new Date().toISOString().split('T')[0]}.json`, 'application/json');
+    baixarArquivoDados(json, `backup_comissao_biblico_catequetica_${Utilidades.obterDataAtual()}.json`, 'application/json');
     Utilidades.notificacao('Backup exportado com sucesso!');
 }
 

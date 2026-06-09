@@ -276,7 +276,7 @@ async function montarDadosFichaParticipante(idParticipante, contexto = null) {
         financeiro: calcularResumoFinanceiroParticipante(participante, curso, disciplinasCurso, frequencias, pagamentos),
         frequencia: calcularResumoFrequenciaParticipante(participante, frequencias, curso),
         atividades: calcularResumoAtividadesParticipante(participante, atividades, disciplinasCurso),
-        dataGeracao: new Date().toISOString().split('T')[0]
+        dataGeracao: Utilidades.obterDataAtual()
     };
 }
 
@@ -335,7 +335,8 @@ function calcularResumoFinanceiroParticipante(participante, curso, disciplinas =
     const pagamentosOutros = pagamentos.filter(pagamento => pagamento.tipo === 'Outros');
     const totalOutros = pagamentosOutros.reduce((total, pagamento) => total + Utilidades.normalizarValorMonetario(pagamento.valor), 0);
     const pagos = obrigacoes.filter(item => item.pago).length;
-    const textoCobrancas = `${pagos}/${obrigacoes.length} · ${obterTextoValorCobrancaFicha(curso, disciplinas)}`;
+    const textoCobrancas = `${pagos}/${obrigacoes.length}`;
+    const textoValorCobranca = obterTextoValorCobrancaFicha(curso, disciplinas);
 
     return {
         inscricaoPaga: Boolean(inscricao?.pago),
@@ -347,6 +348,7 @@ function calcularResumoFinanceiroParticipante(participante, curso, disciplinas =
         obrigacoesPagas: pagos,
         obrigacoesTotal: obrigacoes.length,
         textoCobrancas,
+        textoValorCobranca,
         obrigacoesPendentes: resumo.obrigacoesAPagar,
         obrigacoesAtrasadas: resumo.atrasos,
         valorPendente: resumo.aPagar,
@@ -567,6 +569,7 @@ function montarHtmlFichaParticipante(dadosFicha) {
                     ['Inscrição', financeiro.inscricaoTexto],
                     ['Valor da inscrição', Utilidades.formatarMoeda(financeiro.valorInscricao)],
                     ['Cobranças', financeiro.textoCobrancas],
+                    ['Valor da cobrança', financeiro.textoValorCobranca],
                     ['Outras entradas', Utilidades.formatarMoeda(financeiro.totalOutros)],
                     ['Total pago', Utilidades.formatarMoeda(financeiro.totalGeral)],
                     ['Valor a pagar', Utilidades.formatarMoeda(financeiro.valorPendente)],
@@ -590,7 +593,7 @@ function montarHtmlFichaParticipante(dadosFicha) {
             </div>
 
             <div class="resumo-final-ficha">
-                <p><strong>Resumo:</strong> inscrição ${financeiro.inscricaoTexto.toLowerCase()}; cobranças ${financeiro.obrigacoesPagas}/${financeiro.obrigacoesTotal}; total pago ${Utilidades.formatarMoeda(financeiro.totalGeral)}; valor a pagar ${Utilidades.formatarMoeda(financeiro.valorPendente)}; valor em atraso ${Utilidades.formatarMoeda(financeiro.valorAtrasado)}; frequência ${frequencia.percentualTexto} (${frequencia.situacao}); ${atividades.total} atividade(s) registrada(s).</p>
+                <p><strong>Resumo:</strong> inscrição ${financeiro.inscricaoTexto.toLowerCase()}; cobranças ${financeiro.textoCobrancas}; valor-base ${financeiro.textoValorCobranca}; total pago ${Utilidades.formatarMoeda(financeiro.totalGeral)}; valor a pagar ${Utilidades.formatarMoeda(financeiro.valorPendente)}; valor em atraso ${Utilidades.formatarMoeda(financeiro.valorAtrasado)}; frequência ${frequencia.percentualTexto} (${frequencia.situacao}); ${atividades.total} atividade(s) registrada(s).</p>
             </div>
         </section>
     `;

@@ -7,7 +7,7 @@ async function renderizarAtividades(conteudo) {
 
     cursos.sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR', { sensitivity: 'base' }));
 
-    const dataEntrega = new Date().toISOString().split('T')[0];
+    const dataEntrega = Utilidades.obterDataAtual();
     let codigo = '<div class="pagina-conteudo">';
     codigo += criarCabecalhoSecao('Atividades');
     codigo += '<div class="flex flex-linha md-flex-coluna gap-md mb-lg itens-fim">';
@@ -54,7 +54,7 @@ async function obterDadosLancamentoAtividades(atividadeExistente = null) {
         id: atividadeExistente?.id || null,
         id_curso: atividadeExistente?.id_curso || document.getElementById('atividade-curso')?.value || '',
         id_disciplina: atividadeExistente?.id_disciplina || document.getElementById('atividade-disciplina')?.value || '',
-        data_entrega: atividadeExistente?.data_entrega || document.getElementById('atividade-data')?.value || new Date().toISOString().split('T')[0]
+        data_entrega: atividadeExistente?.data_entrega || document.getElementById('atividade-data')?.value || Utilidades.obterDataAtual()
     };
 }
 

@@ -166,7 +166,7 @@ async function gerarPDFMensalidadesFinanceiro() {
     let html = '<h2>COBRANÇAS</h2>';
     html += `<p><strong>Curso:</strong> ${Utilidades.escaparHtml(curso.nome || '-')}</p>`;
     html += `<p><strong>Tipo de Cobrança:</strong> ${Utilidades.escaparHtml(obterTipoCobrancaCurso(curso))}</p>`;
-    html += `<p><strong>Data de Emissão:</strong> ${Utilidades.formatarData(new Date().toISOString().split('T')[0])}</p>`;
+    html += `<p><strong>Data de Emissão:</strong> ${Utilidades.formatarData(Utilidades.obterDataAtual())}</p>`;
     if (cursoCobraPorEncontro(curso)) {
         html += '<p><strong>Legenda:</strong> data = pagamento registrado; C = compareceu sem pagamento, portanto valor em atraso; F = faltou, sem cobrança.</p>';
     }
@@ -303,7 +303,7 @@ async function gerarPDFLivroCaixaFinanceiro() {
     const totalSaidas = saidas.reduce((total, item) => total + Utilidades.normalizarValorMonetario(item.valor), 0);
 
     let html = '<h2>LIVRO CAIXA</h2>';
-    html += `<p><strong>Data de Emissão:</strong> ${Utilidades.formatarData(new Date().toISOString().split('T')[0])}</p>`;
+    html += `<p><strong>Data de Emissão:</strong> ${Utilidades.formatarData(Utilidades.obterDataAtual())}</p>`;
     html += `<p><strong>Período de Referência:</strong> ${Utilidades.formatarData(dataInicio)} - ${Utilidades.formatarData(dataFim)}</p>`;
     html += '<h3 class="cor-texto-sucesso">ENTRADAS (RECEBIMENTOS)</h3>';
     html += '<table><thead><tr><th>Data</th><th>Descrição</th><th class="alinhado-direita">Valor</th></tr></thead><tbody>';

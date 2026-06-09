@@ -12,7 +12,7 @@ async function renderizarFrequencia(conteudo) {
     codigo += '<div class="flex flex-linha md-flex-coluna gap-md mb-lg itens-fim">';
     codigo += '<div class="flex-1 w-total">' + criarSeletor('Curso', 'freq-curso', cursos.map(curso => ({ id: curso.id, nome: curso.nome })), '') + '</div>';
     codigo += '<div class="flex-1 w-total" id="recipiente-disciplina-frequencia">' + criarSeletor('Disciplina', 'freq-disciplina', [{ id: '', nome: 'Selecione um curso primeiro...' }], '') + '</div>';
-    const dataAula = new Date().toISOString().split('T')[0];
+    const dataAula = Utilidades.obterDataAtual();
     codigo += '<input type="hidden" id="freq-data" value="' + dataAula + '">';
     codigo += '<div class="flex-1">' + criarCampoSomenteLeitura('Data da Aula', 'freq-data-visual', Utilidades.formatarData(dataAula)) + '</div>';
     codigo += '<div class="flex-1 w-total flex gap-sm md-flex-coluna mb-md">';
@@ -127,13 +127,13 @@ async function salvarFrequencia() {
 
     await bd.salvar('frequencias', registro);
 
-    const desistentesAtualizados = await atualizarDesistentesPorFalta(AppEstado.frequenciaAtual.id_curso);
+    const participantesAtualizados = await atualizarDesistentesPorFalta(AppEstado.frequenciaAtual.id_curso);
     const mensagemBase = AppEstado.frequenciaAtual.id ? 'Frequência atualizada com sucesso!' : 'Diário salvo com sucesso!';
-    const mensagemDesistentes = desistentesAtualizados.length > 0
-        ? ` ${desistentesAtualizados.length} participante(s) atualizado(s) como desistente(s) por faltas.`
+    const mensagemStatus = participantesAtualizados.length > 0
+        ? ` ${participantesAtualizados.length} participante(s) com status atualizado por frequência.`
         : '';
 
-    Utilidades.notificacao(`${mensagemBase}${mensagemDesistentes}`, 'sucesso');
+    Utilidades.notificacao(`${mensagemBase}${mensagemStatus}`, 'sucesso');
     AppEstado.frequenciaAtual = null;
     Interface.fecharJanela('janela-formulario');
     await renderizarAbaAtual();
