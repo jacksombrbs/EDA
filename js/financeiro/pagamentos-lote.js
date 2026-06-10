@@ -34,10 +34,14 @@ async function abrirFormularioPagamentoLote(id = null) {
 
     document.getElementById('conteudo-formulario').innerHTML = formulario;
     document.getElementById('valor_unitario_lote')?.setAttribute('step', '0.01');
-    document.getElementById('id_curso_lote')?.addEventListener('change', () => atualizarFormularioPagamentoLote(participantes, lote));
-    document.getElementById('id_paroquia_lote')?.addEventListener('change', () => atualizarFormularioPagamentoLote(participantes, lote));
+    document.getElementById('id_curso_lote')?.toggleAttribute('disabled', Boolean(lote));
+    document.getElementById('id_paroquia_lote')?.toggleAttribute('disabled', Boolean(lote));
+    if (!lote) {
+        document.getElementById('id_curso_lote')?.addEventListener('change', () => atualizarFormularioPagamentoLote(participantes, lote));
+        document.getElementById('id_paroquia_lote')?.addEventListener('change', () => atualizarFormularioPagamentoLote(participantes, lote));
+    }
     document.getElementById('recipiente-referencia-lote')?.addEventListener('change', evento => {
-        if (evento.target?.id === 'tipo_cobranca_lote') atualizarGrupoCobrancasPagamento('tipo_cobranca_lote', 'marcador-cobranca-lote');
+        if (evento.target?.id === 'tipo_cobranca_lote') atualizarGrupoCobrancasPagamento('tipo_cobranca_lote', 'marcador-cobranca-lote', !lote);
         atualizarValorPagamentoLote();
     });
     document.getElementById('valor_unitario_lote')?.addEventListener('input', atualizarValorPagamentoLote);
@@ -62,22 +66,71 @@ async function atualizarReferenciasPagamentoLote(lote = null, participantes = []
     const recipiente = document.getElementById('recipiente-referencia-lote');
     if (!recipiente) return;
 
+    const pagamentos = await bd.obterTodos('pagamentos');
+
+    if (lote) {
+        const opcoes = montarOpcoesCobrancasRegistradasLote(lote, pagamentos);
+        const marcadasAtuais = new Set(Array.from(document.querySelectorAll('.marcador-cobranca-lote:checked')).map(campo => campo.value));
+        const marcadas = marcadasAtuais.size > 0
+            ? new Set(opcoes.filter(opcao => marcadasAtuais.has(opcao.id)).map(opcao => opcao.id))
+            : new Set(opcoes.map(opcao => opcao.id));
+        const tipoSelecionado = obterTipoCobrancaSelecionado(opcoes, lote.tipo === 'Múltiplas' ? '' : lote.tipo);
+        recipiente.innerHTML = montarControleCobrancasPagamento(opcoes, marcadas, 'marcador-cobranca-lote', 'tipo_cobranca_lote', tipoSelecionado);
+        atualizarGrupoCobrancasPagamento('tipo_cobranca_lote', 'marcador-cobranca-lote', false);
+        return;
+    }
+
     const curso = idCurso ? await bd.obter('cursos', idCurso) : null;
-    const [disciplinas, frequencias, pagamentos] = await Promise.all([
+    const [disciplinas, frequencias] = await Promise.all([
         bd.obterTodos('disciplinas'),
-        bd.obterTodos('frequencias'),
-        bd.obterTodos('pagamentos')
+        bd.obterTodos('frequencias')
     ]);
     const disciplinasCurso = disciplinas.filter(disciplina => String(disciplina.id_curso) === String(idCurso));
     const frequenciasCurso = frequencias.filter(frequencia => String(frequencia.id_curso || '') === String(idCurso));
     const participantesBase = obterParticipantesBaseCobrancasLote(participantes);
     const opcoes = montarOpcoesCobrancaLote(curso, disciplinasCurso, participantesBase, pagamentos, { ignorarLoteId: AppEstado.registroEmEdicao }, frequenciasCurso);
     const marcadasAtuais = new Set(Array.from(document.querySelectorAll('.marcador-cobranca-lote:checked')).map(campo => campo.value));
-    const marcadas = new Set([...(lote?.cobrancas || []).map(codificarCobrancaPagamento), ...marcadasAtuais]);
-    if (lote && marcadas.size === 0) marcadas.add(montarValorOpcaoCobranca(lote));
-    const tipoSelecionado = obterTipoCobrancaSelecionado(opcoes, lote?.tipo === 'Múltiplas' ? '' : lote?.tipo);
-    recipiente.innerHTML = montarControleCobrancasPagamento(opcoes, marcadas, 'marcador-cobranca-lote', 'tipo_cobranca_lote', tipoSelecionado);
+    const tipoSelecionado = obterTipoCobrancaSelecionado(opcoes, '');
+    recipiente.innerHTML = montarControleCobrancasPagamento(opcoes, marcadasAtuais, 'marcador-cobranca-lote', 'tipo_cobranca_lote', tipoSelecionado);
     atualizarGrupoCobrancasPagamento('tipo_cobranca_lote', 'marcador-cobranca-lote');
+}
+
+function montarOpcoesCobrancasRegistradasLote(lote = null, pagamentos = []) {
+    const cobrancasRegistradas = obterCobrancasRegistradasLote(lote, pagamentos);
+    if (!cobrancasRegistradas.length) {
+        return [{ id: '', nome: 'Nenhuma cobrança registrada neste lote.', valor: 0, descricao: '' }];
+    }
+
+    return ordenarOpcoesCobrancaPagamento(cobrancasRegistradas.map(cobranca => ({
+        id: codificarCobrancaPagamento(cobranca),
+        tipo: cobranca.tipo,
+        nome: `${cobranca.descricao || cobranca.tipo} - ${Utilidades.formatarMoeda(cobranca.valor)}`,
+        descricao: cobranca.descricao || cobranca.tipo,
+        valor: Utilidades.normalizarValorMonetario(cobranca.valor)
+    })));
+}
+
+function obterCobrancasRegistradasLote(lote = null, pagamentos = []) {
+    if (!lote) return [];
+
+    const origem = Array.isArray(lote.cobrancas) && lote.cobrancas.length
+        ? lote.cobrancas
+        : pagamentos.filter(pagamento => String(pagamento.id_lote || '') === String(lote.id));
+
+    const mapa = new Map();
+    origem.forEach(cobranca => {
+        const chave = codificarCobrancaPagamento(cobranca);
+        if (!chave || mapa.has(chave)) return;
+        mapa.set(chave, {
+            tipo: cobranca.tipo,
+            referencia_id: cobranca.referencia_id || '',
+            referencia_indice: cobranca.referencia_indice || null,
+            descricao: cobranca.descricao || cobranca.tipo || 'Pagamento',
+            valor: Utilidades.normalizarValorMonetario(cobranca.valor)
+        });
+    });
+
+    return Array.from(mapa.values());
 }
 
 function montarOpcoesCobrancaLote(curso = null, disciplinas = [], participantes = [], pagamentos = [], contexto = {}, frequencias = []) {
@@ -122,9 +175,17 @@ async function salvarPagamentoLote(eventoOuOpcoes = {}) {
         if (!validarFormularioPagamentoLote(dados)) return null;
 
         const participantes = await bd.obterTodos('participantes');
+        const loteOriginal = AppEstado.registroEmEdicao ? await bd.obter('pagamentos_lote', AppEstado.registroEmEdicao) : null;
+        const pagamentos = loteOriginal ? await bd.obterTodos('pagamentos') : [];
+        const cobrancasOriginais = new Set(obterCobrancasRegistradasLote(loteOriginal, pagamentos).map(codificarCobrancaPagamento));
+        const participantesOriginais = new Set((loteOriginal?.ids_participantes || []).map(String));
+
         for (const cobranca of dados.cobrancas) {
             if (cobranca.tipo === 'Outros') continue;
+            const chaveCobranca = codificarCobrancaPagamento(cobranca);
             for (const idParticipante of dados.ids_participantes) {
+                if (cobrancasOriginais.has(chaveCobranca) && participantesOriginais.has(String(idParticipante))) continue;
+
                 const validacao = await validarPagamento(montarDadosPagamentoPorCobranca({ ...dados, id_participante: idParticipante }, cobranca), { ignorarLoteId: AppEstado.registroEmEdicao });
                 if (!validacao.valido) {
                     const participante = participantes.find(item => String(item.id) === String(idParticipante));
@@ -201,12 +262,10 @@ function renderizarParticipantesLotePagamento(participantes, lote = null) {
     if (!recipiente) return;
 
     const idsMarcados = new Set((lote?.ids_participantes || []).map(String));
-    const ativos = obterParticipantesFiltradosLote(participantes);
-    const inativosMarcados = participantes
-        .filter(participante => idsMarcados.has(String(participante.id)))
-        .filter(participante => !ativos.some(ativo => String(ativo.id) === String(participante.id)));
-    const filtrados = [...ativos, ...inativosMarcados]
-        .sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+    const filtrados = (lote
+        ? participantes.filter(participante => idsMarcados.has(String(participante.id)))
+        : obterParticipantesFiltradosLote(participantes)
+    ).sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
 
     if (!idCurso || !idParoquia) {
         recipiente.innerHTML = '<p class="texto-sm cor-texto-claro m-zero">Selecione curso e paróquia para listar os participantes.</p>';

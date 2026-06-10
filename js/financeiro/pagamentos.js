@@ -108,7 +108,7 @@ function montarGrupoCobrancasPagamento(tipo, opcoes = [], marcadas = new Set(), 
     `;
 }
 
-function atualizarGrupoCobrancasPagamento(idSeletorTipo, classeMarcador) {
+function atualizarGrupoCobrancasPagamento(idSeletorTipo, classeMarcador, limparOcultos = true) {
     const seletor = document.getElementById(idSeletorTipo);
     const tipoSelecionado = seletor?.value || '';
     const recipiente = seletor?.closest('.flex.flex-coluna.gap-sm');
@@ -117,7 +117,7 @@ function atualizarGrupoCobrancasPagamento(idSeletorTipo, classeMarcador) {
     recipiente.querySelectorAll('.grupo-cobrancas-pagamento').forEach(grupo => {
         const ativo = grupo.dataset.tipoCobranca === tipoSelecionado;
         grupo.classList.toggle('oculto', !ativo);
-        if (!ativo) grupo.querySelectorAll(`.${classeMarcador}`).forEach(campo => { campo.checked = false; });
+        if (limparOcultos && !ativo) grupo.querySelectorAll(`.${classeMarcador}`).forEach(campo => { campo.checked = false; });
     });
 }
 
