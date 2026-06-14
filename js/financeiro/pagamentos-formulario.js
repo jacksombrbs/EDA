@@ -7,9 +7,7 @@ async function abrirFormularioPagamento(id = null) {
         id ? bd.obter('pagamentos', id) : Promise.resolve(null)
     ]);
 
-    const participantesDisponiveis = participantes
-        .filter(participante => Utilidades.participanteEstaAtivo(participante) || String(participante.id) === String(pagamento?.id_participante || ''))
-        .sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+    const participantesDisponiveis = await obterParticipantesDisponiveisPagamento(participantes, pagamento);
     const data = pagamento?.data || Utilidades.obterDataAtual();
 
     document.getElementById('titulo-janela').textContent = id ? 'Editar Pagamento Individual' : 'Novo Pagamento Individual';
@@ -45,6 +43,32 @@ async function abrirFormularioPagamento(id = null) {
 
 async function editarPagamento(id) {
     await abrirFormularioPagamento(id);
+}
+
+async function obterParticipantesDisponiveisPagamento(participantes = [], pagamento = null) {
+    const idParticipantePagamento = String(pagamento?.id_participante || '');
+    const [cursos, disciplinas, frequencias, pagamentos] = await Promise.all([
+        bd.obterTodos('cursos'),
+        bd.obterTodos('disciplinas'),
+        bd.obterTodos('frequencias'),
+        bd.obterTodos('pagamentos')
+    ]);
+
+    const cursosPorId = new Map(cursos.map(curso => [String(curso.id), curso]));
+
+    return participantes
+        .filter(participante => {
+            if (String(participante.id) === idParticipantePagamento) return true;
+            if (Utilidades.participanteEstaAtivo(participante)) return true;
+
+            const curso = cursosPorId.get(String(participante.id_curso || ''));
+            if (!curso || !cursoCobraDesistentes(curso)) return false;
+
+            const disciplinasCurso = disciplinas.filter(disciplina => String(disciplina.id_curso) === String(curso.id));
+            const frequenciasCurso = frequencias.filter(frequencia => String(frequencia.id_curso || '') === String(curso.id));
+            return obterObrigacoesAbertasParticipante(participante, curso, disciplinasCurso, frequenciasCurso, pagamentos, {}).length > 0;
+        })
+        .sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
 }
 
 async function atualizarCobrancasPagamentoIndividual(pagamento = null) {

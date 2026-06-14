@@ -57,7 +57,7 @@ async function abrirFormularioPagamentoLote(id = null) {
 
 async function atualizarFormularioPagamentoLote(participantes, lote = null) {
     await atualizarReferenciasPagamentoLote(lote, participantes);
-    renderizarParticipantesLotePagamento(participantes, lote);
+    await renderizarParticipantesLotePagamento(participantes, lote);
     await atualizarValorPagamentoLote();
 }
 
@@ -87,7 +87,7 @@ async function atualizarReferenciasPagamentoLote(lote = null, participantes = []
     ]);
     const disciplinasCurso = disciplinas.filter(disciplina => String(disciplina.id_curso) === String(idCurso));
     const frequenciasCurso = frequencias.filter(frequencia => String(frequencia.id_curso || '') === String(idCurso));
-    const participantesBase = obterParticipantesBaseCobrancasLote(participantes);
+    const participantesBase = await obterParticipantesBaseCobrancasLote(participantes, curso, disciplinasCurso, frequenciasCurso, pagamentos, { ignorarLoteId: AppEstado.registroEmEdicao });
     const opcoes = montarOpcoesCobrancaLote(curso, disciplinasCurso, participantesBase, pagamentos, { ignorarLoteId: AppEstado.registroEmEdicao }, frequenciasCurso);
     const marcadasAtuais = new Set(Array.from(document.querySelectorAll('.marcador-cobranca-lote:checked')).map(campo => campo.value));
     const tipoSelecionado = obterTipoCobrancaSelecionado(opcoes, '');
@@ -232,7 +232,14 @@ async function excluirPagamentoLote(id) {
     await renderizarAbaAtual();
 }
 
-function obterParticipantesFiltradosLote(participantes = []) {
+function participanteDeveAparecerNoLote(participante, curso = null, disciplinas = [], frequencias = [], pagamentos = [], contexto = {}) {
+    if (Utilidades.participanteEstaAtivo(participante)) return true;
+    if (!curso || !cursoCobraDesistentes(curso)) return false;
+
+    return obterObrigacoesAbertasParticipante(participante, curso, disciplinas, frequencias, pagamentos, contexto).length > 0;
+}
+
+async function obterParticipantesFiltradosLote(participantes = [], curso = null, disciplinas = [], frequencias = [], pagamentos = [], contexto = {}) {
     const idCurso = document.getElementById('id_curso_lote')?.value || '';
     const idParoquia = document.getElementById('id_paroquia_lote')?.value || '';
 
@@ -241,12 +248,12 @@ function obterParticipantesFiltradosLote(participantes = []) {
     return participantes
         .filter(participante => String(participante.id_curso) === String(idCurso))
         .filter(participante => String(participante.id_paroquia) === String(idParoquia))
-        .filter(participante => Utilidades.participanteEstaAtivo(participante));
+        .filter(participante => participanteDeveAparecerNoLote(participante, curso, disciplinas, frequencias, pagamentos, contexto));
 }
 
-function obterParticipantesBaseCobrancasLote(participantes = []) {
+async function obterParticipantesBaseCobrancasLote(participantes = [], curso = null, disciplinas = [], frequencias = [], pagamentos = [], contexto = {}) {
     const idsMarcados = new Set(obterIdsParticipantesLoteMarcados().map(String));
-    const filtrados = obterParticipantesFiltradosLote(participantes);
+    const filtrados = await obterParticipantesFiltradosLote(participantes, curso, disciplinas, frequencias, pagamentos, contexto);
 
     if (idsMarcados.size > 0) {
         return filtrados.filter(participante => idsMarcados.has(String(participante.id)));
@@ -255,17 +262,30 @@ function obterParticipantesBaseCobrancasLote(participantes = []) {
     return filtrados;
 }
 
-function renderizarParticipantesLotePagamento(participantes, lote = null) {
+async function renderizarParticipantesLotePagamento(participantes, lote = null) {
     const idCurso = document.getElementById('id_curso_lote')?.value || '';
     const idParoquia = document.getElementById('id_paroquia_lote')?.value || '';
     const recipiente = document.getElementById('recipiente-participantes-lote');
     if (!recipiente) return;
 
     const idsMarcados = new Set((lote?.ids_participantes || []).map(String));
-    const filtrados = (lote
-        ? participantes.filter(participante => idsMarcados.has(String(participante.id)))
-        : obterParticipantesFiltradosLote(participantes)
-    ).sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+    let filtrados = [];
+
+    if (lote) {
+        filtrados = participantes.filter(participante => idsMarcados.has(String(participante.id)));
+    } else if (idCurso && idParoquia) {
+        const [curso, disciplinas, frequencias, pagamentos] = await Promise.all([
+            bd.obter('cursos', idCurso),
+            bd.obterTodos('disciplinas'),
+            bd.obterTodos('frequencias'),
+            bd.obterTodos('pagamentos')
+        ]);
+        const disciplinasCurso = disciplinas.filter(disciplina => String(disciplina.id_curso) === String(idCurso));
+        const frequenciasCurso = frequencias.filter(frequencia => String(frequencia.id_curso || '') === String(idCurso));
+        filtrados = await obterParticipantesFiltradosLote(participantes, curso, disciplinasCurso, frequenciasCurso, pagamentos, { ignorarLoteId: AppEstado.registroEmEdicao });
+    }
+
+    filtrados = filtrados.sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
 
     if (!idCurso || !idParoquia) {
         recipiente.innerHTML = '<p class="texto-sm cor-texto-claro m-zero">Selecione curso e paróquia para listar os participantes.</p>';
@@ -283,7 +303,7 @@ function renderizarParticipantesLotePagamento(participantes, lote = null) {
             ${filtrados.map(participante => `
                 <label class="flex itens-centro gap-sm p-sm fundo-branco hover-fundo-superficie-2 raio-xxs cursor-apontador transicao">
                     <input type="checkbox" class="checkbox-padrao marcador-participante-lote" value="${participante.id}" ${idsMarcados.has(String(participante.id)) ? 'checked' : ''}>
-                    <span class="texto-md cor-texto-escuro peso-medium">${Utilidades.escaparHtml(participante.nome)}${Utilidades.participanteEstaAtivo(participante) ? '' : ' <span class="etiqueta">Inativo</span>'}</span>
+                    <span class="texto-md cor-texto-escuro peso-medium">${Utilidades.escaparHtml(participante.nome)}${Utilidades.participanteEstaAtivo(participante) ? '' : ' <span class="etiqueta">Desistente</span>'}</span>
                 </label>
             `).join('')}
         </div>
