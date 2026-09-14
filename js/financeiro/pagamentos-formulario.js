@@ -25,6 +25,7 @@ async function abrirFormularioPagamento(id = null) {
     formulario += criarRodapeFormulario('', id ? 'Atualizar Pagamento' : 'Salvar Pagamento', {
         tipoSalvar: 'submit',
         botoesExtras: criarBotao('Salvar e Gerar Recibo', 'salvarPagamentoEGerarRecibo()', 'secundario', 'md-w-total', 'button', '')
+            + criarBotao('Salvar e Gerar Pix', 'salvarPagamentoEGerarPix()', 'secundario', 'md-w-total', 'button', '')
     });
     formulario += '</form>';
 
@@ -183,6 +184,7 @@ async function salvarPagamento(eventoOuOpcoes = {}) {
         AppEstado.salvandoPagamento = false;
     }
 }
+
 
 async function salvarPagamentoEGerarRecibo() {
     const pagamentos = await salvarPagamento({ fecharJanela: true, renderizar: true, notificar: true });

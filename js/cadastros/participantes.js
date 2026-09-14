@@ -14,7 +14,7 @@ async function renderizarParticipantes(conteudo) {
 
     let codigo = '<div class="pagina-conteudo">';
     codigo += criarCabecalhoSecao('Participantes Cadastrados', botoesCabecalho);
-    codigo += Busca.criarCampoBusca('busca-participantes', 'Buscar por nome...');
+    codigo += Busca.criarCampoBusca('busca-participantes', 'Buscar por nome, código, paróquia ou status...');
     codigo += participantes.length
         ? renderizarTabelaParticipantes(participantes, paroquias)
         : criarMensagemVazia('Nenhum participante cadastrado ainda.');

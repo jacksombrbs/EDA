@@ -9,6 +9,7 @@ async function renderizarPagamentos(conteudo) {
 
     const botoesCabecalho = '<div class="flex gap-sm md-flex-coluna">'
         + criarBotao('Pagamento em Lote', 'abrirFormularioPagamentoLote()', 'secundario', '', 'button', '')
+        + criarBotao('Configurar Pix', 'abrirConfiguracaoPix()', 'secundario', '', 'button', '')
         + criarBotao('Novo Pagamento Individual', 'abrirFormularioPagamento()', 'primario', '', 'button', '')
         + '</div>';
 
@@ -219,6 +220,7 @@ function montarLinhaPagamentoIndividual(pagamento, participantes, cursos, indice
         <td class="p-md texto-esquerda cor-texto-escuro">${Utilidades.formatarData(pagamento.data)}</td>
         <td class="p-md texto-esquerda">${criarAcoesTabela([
             { rotulo: 'Recibo', acao: `acionarReciboDireto('${pagamento.id}')` },
+            { rotulo: 'Pix', acao: `gerarPixPagamento('${pagamento.id}')` },
             { rotulo: 'Editar', acao: `editarPagamento('${pagamento.id}')` },
             { rotulo: 'Excluir', acao: `excluirPagamento('${pagamento.id}')`, perigo: true }
         ])}</td>

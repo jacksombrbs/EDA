@@ -364,3 +364,19 @@
     border-left: 1px solid var(--cor-borda);
     border-top: 1px solid var(--cor-borda);
 }
+
+.pix-geracao {
+    max-width: 420px;
+    margin: 0 auto;
+}
+
+.qrcode-pix {
+    min-height: 260px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--espaco-md);
+    background-color: var(--cor-superficie);
+    border: 1px solid var(--cor-borda);
+    border-radius: var(--raio-sm);
+}

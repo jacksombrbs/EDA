@@ -34,10 +34,10 @@ async function montarHtmlListaFrequencia(idCurso, idDisciplina, data) {
         return html;
     }
 
-    html += '<table><thead><tr><th class="coluna-nome-documento">Nome do Participante</th><th>Paróquia</th><th class="coluna-assinatura">Assinatura</th></tr></thead><tbody>';
+    html += '<table><thead><tr><th class="coluna-nome-documento">Nome do Participante</th><th>Código</th><th>Paróquia</th><th class="coluna-assinatura">Assinatura</th></tr></thead><tbody>';
     participantes.forEach(participante => {
         const status = Utilidades.participanteEstaAtivo(participante) ? '' : '<span class="status-assinatura cor-texto-erro peso-bold">desistente</span>';
-        html += `<tr class="linha-assinatura"><td><strong class="nome-assinatura">${Utilidades.escaparHtml(participante.nome || '-')}</strong>${status}</td><td>${Utilidades.escaparHtml(mapaParoquias[participante.id_paroquia] || 'Não informada')}</td><td></td></tr>`;
+        html += `<tr class="linha-assinatura"><td><strong class="nome-assinatura">${Utilidades.escaparHtml(participante.nome || '-')}</strong>${status}</td><td>${Utilidades.escaparHtml(participante.codigo_acesso || '-')}</td><td>${Utilidades.escaparHtml(mapaParoquias[participante.id_paroquia] || 'Não informada')}</td><td></td></tr>`;
     });
     html += '</tbody></table>';
 

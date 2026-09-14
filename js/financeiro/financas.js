@@ -58,7 +58,8 @@ async function abrirFormularioFinanca(id = null) {
         categoria: '',
         tipo: 'Saída',
         id_palestrante: '',
-        id_disciplina: ''
+        id_disciplina: '',
+        pagador: ''
     };
 
     const categorias = {
@@ -88,6 +89,7 @@ async function abrirFormularioFinanca(id = null) {
     formulario += '</div>';
     formulario += '<div class="flex gap-md w-total md-flex-coluna">';
     formulario += '<div id="recipiente-descricao-financa" class="flex-1">' + criarCampoFormulario('Descrição / Referência', 'text', 'descricao', dados.descricao || '', 'Ex: Compra de material', true) + '</div>';
+    formulario += '<div id="recipiente-pagador-financa" class="flex-1 oculto">' + criarCampoFormulario('Quem está pagando', 'text', 'pagador', dados.pagador || '', 'Ex: João Silva', false) + '</div>';
     formulario += '<div id="recipiente-palestrante-financa" class="flex-1 oculto">' + criarSeletor('Palestrante e Disciplina', 'palestrante_disciplina_financa', montarOpcoesPalestrantesDisciplinas(palestrantes, disciplinas, cursos), valorSelecionadoPalestrante, false) + '</div>';
     formulario += '</div>';
     formulario += '<div class="flex gap-md w-total md-flex-coluna">';
@@ -97,6 +99,7 @@ async function abrirFormularioFinanca(id = null) {
     formulario += '</div>';
     formulario += criarRodapeFormulario('salvarFinanca()', id ? 'Atualizar' : 'Salvar', {
         botoesExtras: criarBotao('Salvar e Gerar Recibo', 'salvarFinancaEGerarRecibo()', 'secundario', 'md-w-total oculto', 'button', 'id="botao-recibo-financa"')
+            + criarBotao('Salvar e Gerar Pix', 'salvarFinancaEGerarPix()', 'secundario', 'md-w-total oculto', 'button', 'id="botao-pix-financa"')
     });
     formulario += '</form>';
 
@@ -162,9 +165,13 @@ function separarValorPalestranteDisciplina(valor = '') {
 function atualizarRegraPalestranteFinanca() {
     const categoria = document.getElementById('categoria_financa')?.value || '';
     const ehPalestrante = categoria === 'Pagamento de Palestrante';
+    const tipo = document.getElementById('tipo_financa')?.value || 'Saída';
+    const ehEntrada = tipo === 'Entrada';
 
     document.getElementById('recipiente-palestrante-financa')?.classList.toggle('oculto', !ehPalestrante);
     document.getElementById('botao-recibo-financa')?.classList.toggle('oculto', !ehPalestrante);
+    document.getElementById('recipiente-pagador-financa')?.classList.toggle('oculto', !ehEntrada);
+    document.getElementById('botao-pix-financa')?.classList.toggle('oculto', !ehEntrada);
 }
 
 async function editarFinanca(id) {
@@ -194,6 +201,19 @@ async function salvarFinanca(eventoOuOpcoes = {}) {
     if (opcoes.renderizar !== false) await renderizarAbaAtual();
 
     return financa;
+}
+
+async function salvarFinancaEGerarPix() {
+    const configuracao = await obterConfiguracaoPix();
+    if (!configuracao.chave_pix) {
+        Utilidades.notificacao('Configure o Pix antes de gerar o pagamento.', 'aviso');
+        return;
+    }
+
+    const financa = await salvarFinanca({ fecharJanela: true, renderizar: true, notificar: true });
+    if (!financa) return;
+
+    await gerarPixFinanca(financa.id);
 }
 
 async function salvarFinancaEGerarRecibo() {
@@ -245,6 +265,7 @@ function obterDadosFormularioFinanca() {
         descricao: document.getElementById('descricao')?.value.trim() || '',
         valor: document.getElementById('valor')?.value || '0',
         data: document.getElementById('data')?.value || Utilidades.obterDataAtual(),
+        pagador: document.getElementById('pagador')?.value.trim() || '',
         id_palestrante: categoria === 'Pagamento de Palestrante' ? selecao.idPalestrante : '',
         id_disciplina: categoria === 'Pagamento de Palestrante' ? selecao.idDisciplina : ''
     };
@@ -264,6 +285,11 @@ function validarFinanca(dados) {
     if (dados.categoria === 'Pagamento de Palestrante' && !Validacao.notificarCamposObrigatorios([
         { nome: 'Palestrante e Disciplina', valor: dados.id_palestrante }
     ])) {
+        return { valido: false };
+    }
+
+    if (dados.tipo === 'Entrada' && !dados.pagador) {
+        Utilidades.notificacao('Informe quem está pagando.', 'aviso');
         return { valido: false };
     }
 
@@ -293,6 +319,7 @@ function montarFinanca(dados, id = null) {
         descricao: dados.descricao,
         valor: dados.valor,
         data: dados.data,
+        pagador: dados.pagador || '',
         id_palestrante: dados.id_palestrante || '',
         id_disciplina: dados.id_disciplina || ''
     };
@@ -326,6 +353,9 @@ function renderizarTabelaLivroCaixa(transacoes) {
             ? criarAcoesTabela([
                 transacao.categoria === 'Pagamento de Palestrante'
                     ? { rotulo: 'Recibo', acao: `acionarReciboFinancaDireto('${transacao.id}')` }
+                    : null,
+                transacao.tipo === 'Entrada' && transacao.origem === 'manual'
+                    ? { rotulo: 'Pix', acao: `gerarPixFinanca('${transacao.id}')` }
                     : null,
                 { rotulo: 'Editar', acao: `editarFinanca('${transacao.id}')` },
                 { rotulo: 'Excluir', acao: `excluirFinanca('${transacao.id}')`, perigo: true }
