@@ -20,6 +20,7 @@
 .icone-inline[data-icone="disciplinas"] { --icone-imagem: url("../icones/disciplinas.svg"); }
 .icone-inline[data-icone="paroquias"] { --icone-imagem: url("../icones/paroquias.svg"); }
 .icone-inline[data-icone="participantes"] { --icone-imagem: url("../icones/participantes.svg"); }
+.icone-inline[data-icone="etiquetas"] { --icone-imagem: url("../icones/etiquetas.svg"); }
 .icone-inline[data-icone="frequencia"] { --icone-imagem: url("../icones/frequencia.svg"); }
 .icone-inline[data-icone="atividades"] { --icone-imagem: url("../icones/atividades.svg"); }
 .icone-inline[data-icone="financas"] { --icone-imagem: url("../icones/financas.svg"); }

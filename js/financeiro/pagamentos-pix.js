@@ -1,4 +1,5 @@
 const CHAVE_CONFIGURACAO_PIX = 'pix';
+let telefonePixAtual = '';
 
 async function obterConfiguracaoPix() {
     await bd.inicializar();
@@ -106,7 +107,7 @@ async function gerarPixPagamento(idPagamento) {
         identificador: montarIdentificadorPix(participante.nome, descricao)
     });
 
-    mostrarPixGerado(payload, participante.nome || '', descricao, pagamento.valor);
+    mostrarPixGerado(payload, participante.nome || '', descricao, pagamento.valor, participante.telefone || '');
 }
 
 async function gerarPixFinanca(idFinanca) {
@@ -133,10 +134,13 @@ async function gerarPixFinanca(idFinanca) {
         identificador: montarIdentificadorPix(financa.pagador || '', descricao)
     });
 
-    mostrarPixGerado(payload, financa.pagador || '', descricao, financa.valor);
+    const participantes = await bd.obterTodos('participantes');
+    const participante = participantes.find(item => String(item.nome || '').toLowerCase() === String(financa.pagador || '').toLowerCase());
+    mostrarPixGerado(payload, financa.pagador || '', descricao, financa.valor, participante?.telefone || '');
 }
 
-function mostrarPixGerado(payload, pagador, descricao, valor) {
+function mostrarPixGerado(payload, pagador, descricao, valor, telefone = '') {
+    telefonePixAtual = telefone;
     const identificacao = montarDescricaoPix(pagador, descricao);
     document.getElementById('titulo-janela').textContent = 'Pagamento via Pix';
     
@@ -145,6 +149,7 @@ function mostrarPixGerado(payload, pagador, descricao, valor) {
             <!-- Apenas o QR Code fica centralizado -->
             <div class="pix-geracao flex flex-coluna itens-centro mb-xs">
                 <div id="qrcode-pix" class="qrcode-pix"></div>
+                <p class="texto-sm cor-texto-claro texto-centro mt-sm">Aponte a câmera do celular para este QR Code.</p>
             </div>
             
             <!-- Dados do pagamento e Textarea ficam fora da centralização e com w-total -->
@@ -156,7 +161,8 @@ function mostrarPixGerado(payload, pagador, descricao, valor) {
             
             ${criarRodapeModal([
                 { rotulo: 'Cancelar', acao: "Interface.fecharJanela('janela-formulario')", variante: 'secundario' },
-                { rotulo: 'Copiar Código Pix', acao: 'copiarCodigoPixGerado()', variante: 'primario'  }
+                { rotulo: 'Copiar Código Pix', acao: 'copiarCodigoPixGerado()', variante: 'primario'  },
+                { rotulo: 'Enviar pelo WhatsApp', acao: 'enviarPixWhatsApp()', variante: 'sucesso' }
             ])}
         </div>
     `;
@@ -194,6 +200,32 @@ function copiarCodigoPixGerado() {
     const codigo = document.getElementById('codigo-pix-gerado')?.value || '';
     if (!codigo) return;
     Utilidades.copiarParaClipboard(codigo);
+}
+
+function enviarPixWhatsApp() {
+    if (!telefonePixAtual) {
+        Utilidades.notificacao('Este participante não possui telefone registrado.', 'aviso');
+        return;
+    }
+
+    const imagem = document.querySelector('#qrcode-pix img, #qrcode-pix canvas');
+    const codigo = document.getElementById('codigo-pix-gerado')?.value || '';
+    const identificacao = document.querySelector('#conteudo-formulario p:nth-of-type(2)')?.textContent || 'Pagamento via Pix';
+    if (navigator.share && imagem) {
+        const enviarImagem = dataUrl => {
+            fetch(dataUrl).then(resposta => resposta.blob()).then(blob => {
+                const arquivo = new File([blob], 'qr-code-pix.png', { type: 'image/png' });
+                return navigator.share({ title: 'QR Code PIX', text: `${identificacao}\n\nCódigo Pix (copia e cola):\n${codigo}`, files: [arquivo] });
+            }).catch(() => abrirWhatsAppComPix(identificacao, codigo));
+        };
+        enviarImagem(imagem.tagName.toLowerCase() === 'canvas' ? imagem.toDataURL('image/png') : imagem.src);
+        return;
+    }
+    abrirWhatsAppComPix(identificacao, codigo);
+}
+
+function abrirWhatsAppComPix(identificacao, codigo) {
+    enviarAvisoWhatsApp(telefonePixAtual, 'Pagamento via Pix', `${identificacao}\n\nCódigo Pix (copia e cola):\n${codigo}`);
 }
 
 function montarPayloadPix(dados = {}) {

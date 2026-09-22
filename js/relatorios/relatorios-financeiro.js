@@ -144,22 +144,27 @@ async function gerarPDFMensalidadesFinanceiro() {
     const baseParticipantes = participantesTodosCurso || participantes;
     const paroquiasMap = {};
     paroquias.forEach(paroquia => { paroquiasMap[paroquia.id] = paroquia.nome; });
-    const gruposParoquia = ordenarGruposParoquiaRelatorio(Object.values(agruparParticipantesPorParoquia(baseParticipantes)), paroquiasMap);
+    const mapaSetoresParoquias = Object.fromEntries(paroquias.map(paroquia => [String(paroquia.id), paroquia.setor || '']));
+    const gruposParoquia = agruparParticipantesPorSetorParoquiaRelatorio(baseParticipantes, paroquiasMap, mapaSetoresParoquias);
     const obrigacoesCurso = montarObrigacoesModeloCurso(curso, disciplinas, frequencias);
     const totalColunas = obrigacoesCurso.length + 3;
 
     let html = montarCabecalhoRelatorioImpresso('COBRANÇAS', [
         { rotulo: 'Curso', valor: curso.nome || '-' },
         { rotulo: 'Tipo de Cobrança', valor: obterTipoCobrancaCurso(curso) },
+        { rotulo: 'Setores', valor: obterIdentificacaoSetoresRelatorio(paroquias) },
         { rotulo: 'Data de Emissão', valor: Utilidades.formatarData(Utilidades.obterDataAtual()) }
     ]);
     if (cursoCobraPorEncontro(curso)) {
         html += '<p><strong>Legenda:</strong> data = pagamento registrado; C = compareceu sem pagamento; F = faltou</p>';
     }
 
+    let setorAnterior = '';
     gruposParoquia.forEach((grupo, indiceGrupo) => {
+        const primeiroDoSetor = grupo.setor !== setorAnterior;
+        if (primeiroDoSetor) { const classeQuebraSetor = setorAnterior ? ' quebra-pagina-antes' : ''; html += `<h2 class="titulo-grupo-setor${classeQuebraSetor}">Setor: ${Utilidades.escaparHtml(grupo.setor)}</h2>`; setorAnterior = grupo.setor; }
         const nomeParoquia = paroquiasMap[grupo.idParoquia] || 'Participantes Sem Vínculo Paroquial';
-        html += abrirGrupoParoquiaRelatorio(nomeParoquia, indiceGrupo);
+        html += abrirGrupoParoquiaRelatorio(nomeParoquia, primeiroDoSetor ? 0 : 1);
         html += '<table><thead><tr><th class="coluna-nome-documento">Nome do Participante</th>';
         obrigacoesCurso.forEach(obrigacao => { html += `<th class="texto-centro">${Utilidades.escaparHtml(obrigacao.rotulo)}</th>`; });
         html += '<th class="texto-centro">A pagar</th><th class="texto-centro">Atraso</th></tr></thead><tbody>';
@@ -274,4 +279,3 @@ async function gerarPDFLivroCaixaFinanceiro() {
     html += `<div class="bloco-resumo"><p class="${totalEntradas - totalSaidas >= 0 ? 'cor-texto-sucesso' : 'cor-texto-erro'}"><strong>Saldo:</strong> ${Utilidades.formatarMoeda(totalEntradas - totalSaidas)}</p></div>`;
     dispararImpressao('Livro Caixa', html);
 }
-

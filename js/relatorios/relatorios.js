@@ -151,7 +151,7 @@ function montarFiltrosFluxoRelatorio(contexto = {}, tipo = '') {
     const tipoFrequencia = document.getElementById('filtro-tipo-frequencia')?.value || 'geral';
     const disciplinas = (contexto.disciplinas || []).map(disciplina => ({ id: disciplina.id, nome: disciplina.nome }));
     const filtroComplementar = tipoFrequencia === 'geral'
-        ? criarSeletor('Organização', 'filtro-organizacao-frequencia', [{ id: 'paroquia', nome: 'Por paróquia' }, { id: 'alfabetica', nome: 'Ordem alfabética' }], document.getElementById('filtro-organizacao-frequencia')?.value || 'paroquia', false)
+        ? criarSeletor('Organização', 'filtro-organizacao-frequencia', [{ id: 'paroquia', nome: 'Por paróquia' }, { id: 'setor', nome: 'Por setor' }, { id: 'alfabetica', nome: 'Ordem alfabética' }], document.getElementById('filtro-organizacao-frequencia')?.value || 'paroquia', false)
         : criarSeletor('Disciplina', 'filtro-disciplina-freq', disciplinas, document.getElementById('filtro-disciplina-freq')?.value || '', false);
 
     return `
@@ -297,6 +297,17 @@ function ordenarGruposParoquiaRelatorio(grupos = [], paroquiasMap = {}) {
     });
 }
 
+function agruparParticipantesPorSetorParoquiaRelatorio(participantes = [], paroquiasMap = {}, mapaSetoresParoquias = {}) {
+    const gruposParoquia = Object.values(agruparParticipantesPorParoquia(participantes)).map(grupo => ({
+        ...grupo,
+        setor: mapaSetoresParoquias[String(grupo.idParoquia)] || 'Sem setor'
+    }));
+    return gruposParoquia.sort((a, b) => {
+        const comparacaoSetor = a.setor.localeCompare(b.setor, 'pt-BR');
+        return comparacaoSetor || (paroquiasMap[a.idParoquia] || 'Sem Vínculo').localeCompare(paroquiasMap[b.idParoquia] || 'Sem Vínculo', 'pt-BR');
+    });
+}
+
 function agruparParticipantesPorCapelaRelatorio(participantes = []) {
     const grupos = participantes.reduce((resultado, participante) => {
         const capela = participante.capela ? participante.capela.trim() : 'Sem Capela';
@@ -315,4 +326,10 @@ function agruparParticipantesPorCapelaRelatorio(participantes = []) {
 
 function montarLinhaCapelaRelatorio(capela = '', colunas = 1) {
     return `<tr><td colspan="${colunas}" class="peso-bold cor-texto-primario fundo-superficie-2">Capela: ${Utilidades.escaparHtml(capela || 'Sem Capela')}</td></tr>`;
+}
+
+function obterIdentificacaoSetoresRelatorio(paroquias = []) {
+    const setores = [...new Set(paroquias.map(paroquia => (paroquia.setor || '').trim()).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    return setores.length ? setores.join(', ') : 'Não informado';
 }

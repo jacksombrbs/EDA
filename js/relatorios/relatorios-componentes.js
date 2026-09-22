@@ -46,7 +46,7 @@ function montarCabecalhoRelatorioImpresso(titulo, detalhes = []) {
 }
 
 function abrirGrupoParoquiaRelatorio(nomeParoquia, indice = 0) {
-    const quebra = indice > 0 ? ' class="quebra-pagina-antes"' : '';
+    const quebra = indice > 0 ? ' class="quebra-pagina-antes grupo-paroquia-relatorio"' : ' class="grupo-paroquia-relatorio"';
     return `<div${quebra}><h3>Paróquia: ${Utilidades.escaparHtml(nomeParoquia || 'Participantes Sem Vínculo Paroquial')}</h3>`;
 }
 
